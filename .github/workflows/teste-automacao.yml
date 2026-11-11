@@ -1,51 +1,45 @@
 
-name: Teste de automacao
+name: Instalar banco Entre Suspeitos
 
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  diagnostico:
+  instalar:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Conferir conexao sem mostrar senha
-        env:
-          DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      - name: Baixar arquivos
+        uses: actions/checkout@v4
+
+      - name: Preparar SQL
         run: |
-          python3 - <<'PY'
-          import os
-          import sys
-          from urllib.parse import urlsplit
+          set -e
+          test -f EntreSuspeitos_SQL_GitHub.zip
+          unzip -p EntreSuspeitos_SQL_GitHub.zip instalar.sql > /tmp/instalar.sql
+          test -s /tmp/instalar.sql
 
-          raw = os.getenv("DB_URL", "").strip()
-          try:
-              u = urlsplit(raw)
-              checks = {
-                "Segredo configurado": bool(raw),
-                "Usuario correto": (u.username or "").startswith("postgres."),
-                "Servidor correto": (u.hostname or "").endswith(".pooler.supabase.com"),
-                "Porta correta": u.port == 5432,
-                "Senha presente": bool(u.password),
-              }
-          except Exception:
-              checks = {"URL valida": False}
-
-          for nome, ok in checks.items():
-              print(nome, "OK" if ok else "FALHA")
-
-          if not all(checks.values()):
-              sys.exit(1)
-
-          print("FORMATO DA CONEXAO CORRETO")
-          PY
-
-      - name: Testar acesso ao Supabase
-        env:
-          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
-          PGSSLMODE: require
-          PGCONNECT_TIMEOUT: '15'
+      - name: Instalar cliente PostgreSQL
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client
-          psql "$DATABASE_URL" -w -X -At -c "SELECT 'CONEXAO_OK';"
+
+      - name: Instalar banco de dados
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGSSLMODE: require
+        run: |
+          set -e
+          test -n "$DATABASE_URL"
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f /tmp/instalar.sql
+
+      - name: Verificar instalacao
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGSSLMODE: require
+        run: |
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -At -c "select to_regprocedure('public.es_start(uuid)') is not null;"
           
