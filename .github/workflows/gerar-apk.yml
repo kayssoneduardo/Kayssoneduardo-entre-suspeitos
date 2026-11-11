@@ -1,42 +1,95 @@
-
 name: Gerar APK Android
-
 on:
   workflow_dispatch:
-
+permissions:
+  contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 35
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Baixar repositório
+        uses: actions/checkout@v4
       - name: Extrair projeto
-        run: unzip -o EntreSuspeitos_Android.zip -d .
-
-      - uses: actions/setup-node@v4
+        shell: bash
+        run: |
+          if [ ! -f EntreSuspeitos_Android.zip ]; then
+            echo "ERRO: envie EntreSuspeitos_Android.zip na raiz do repositório"
+            exit 1
+          fi
+          unzip -oq EntreSuspeitos_Android.zip -d .
+          test -f package.json && test -f www/index.html && test -f www/words.js
+          echo "Projeto extraído com sucesso"
+      - name: Preparar Node
+        uses: actions/setup-node@v4
         with:
           node-version: '22'
-
-      - uses: actions/setup-java@v4
+      - name: Preparar Java
+        uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '21'
-
-      - uses: android-actions/setup-android@v4
-
-      - name: Compilar aplicativo
+      - name: Preparar Android
+        uses: android-actions/setup-android@v4
+      - name: Configurar servidor online (opcional)
+        env:
+          ES_URL: ${{ vars.SUPABASE_URL }}
+          ES_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os,json,pathlib
+          url=os.environ.get('ES_URL','').strip().rstrip('/')
+          key=os.environ.get('ES_KEY','').strip()
+          if url and not (url.startswith('https://') and url.endswith('.supabase.co')):
+              raise SystemExit('SUPABASE_URL deve ser HTTPS, terminando em .supabase.co')
+          if bool(url)!=bool(key):
+              raise SystemExit('Configure SUPABASE_URL e SUPABASE_ANON_KEY juntas.')
+          payload={'url':url,'key':key}
+          pathlib.Path('www/server-config.js').write_text('window.ES_SERVER_CONFIG = '+json.dumps(payload)+';\n')
+          print('Servidor público configurado?',bool(url))
+          PY
+      - name: Instalar dependências e gerar projeto Android
         run: |
           npm install
           npx cap add android
           npx cap sync android
+      - name: Preparar permissões, nome e ícone do aplicativo
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+          manifest=Path('android/app/src/main/AndroidManifest.xml')
+          xml=manifest.read_text()
+          for perm in ['android.permission.INTERNET','android.permission.RECORD_AUDIO','android.permission.MODIFY_AUDIO_SETTINGS']:
+              if perm not in xml:
+                  xml=xml.replace('<application',f'<uses-permission android:name="{perm}" />\n    <application',1)
+          manifest.write_text(xml)
+          for px,qualifier in [(48,'mdpi'),(72,'hdpi'),(96,'xhdpi'),(144,'xxhdpi'),(192,'xxxhdpi')]:
+              src=Path(f'branding/android/mipmap-{qualifier}/ic_launcher.png')
+              dest=Path(f'android/app/src/main/res/mipmap-{qualifier}/ic_launcher.png')
+              if src.exists():
+                  dest.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(src,dest)
+              # Android 8+ adaptativo usa foreground separado
+              fg=Path(f'branding/android/mipmap-{qualifier}/ic_launcher_foreground.png')
+              if fg.exists():
+                  shutil.copyfile(fg,dest.with_name('ic_launcher_foreground.png'))
+              rnd=dest.with_name('ic_launcher_round.png')
+              if src.exists():
+                  shutil.copyfile(src,rnd)
+          PY
+      - name: Validar banco e lógica do jogo
+        run: node tests/test_engine.js
+      - name: Gerar APK instalável de teste
+        run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
-
-      - name: Salvar APK
+      - name: Disponibilizar APK
         uses: actions/upload-artifact@v4
         with:
-          name: Entre-Suspeitos-APK
+          name: Entre-Suspeitos-V4-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30
           
