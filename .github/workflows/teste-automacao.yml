@@ -1,0 +1,13 @@
+
+name: Teste de automacao
+
+on:
+  workflow_dispatch:
+
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar funcionamento
+        run: echo "Automacao reconhecida"
+        
