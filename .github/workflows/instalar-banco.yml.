@@ -2,12 +2,16 @@ name: Instalar banco Entre Suspeitos
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/instalar-banco.yml'
 
 permissions:
   contents: read
 
 jobs:
   instalar:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:
