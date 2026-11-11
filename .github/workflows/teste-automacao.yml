@@ -4,10 +4,37 @@ name: Teste de automacao
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   teste:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     steps:
-      - name: Verificar funcionamento
-        run: echo "Automacao reconhecida"
-        
+      - name: Baixar arquivos
+        uses: actions/checkout@v4
+
+      - name: Instalar banco Entre Suspeitos
+        shell: bash
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGSSLMODE: require
+        run: |
+          set -euo pipefail
+
+          if [ -z "$DATABASE_URL" ]; then
+            echo "ERRO: segredo SUPABASE_DB_URL ausente"
+            exit 1
+          fi
+
+          unzip -p EntreSuspeitos_SQL_GitHub.zip instalar.sql > /tmp/instalar.sql
+          test -s /tmp/instalar.sql
+
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -f /tmp/instalar.sql
+
+          psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1 -At -c "select to_regprocedure('public.es_start(uuid)') is not null;"
