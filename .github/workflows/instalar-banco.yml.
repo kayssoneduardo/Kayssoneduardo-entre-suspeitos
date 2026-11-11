@@ -1,0 +1,57 @@
+name: Instalar banco Entre Suspeitos
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  instalar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      PGSSLMODE: require
+      PGCONNECT_TIMEOUT: '20'
+    steps:
+      - name: Baixar arquivos
+        uses: actions/checkout@v4
+
+      - name: Conferir arquivos e configuracao
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_DB_URL" || { echo 'ERRO: falta secret SUPABASE_DB_URL'; exit 1; }
+          test -f EntreSuspeitos_SQL_GitHub.zip || { echo 'ERRO: envie EntreSuspeitos_SQL_GitHub.zip na raiz'; exit 1; }
+          unzip -p EntreSuspeitos_SQL_GitHub.zip instalar.sql > /tmp/entre-suspeitos-instalar.sql
+          python3 - <<'PY_CHECK'
+          from pathlib import Path
+          p=Path('/tmp/entre-suspeitos-instalar.sql')
+          s=p.read_text()
+          assert s.count('$$') % 2 == 0, 'SQL incompleto: pares $$'
+          assert 'create or replace function public.es_start' in s
+          assert 'COMMIT;' in s
+          assert 'selecione * em' not in s.lower()
+          print('SQL carregado diretamente do ZIP, sem copiar nem traduzir.')
+          PY_CHECK
+
+      - name: Instalar cliente PostgreSQL
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Aplicar banco no Supabase
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -f /tmp/entre-suspeitos-instalar.sql
+
+      - name: Verificar instalacao
+        shell: bash
+        run: |
+          set -euo pipefail
+          psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -At -c "select 'TABELAS_ES=' || count(*) from pg_tables where schemaname='public' and tablename like 'es_%';"
+          psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -At -c "select 'FUNCOES_ES=' || count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname like 'es_%';"
+          psql "$SUPABASE_DB_URL" -X -v ON_ERROR_STOP=1 -At -c "select 'ES_START_OK=' || to_regprocedure('public.es_start(uuid)') is not null;"
