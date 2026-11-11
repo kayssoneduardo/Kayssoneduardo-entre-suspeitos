@@ -1,0 +1,6 @@
+{
+  "appId": "br.com.entresuspeitos.jogo",
+  "appName": "Entre Suspeitos",
+  "webDir": "www",
+  "server": {"androidScheme": "https"}
+}
