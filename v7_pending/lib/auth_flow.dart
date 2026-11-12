@@ -106,6 +106,9 @@ class _AccountPageState extends State<AccountPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (Supabase.instance.client.auth.currentUser != null) {
+      return const AccountOverviewPage();
+    }
     final heading = switch (mode) {
       AccountMode.login => 'Entrar no jogo',
       AccountMode.signup => 'Criar identidade',
@@ -233,4 +236,93 @@ String _friendly(String s) {
   if (text.contains('already registered')) return 'Este e-mail já está cadastrado. Entre ou recupere sua senha.';
   if (text.contains('invalid login')) return 'E-mail ou senha incorretos.';
   return s.replaceFirst('Exception: ', '');
+}
+
+
+/// Única fonte de autorização: o UID autenticado consultado com RLS
+/// no servidor. E-mail, nickname ou variáveis locais nunca concedem acesso.
+Future<bool> esIsAdministrator() async {
+  final user = Supabase.instance.client.auth.currentUser;
+  if (user == null) return false;
+  try {
+    final row = await Supabase.instance.client
+      .from('es_admins')
+      .select('user_id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+    return row != null && row['user_id'] == user.id;
+  } catch (_) {
+    return false; // Falhar fechado.
+  }
+}
+
+class AccountOverviewPage extends StatefulWidget {
+  const AccountOverviewPage({super.key});
+  @override State<AccountOverviewPage> createState() => _AccountOverviewPageState();
+}
+class _AccountOverviewPageState extends State<AccountOverviewPage> {
+  late Future<bool> permission;
+  @override void initState() {
+    super.initState();
+    permission = esIsAdministrator();
+  }
+  @override Widget build(BuildContext context) {
+    final user = Supabase.instance.client.auth.currentUser;
+    return Scaffold(backgroundColor: _bg,
+      appBar: AppBar(title: const Text('Minha identidade')),
+      body: ListView(padding: const EdgeInsets.all(24), children: [
+        const Center(child: CircleAvatar(radius: 36, backgroundColor: _surface, child: Icon(Icons.person_outline, size: 40, color: _purple))),
+        const SizedBox(height: 14),
+        const Center(child: Text('SESSÃO ATIVA', style: TextStyle(color: _purple, letterSpacing: 2))),
+        const SizedBox(height: 14),
+        ListTile(title: const Text('E-mail'), subtitle: Text(user?.email ?? '')),
+        FutureBuilder<bool>(future: permission, builder: (context, snapshot) {
+          if (!snapshot.hasData) return const LinearProgressIndicator();
+          if (!snapshot.data!) return const ListTile(leading: Icon(Icons.verified_user_outlined), title: Text('Jogador'));
+          return Column(children: [
+            const ListTile(leading: Icon(Icons.admin_panel_settings_outlined, color: _purple),
+              title: Text('Superadministrador Zero'), subtitle: Text('Vínculo de usuário validado pelo servidor')),
+            OutlinedButton.icon(onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const RestrictedAdminPage())),
+              icon: const Icon(Icons.admin_panel_settings_outlined), label: const Text('Painel Zero')),
+          ]);
+        }),
+        const SizedBox(height: 22),
+        OutlinedButton.icon(onPressed: () async {
+          await Supabase.instance.client.auth.signOut();
+          if (context.mounted) Navigator.of(context).pop();
+        }, icon: const Icon(Icons.logout_rounded), label: const Text('Sair da conta')),
+      ]));
+  }
+}
+
+class RestrictedAdminPage extends StatefulWidget {
+  const RestrictedAdminPage({super.key});
+  @override State<RestrictedAdminPage> createState() => _RestrictedAdminPageState();
+}
+class _RestrictedAdminPageState extends State<RestrictedAdminPage> {
+  late Future<bool> check;
+  @override void initState() { super.initState(); check = esIsAdministrator(); }
+  @override Widget build(BuildContext context) => Scaffold(
+    backgroundColor: _bg,
+    appBar: AppBar(title: const Text('Painel Zero')),
+    body: FutureBuilder<bool>(future: check, builder: (context, snapshot) {
+      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+      if (!snapshot.data!) return const Center(child: Padding(
+        padding: EdgeInsets.all(20), child: Text('Acesso negado. Esta conta não possui autorização administrativa.')));
+      return ListView(padding: const EdgeInsets.all(20), children: [
+        const Icon(Icons.shield_outlined, size: 64, color: Color(0xFFC2A16C)),
+        const SizedBox(height: 12),
+        const Text('ZERO • ACESSO AUTORIZADO', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFFC2A16C), letterSpacing: 1.5)),
+        const SizedBox(height: 18),
+        const Text('Esta versão valida sua identidade no Supabase. Ferramentas de moderação serão ativadas somente depois de implementarmos as permissões e a auditoria no servidor.',
+          textAlign: TextAlign.center, style: TextStyle(color: _muted, height: 1.4)),
+        const SizedBox(height: 22),
+        for (final label in ['Jogadores e denúncias', 'Silenciar e expulsar', 'Bloqueios', 'Auditoria'])
+          Card(color: _surface, child: ListTile(enabled: false,
+            leading: const Icon(Icons.lock_outline, color: _muted),
+            title: Text(label), subtitle: const Text('Aguardando implementação segura'))),
+      ]);
+    }),
+  );
 }
