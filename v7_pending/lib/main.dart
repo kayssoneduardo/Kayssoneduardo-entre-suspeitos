@@ -194,9 +194,9 @@ class _HomePageState extends State<HomePage> {
                     child: const Icon(Icons.person_search_outlined, color: violet, size: 27)),
                   const SizedBox(width: 10),
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(db.auth.currentUser == null ? 'VISITANTE' : 'IDENTIDADE ATIVA',
+                    Text(cloudUrl.isEmpty || cloudKey.isEmpty || db.auth.currentUser == null ? 'VISITANTE' : 'IDENTIDADE ATIVA',
                       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, letterSpacing: 1.2)),
-                    Text(db.auth.currentUser == null ? 'Entre ou crie sua conta' : 'Toque para ver seu perfil',
+                    Text(cloudUrl.isEmpty || cloudKey.isEmpty || db.auth.currentUser == null ? 'Entre ou crie sua conta' : 'Toque para ver seu perfil',
                       style: const TextStyle(color: secondaryText, fontSize: 11)),
                   ]),
                 ]),
@@ -231,8 +231,15 @@ class _HomePageState extends State<HomePage> {
             _actionTile(title: 'JOGAR OFFLINE',
               subtitle: 'Um celular. Muitas identidades.',
               icon: Icons.style_outlined, primary: true,
-              onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const OfflinePage()))),
+              onTap: () async {
+                widget.onRoom(true);
+                try {
+                  await Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const OfflinePage()));
+                } finally {
+                  widget.onRoom(false);
+                }
+              }),
             const SizedBox(height: 12),
             _actionTile(title: 'JOGAR ONLINE',
               subtitle: 'Partidas, suspeitas e voz ao vivo.',
