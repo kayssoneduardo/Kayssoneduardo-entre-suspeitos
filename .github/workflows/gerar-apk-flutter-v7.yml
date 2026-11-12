@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/gerar-apk-flutter-v7.yml'
+      - 'v7_pending/**'
 permissions:
   contents: read
 jobs:
@@ -51,7 +52,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           p=Path('pubspec.yaml')
-          p.write_text(p.read_text().replace('version: 5.0.0+1','version: 7.0.0+1'))
+          p.write_text(p.read_text().replace('version: 5.0.0+1','version: 7.0.1+2'))
           PY
       - name: Dependencias e testes
         working-directory: flutter_v7/EntreSuspeitos_Flutter_V5
