@@ -52,7 +52,7 @@ Future<Map<String, dynamic>?> showCreateRoomOptions(BuildContext context) async 
           const SizedBox(height: 25),
           Row(children: [
             const Expanded(child: Text('Máximo de jogadores')),
-            IconButton(onPressed: maxPlayers <= 4 ? null : () => setConfig(() {
+            IconButton(onPressed: maxPlayers <= 3 ? null : () => setConfig(() {
               maxPlayers--; if (impostors > (maxPlayers - 1) ~/ 2) impostors = (maxPlayers - 1) ~/ 2;
             }), icon: const Icon(Icons.remove_circle_outline)),
             Text('$maxPlayers', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
