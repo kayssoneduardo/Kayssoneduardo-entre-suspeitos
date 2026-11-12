@@ -9,7 +9,7 @@ def replace_once(old: str, new: str):
         raise RuntimeError(f'Padrão do código online não encontrado: {old[:85]!r}')
     source = source.replace(old, new, 1)
 
-replace_once("import 'voice.dart';", "import 'voice.dart';\nimport 'auth_flow.dart';\nimport 'create_room_v7.dart';")
+replace_once("import 'voice.dart';", "import 'voice.dart';\nimport 'auth_flow.dart';\nimport 'create_room_v7.dart';\nimport 'social_v7.dart';")
 
 # Centralizar login/recuperação/cadastro em uma única experiência:
 # nunca usar o AuthPanel antigo dentro das salas.
@@ -31,6 +31,11 @@ source = source[:start] + """ Future<void> create() async {
   }
  }
 """ + source[end:]
+
+replace_once(
+  "  ListTile(leading:const Icon(Icons.leaderboard),title:const Text('Ranking'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const LeaderboardPage()))),",
+  "  ListTile(leading:const Icon(Icons.leaderboard),title:const Text('Ranking'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const LeaderboardPage()))),\n  ListTile(leading:const Icon(Icons.workspace_premium_outlined),title:const Text('Títulos e conquistas'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const TitlesPageV7()))),\n  ListTile(leading:const Icon(Icons.group_outlined),title:const Text('Amigos'),onTap:()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>const FriendsPageV7()))),",
+)
 
 replace_once("label:const Text('CRIAR SALA PRIVADA')", "label:const Text('CRIAR SALA · PÚBLICA OU PRIVADA')")
 
