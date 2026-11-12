@@ -6,29 +6,30 @@ BASE = Path('.')
 assets = BASE / 'assets'
 assets.mkdir(exist_ok=True)
 
-# Trilha instrumental ORIGINAL, sintetizada com envoltória suave e sem ruído aleatório.
-# Pico abaixo de 0.55 e final em fade para impedir estalos no loop.
+# Trilha ambiente original: harmonia de suspense discreta, sem batidas nem ruídos.
+# Melodia em camadas macias; entrada/saída gradual para evitar estalos no loop.
 rate = 24000
-seconds = 18
-notes = [(0, 6, 164.81), (3, 6, 146.83), (6, 6, 130.81), (9, 6, 146.83), (12, 6, 123.47), (15, 3, 164.81)]
+seconds = 24
+pitches = [130.81, 155.56, 196.00]  # C3-Eb3-G3: tríade menor estável
 with wave.open(str(assets / 'suspense.wav'), 'wb') as out:
     out.setnchannels(1); out.setsampwidth(2); out.setframerate(rate)
     buf = bytearray()
     for n in range(rate * seconds):
         t = n / rate
-        attack = min(1.0, t / 1.3)
-        release = min(1.0, (seconds - t) / 1.5)
-        envelope = max(0., attack * release)
-        drone = math.sin(2 * math.pi * 82.41 * t) * .22
-        drone += math.sin(2 * math.pi * 123.47 * t) * .14
-        tone = 0.0
-        for start, duration, f in notes:
-            if start <= t < start + duration:
-                x = (t - start) / duration
-                bell = math.sin(math.pi * x) ** 2
-                tone += bell * (.12 * math.sin(2 * math.pi * f * t) + .04 * math.sin(2 * math.pi * (f * 2.003) * t))
-        pulse = (.72 + .28 * math.sin(2 * math.pi * .13 * t)) * drone
-        sample = (pulse + tone) * envelope * .9
+        # Fade de 2,5 s para transições silenciosas e loop sem clique.
+        envelope = min(1.0, t / 2.5, (seconds - t) / 2.5)
+        envelope = max(0.0, envelope)
+        envelope = envelope * envelope * (3.0 - 2.0 * envelope)
+        # Lento e regular, com poucas frequências e sem percussão.
+        pad = 0.0
+        for i, freq in enumerate(pitches):
+            motion = 0.85 + 0.15 * math.sin(2 * math.pi * (0.028 + 0.006 * i) * t + i)
+            fundamental = math.sin(2 * math.pi * freq * t + i * 0.7)
+            harmonic = 0.12 * math.sin(2 * math.pi * (freq * 2) * t + i * 0.7)
+            pad += (fundamental + harmonic) * motion * (0.12 if i == 0 else 0.09)
+        # Um leve ar de atmosfera, sem pulsos ou efeitos fortes.
+        shimmer = 0.025 * math.sin(2 * math.pi * 261.63 * t) * (0.5 + 0.5 * math.sin(2 * math.pi * 0.045 * t))
+        sample = (pad + shimmer) * envelope
         value = max(-32767, min(32767, round(sample * 32767)))
         buf += struct.pack('<h', value)
     out.writeframes(buf)
