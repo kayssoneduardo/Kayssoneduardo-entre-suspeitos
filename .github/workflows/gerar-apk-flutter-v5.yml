@@ -36,6 +36,11 @@ jobs:
         run: |
           flutter create --platforms=android --project-name entre_suspeitos --org br.com.entresuspeitos .
           python3 scripts/android_permissions.py
+          # flutter create gera um teste de exemplo incompatível com o app existente.
+          # Conservamos os testes reais incluídos no pacote V5.
+          if grep -q 'package:material_ui/material_ui.dart' test/widget_test.dart 2>/dev/null; then
+            rm test/widget_test.dart
+          fi
       - name: Dependencias
         working-directory: flutter_v5/EntreSuspeitos_Flutter_V5
         run: flutter pub get
