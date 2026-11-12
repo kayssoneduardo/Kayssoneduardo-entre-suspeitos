@@ -64,6 +64,7 @@ class _AdminPageV7State extends State<AdminPageV7> {
             onChanged:(v)=>setDialog(()=>days=v??1)),
           const SizedBox(height:12),
           TextField(controller:reason,maxLength:200,maxLines:2,
+            onChanged:(_) => setDialog(() {}),
             decoration:const InputDecoration(labelText:'Motivo (obrigatório)')),
         ]),
         actions:[
