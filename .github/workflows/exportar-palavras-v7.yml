@@ -1,0 +1,43 @@
+name: Exportar dicionario offline para sincronizacao online
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/exportar-palavras-v7.yml'
+permissions:
+  contents: write
+jobs:
+  exportar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Extrair o mesmo dicionario do APK offline
+        run: |
+          set -euo pipefail
+          mkdir -p v7_pending/data
+          unzip -p EntreSuspeitos_Flutter_V5.zip EntreSuspeitos_Flutter_V5/assets/words.json > v7_pending/data/words.json
+          python3 - <<'PY'
+          import json
+          p='v7_pending/data/words.json'
+          d=json.load(open(p,encoding='utf-8'))
+          n=sum(len(v) for v in d.values())
+          assert n == 1322, (n, list(d))
+          assert len(d)==12
+          assert all(isinstance(item,dict) and all(k in item for k in ['w','h','d'])
+                     for category in d.values() for item in category)
+          print(f'Fonte original confirmada: {n} palavras em {len(d)} categorias.')
+          PY
+      - name: Versionar dicionario no repositorio
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add v7_pending/data/words.json
+          if git diff --cached --quiet; then
+            echo "Dicionario ja exportado."
+            exit 0
+          fi
+          git commit -m "data(v7): exportar 1322 palavras originais do offline"
+          git push origin HEAD:main
