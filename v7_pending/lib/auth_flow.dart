@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'admin_v7.dart';
 
 /// Link exclusivamente destinado à autenticação do Entre Suspeitos.
 /// Deve ser incluído também no Supabase Auth > URL Configuration >
@@ -294,7 +295,7 @@ class _AccountOverviewPageState extends State<AccountOverviewPage> {
             const ListTile(leading: Icon(Icons.admin_panel_settings_outlined, color: _purple),
               title: Text('Superadministrador Zero'), subtitle: Text('Vínculo de usuário validado pelo servidor')),
             OutlinedButton.icon(onPressed: () => Navigator.push(context,
-              MaterialPageRoute(builder: (_) => const RestrictedAdminPage())),
+              MaterialPageRoute(builder: (_) => const AdminPageV7())),
               icon: const Icon(Icons.admin_panel_settings_outlined), label: const Text('Painel Zero')),
           ]);
         }),
