@@ -1,0 +1,64 @@
+name: Validar V7 (sem distribuir APK)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'v7_pending/**'
+      - '.github/workflows/validar-v7.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair projeto base Flutter
+        run: |
+          unzip -oq EntreSuspeitos_Flutter_V5.zip -d flutter_v7
+          test -f flutter_v7/EntreSuspeitos_Flutter_V5/pubspec.yaml
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Preparar projeto Android
+        working-directory: flutter_v7/EntreSuspeitos_Flutter_V5
+        run: |
+          flutter create --platforms=android --project-name entre_suspeitos --org br.com.entresuspeitos .
+          python3 scripts/android_permissions.py
+          if grep -q 'package:material_ui/material_ui.dart' test/widget_test.dart 2>/dev/null; then
+            rm test/widget_test.dart
+          fi
+      - name: Aplicar mudanças V6 e V7
+        working-directory: flutter_v7/EntreSuspeitos_Flutter_V5
+        run: |
+          set -euo pipefail
+          cp ../../v6_overlay/lib/offline.dart lib/offline.dart
+          cp ../../v7_pending/lib/main.dart lib/main.dart
+          cp ../../v7_pending/lib/auth_flow.dart lib/auth_flow.dart
+          cp ../../v6_overlay/scripts/generate_assets.py scripts/generate_assets.py
+          python3 -m pip install --quiet --break-system-packages Pillow
+          python3 scripts/generate_assets.py
+          python3 ../../v7_pending/scripts/patch_manifest.py
+      - name: Resolver dependências
+        working-directory: flutter_v7/EntreSuspeitos_Flutter_V5
+        run: flutter pub get
+      - name: Testar V7
+        working-directory: flutter_v7/EntreSuspeitos_Flutter_V5
+        run: |
+          flutter test
+          flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Validar compilação release (sem publicar APK)
+        working-directory: flutter_v7/EntreSuspeitos_Flutter_V5
+        env:
+          ES_URL: ${{ vars.SUPABASE_URL }}
+          ES_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          test -n "$ES_URL"
+          test -n "$ES_KEY"
+          flutter build apk --release --split-per-abi --tree-shake-icons --dart-define="SUPABASE_URL=$ES_URL" --dart-define="SUPABASE_ANON_KEY=$ES_KEY"
+          ls -lh build/app/outputs/flutter-apk/app-*-release.apk
