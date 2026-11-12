@@ -186,9 +186,15 @@ class _HomePageState extends State<HomePage> {
         Text(phrase, textAlign: TextAlign.center, style: const TextStyle(color: secondaryText, fontStyle: FontStyle.italic)),
         const SizedBox(height: 65),
         _menuButton(title: 'JOGAR OFFLINE', icon: Icons.style_outlined, primary: true, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OfflinePage()))),
-        _menuButton(title: 'JOGAR ONLINE', icon: Icons.groups_2_outlined, onTap: () {
+        _menuButton(title: 'JOGAR ONLINE', icon: Icons.groups_2_outlined, onTap: () async {
           if (cloudUrl.isEmpty || cloudKey.isEmpty) { message(context, 'Supabase não configurado nesta compilação.'); return; }
-          Navigator.push(context, MaterialPageRoute(builder: (_) => OnlinePage(onRoom: widget.onRoom)));
+          if (db.auth.currentUser == null) {
+            final signedIn = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AccountPage()));
+            if (signedIn != true || !context.mounted) return;
+          }
+          if (context.mounted) {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => OnlinePage(onRoom: widget.onRoom)));
+          }
         }),
         _menuButton(title: 'MINHA CONTA', icon: Icons.account_circle_outlined, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountPage()))),
         _menuButton(title: 'CONFIGURAÇÕES', icon: Icons.tune_rounded, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(enabled: widget.musicEnabled, volume: widget.musicVolume, onVolume: widget.onVolume, onMusic: widget.onMusic)))),
