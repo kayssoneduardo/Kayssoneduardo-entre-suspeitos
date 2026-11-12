@@ -35,6 +35,7 @@ class EntreSuspeitos extends StatefulWidget {
 class _EntreSuspeitosState extends State<EntreSuspeitos> with WidgetsBindingObserver {
   final music = AudioPlayer();
   late bool musicEnabled;
+  late double musicVolume;
   bool inRoom = false;
 
   @override
@@ -42,6 +43,7 @@ class _EntreSuspeitosState extends State<EntreSuspeitos> with WidgetsBindingObse
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     musicEnabled = prefs.getBool('music') ?? true;
+    musicVolume = (prefs.getDouble('musicVolume') ?? .22).clamp(0.0, 1.0);
     WidgetsBinding.instance.addPostFrameCallback((_) => _syncMusic());
   }
 
@@ -56,9 +58,10 @@ class _EntreSuspeitosState extends State<EntreSuspeitos> with WidgetsBindingObse
 
   Future<void> _syncMusic() async {
     if (!musicEnabled || inRoom) { await music.stop(); return; }
+    if (music.state == PlayerState.playing) { await music.setVolume(musicVolume); return; }
     try {
       await music.setReleaseMode(ReleaseMode.loop);
-      await music.setVolume(.8);
+      await music.setVolume(musicVolume);
       await music.play(AssetSource('suspense.wav'));
     } catch (e) {
       debugPrint('Erro ao tocar trilha local: $e');
@@ -107,6 +110,8 @@ class _EntreSuspeitosState extends State<EntreSuspeitos> with WidgetsBindingObse
       home: HomePage(
         onRoom: setRoom,
         musicEnabled: musicEnabled,
+        musicVolume: musicVolume,
+        onVolume: (v) { setState(() => musicVolume = v); prefs.setDouble('musicVolume', v); _syncMusic(); },
         onMusic: (v) { setState(() => musicEnabled = v); prefs.setBool('music', v); _syncMusic(); },
       ),
     );
@@ -116,8 +121,10 @@ class _EntreSuspeitosState extends State<EntreSuspeitos> with WidgetsBindingObse
 class HomePage extends StatefulWidget {
   final ValueChanged<bool> onRoom;
   final bool musicEnabled;
+  final double musicVolume;
+  final ValueChanged<double> onVolume;
   final ValueChanged<bool> onMusic;
-  const HomePage({super.key, required this.onRoom, required this.musicEnabled, required this.onMusic});
+  const HomePage({super.key, required this.onRoom, required this.musicEnabled, required this.musicVolume, required this.onVolume, required this.onMusic});
   @override State<HomePage> createState() => _HomePageState();
 }
 
@@ -149,7 +156,7 @@ class _HomePageState extends State<HomePage> {
       ),
       child: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(26, 22, 26, 26), children: [
         Align(alignment: Alignment.centerRight, child: IconButton(
-          tooltip: 'Configurações', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(enabled: widget.musicEnabled, onMusic: widget.onMusic))),
+          tooltip: 'Configurações', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(enabled: widget.musicEnabled, volume: widget.musicVolume, onVolume: widget.onVolume, onMusic: widget.onMusic))),
           icon: const Icon(Icons.settings_outlined, color: secondaryText),
         )),
         const SizedBox(height: 34),
@@ -165,7 +172,7 @@ class _HomePageState extends State<HomePage> {
           if (cloudUrl.isEmpty || cloudKey.isEmpty) { message(context, 'Supabase não configurado nesta compilação.'); return; }
           Navigator.push(context, MaterialPageRoute(builder: (_) => OnlinePage(onRoom: widget.onRoom)));
         }),
-        _menuButton(title: 'CONFIGURAÇÕES', icon: Icons.tune_rounded, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(enabled: widget.musicEnabled, onMusic: widget.onMusic)))),
+        _menuButton(title: 'CONFIGURAÇÕES', icon: Icons.tune_rounded, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(enabled: widget.musicEnabled, volume: widget.musicVolume, onVolume: widget.onVolume, onMusic: widget.onMusic)))),
         const SizedBox(height: 35),
         const Center(child: Text('V6 · PRÉVIA DE DESENVOLVIMENTO', style: TextStyle(color: secondaryText, letterSpacing: 1.5, fontSize: 10))),
       ])),
@@ -193,15 +200,18 @@ class _BrandMark extends StatelessWidget {
 
 class SettingsPage extends StatelessWidget {
   final bool enabled;
+  final double volume;
+  final ValueChanged<double> onVolume;
   final ValueChanged<bool> onMusic;
-  const SettingsPage({super.key, required this.enabled, required this.onMusic});
+  const SettingsPage({super.key, required this.enabled, required this.volume, required this.onVolume, required this.onMusic});
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Configurações')),
     body: ListView(padding: const EdgeInsets.all(18), children: [
       const Text('ÁUDIO E ATMOSFERA', style: TextStyle(color: violet, fontSize: 11, letterSpacing: 1.8, fontWeight: FontWeight.bold)),
       const SizedBox(height: 12),
-      SwitchListTile.adaptive(title: const Text('Música original de suspense'), subtitle: const Text('Desligada automaticamente dentro das salas online.'), value: enabled, onChanged: onMusic),
+      SwitchListTile.adaptive(title: const Text('Música ambiente de suspense'), subtitle: const Text('Trilha suave. Para automaticamente ao entrar em uma sala.'), value: enabled, onChanged: onMusic),
+      ListTile(title: const Text('Volume da música'), subtitle: Slider(value: volume, min: 0, max: .60, divisions: 12, label: '${(volume * 100).round()}%', onChanged: enabled ? onVolume : null)),
       const SizedBox(height: 20),
       const ListTile(leading: Icon(Icons.shield_outlined), title: Text('Identidade Sombra Neon'), subtitle: Text('Paleta híbrida suavizada · Sombra, Noturno e Dossiê')),
       const ListTile(leading: Icon(Icons.privacy_tip_outlined), title: Text('Permissões'), subtitle: Text('O microfone é solicitado somente quando necessário.')),
