@@ -31,7 +31,7 @@ class _OfflinePageState extends State<OfflinePage> {
   @override
   void initState() {
     super.initState();
-    for (var i = 0; i < 4; i++) { inputs.add(TextEditingController()); }
+    for (var i = 0; i < 3; i++) { inputs.add(TextEditingController()); }
     _load();
   }
 
@@ -44,7 +44,7 @@ class _OfflinePageState extends State<OfflinePage> {
       for (final c in inputs) { c.dispose(); }
       inputs.clear();
       for (final n in previous.take(30)) { inputs.add(TextEditingController(text: n)); }
-      while (inputs.length < 4) { inputs.add(TextEditingController()); }
+      while (inputs.length < 3) { inputs.add(TextEditingController()); }
     }
     selected.addAll((prefs!.getStringList('offlineCategories') ?? bank.keys.toList()).where(bank.containsKey));
     if (mounted) setState(() {});
@@ -62,7 +62,7 @@ class _OfflinePageState extends State<OfflinePage> {
   }
 
   void _removePlayer(int i) {
-    if (inputs.length <= 4) { _msg('O mínimo é 4 jogadores.'); return; }
+    if (inputs.length <= 3) { _msg('O mínimo é 3 jogadores.'); return; }
     setState(() => inputs.removeAt(i).dispose());
   }
 
@@ -73,7 +73,7 @@ class _OfflinePageState extends State<OfflinePage> {
   void start() {
     final ps = inputs.map((c) => c.text.trim()).where((s) => s.isNotEmpty).toList();
     if (ps.length != inputs.length) { _msg('Preencha todos os jogadores ou remova os campos vazios.'); return; }
-    if (ps.length < 4 || ps.length > 30) { _msg('Escolha de 4 a 30 jogadores.'); return; }
+    if (ps.length < 3 || ps.length > 30) { _msg('Escolha de 3 a 30 jogadores.'); return; }
     if (ps.map((x) => x.toLowerCase()).toSet().length != ps.length) { _msg('Cada jogador precisa de um nome diferente.'); return; }
     if (impostors > (ps.length - 1) ~/ 2) { _msg('Deve haver mais jogadores comuns que impostores.'); return; }
     if (selected.isEmpty) { _msg('Escolha pelo menos uma categoria.'); return; }
@@ -141,7 +141,7 @@ class _OfflinePageState extends State<OfflinePage> {
             textInputAction: i == inputs.length - 1 ? TextInputAction.done : TextInputAction.next,
             decoration: InputDecoration(counterText: '', hintText: 'Nome do jogador', contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13), border: InputBorder.none),
           )),
-          IconButton(onPressed: inputs.length > 4 ? () => _removePlayer(i) : null, icon: const Icon(Icons.close_rounded, size: 19), tooltip: 'Remover jogador'),
+          IconButton(onPressed: inputs.length > 3 ? () => _removePlayer(i) : null, icon: const Icon(Icons.close_rounded, size: 19), tooltip: 'Remover jogador'),
         ]),
       ),
     OutlinedButton.icon(onPressed: inputs.length < 30 ? _addPlayer : null, icon: const Icon(Icons.person_add_alt_1), label: const Text('Adicionar jogador')),
