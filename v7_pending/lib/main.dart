@@ -13,10 +13,10 @@ const cloudKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 late final SharedPreferences prefs;
 SupabaseClient get db => Supabase.instance.client;
 
-const ink = Color(0xFF111120);
-const surface = Color(0xFF1A1A30);
-const violet = Color(0xFF9F7ED8);
-const rose = Color(0xFFD94F65);
+const ink = Color(0xFF10111D);
+const surface = Color(0xFF1D1B30);
+const violet = Color(0xFFA58CDB);
+const rose = Color(0xFFD25B70);
 const secondaryText = Color(0xFFB7B4C9);
 
 Future<void> main() async {
@@ -48,6 +48,7 @@ class _EntreSuspeitosState extends State<EntreSuspeitos> with WidgetsBindingObse
     WidgetsBinding.instance.addObserver(this);
     if (cloudUrl.isNotEmpty && cloudKey.isNotEmpty) {
       authSub = Supabase.instance.client.auth.onAuthStateChange.listen((state) {
+        if (mounted) setState(() {});
         if (state.event == AuthChangeEvent.passwordRecovery) {
           nav.currentState?.push(MaterialPageRoute(builder: (_) => const ChangePasswordPage()));
         } else if (state.event == AuthChangeEvent.signedIn) {
@@ -170,39 +171,151 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) => Scaffold(
     body: Container(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF161526), Color(0xFF111120), Color(0xFF211528)]),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft, end: Alignment.bottomRight,
+          colors: [Color(0xFF10111D), Color(0xFF1A1930), Color(0xFF211624)],
+          stops: [0, .56, 1],
+        ),
       ),
-      child: SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(26, 22, 26, 26), children: [
-        Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-          IconButton(tooltip: 'Minha conta', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountPage())), icon: const Icon(Icons.account_circle_outlined, color: secondaryText)),
-          IconButton(tooltip: 'Configurações', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(enabled: widget.musicEnabled, volume: widget.musicVolume, onVolume: widget.onVolume, onMusic: widget.onMusic))), icon: const Icon(Icons.settings_outlined, color: secondaryText)),
+      child: SafeArea(
+        child: Stack(children: [
+          const Positioned(top: 98, right: -100, child: _AmbientCircle(size: 260, color: Color(0xFF554279))),
+          const Positioned(bottom: -140, left: -70, child: _AmbientCircle(size: 350, color: Color(0xFF7A274A))),
+          ListView(padding: const EdgeInsets.fromLTRB(24, 14, 24, 30), children: [
+            Row(children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(24),
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountPage())),
+                child: Row(children: [
+                  Container(width: 46, height: 46,
+                    decoration: BoxDecoration(shape: BoxShape.circle,
+                      border: Border.all(color: violet.withValues(alpha: .6)),
+                      gradient: const LinearGradient(colors: [Color(0xFF2F2649), Color(0xFF1D1C32)])),
+                    child: const Icon(Icons.person_search_outlined, color: violet, size: 27)),
+                  const SizedBox(width: 10),
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(db.auth.currentUser == null ? 'VISITANTE' : 'IDENTIDADE ATIVA',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, letterSpacing: 1.2)),
+                    Text(db.auth.currentUser == null ? 'Entre ou crie sua conta' : 'Toque para ver seu perfil',
+                      style: const TextStyle(color: secondaryText, fontSize: 11)),
+                  ]),
+                ]),
+              ),
+              const Spacer(),
+              IconButton(tooltip: 'Configurações',
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) =>
+                  SettingsPage(enabled: widget.musicEnabled, volume: widget.musicVolume,
+                    onVolume: widget.onVolume, onMusic: widget.onMusic))),
+                icon: const Icon(Icons.settings_outlined, color: secondaryText)),
+            ]),
+            const SizedBox(height: 31),
+            const Center(child: _BrandMark()),
+            const SizedBox(height: 17),
+            const Text('ENTRE', textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 32, letterSpacing: 7, fontWeight: FontWeight.w900)),
+            const Text('SUSPEITOS', textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 35, color: Color(0xFFF3E2E8),
+                letterSpacing: 1.7, height: 1.03, fontWeight: FontWeight.w900)),
+            Container(alignment: Alignment.center,
+              padding: const EdgeInsets.only(top: 13, bottom: 16),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 36, height: 1, color: rose.withValues(alpha: .7)),
+                const SizedBox(width: 10),
+                const Icon(Icons.fingerprint, color: rose, size: 16),
+                const SizedBox(width: 10),
+                Container(width: 36, height: 1, color: rose.withValues(alpha: .7)),
+              ])),
+            Text(phrase, textAlign: TextAlign.center,
+              style: const TextStyle(color: secondaryText, fontStyle: FontStyle.italic, fontSize: 13)),
+            const SizedBox(height: 37),
+            _actionTile(title: 'JOGAR OFFLINE',
+              subtitle: 'Um celular. Muitas identidades.',
+              icon: Icons.style_outlined, primary: true,
+              onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const OfflinePage()))),
+            const SizedBox(height: 12),
+            _actionTile(title: 'JOGAR ONLINE',
+              subtitle: 'Partidas, suspeitas e voz ao vivo.',
+              icon: Icons.groups_2_outlined,
+              onTap: () async {
+                if (cloudUrl.isEmpty || cloudKey.isEmpty) {
+                  message(context, 'Servidor online não configurado nesta versão.'); return;
+                }
+                if (db.auth.currentUser == null) {
+                  final ok = await Navigator.push<bool>(context,
+                    MaterialPageRoute(builder: (_) => const AccountPage()));
+                  if (ok != true || !context.mounted) return;
+                }
+                if (context.mounted) {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) =>
+                    OnlinePage(onRoom: widget.onRoom)));
+                }
+              }),
+            const SizedBox(height: 12),
+            _actionTile(title: 'MINHA IDENTIDADE',
+              subtitle: 'Conta, perfil e administração.',
+              icon: Icons.shield_outlined,
+              onTap: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const AccountPage()))),
+            const SizedBox(height: 12),
+            _actionTile(title: 'CONFIGURAÇÕES',
+              subtitle: 'Áudio, atmosfera e preferências.',
+              icon: Icons.tune_outlined,
+              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) =>
+                SettingsPage(enabled: widget.musicEnabled, volume: widget.musicVolume,
+                  onVolume: widget.onVolume, onMusic: widget.onMusic)))),
+            const SizedBox(height: 35),
+            const Center(child: Text('V7 · PRÉVIA INTEGRADA',
+              style: TextStyle(color: secondaryText, letterSpacing: 1.8, fontSize: 10))),
+          ]),
         ]),
-        const SizedBox(height: 34),
-        const Center(child: _BrandMark()),
-        const SizedBox(height: 20),
-        const Text('ENTRE', textAlign: TextAlign.center, style: TextStyle(fontSize: 34, letterSpacing: 5, fontWeight: FontWeight.w800)),
-        const Text('SUSPEITOS', textAlign: TextAlign.center, style: TextStyle(fontSize: 38, color: Color(0xFFF1D6DE), letterSpacing: 2.7, height: 1.04, fontWeight: FontWeight.w800)),
-        const SizedBox(height: 15),
-        Text(phrase, textAlign: TextAlign.center, style: const TextStyle(color: secondaryText, fontStyle: FontStyle.italic)),
-        const SizedBox(height: 65),
-        _menuButton(title: 'JOGAR OFFLINE', icon: Icons.style_outlined, primary: true, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const OfflinePage()))),
-        _menuButton(title: 'JOGAR ONLINE', icon: Icons.groups_2_outlined, onTap: () async {
-          if (cloudUrl.isEmpty || cloudKey.isEmpty) { message(context, 'Supabase não configurado nesta compilação.'); return; }
-          if (db.auth.currentUser == null) {
-            final signedIn = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AccountPage()));
-            if (signedIn != true || !context.mounted) return;
-          }
-          if (context.mounted) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => OnlinePage(onRoom: widget.onRoom)));
-          }
-        }),
-        _menuButton(title: 'MINHA CONTA', icon: Icons.account_circle_outlined, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AccountPage()))),
-        _menuButton(title: 'CONFIGURAÇÕES', icon: Icons.tune_rounded, onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsPage(enabled: widget.musicEnabled, volume: widget.musicVolume, onVolume: widget.onVolume, onMusic: widget.onMusic)))),
-        const SizedBox(height: 35),
-        const Center(child: Text('V7 · PACOTE DE DESENVOLVIMENTO', style: TextStyle(color: secondaryText, letterSpacing: 1.5, fontSize: 10))),
-      ])),
+      ),
     ),
   );
+
+  Widget _actionTile({required String title, required String subtitle,
+      required IconData icon, required VoidCallback onTap, bool primary = false}) {
+    final border = primary ? rose.withValues(alpha: .7) : violet.withValues(alpha: .25);
+    return Material(color: Colors.transparent,
+      child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(17),
+        child: Container(padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(colors: primary
+              ? [const Color(0xFF772337), const Color(0xFF41213E)]
+              : [const Color(0xFF292540), const Color(0xFF1C1D33)]),
+            borderRadius: BorderRadius.circular(17),
+            border: Border.all(color: border),
+            boxShadow: primary
+              ? [BoxShadow(color: rose.withValues(alpha: .16), blurRadius: 20)]
+              : null,
+          ),
+          child: Row(children: [
+            Container(width: 43, height: 43, alignment: Alignment.center,
+              decoration: BoxDecoration(shape: BoxShape.circle,
+                color: (primary ? rose : violet).withValues(alpha: .12)),
+              child: Icon(icon, color: primary ? const Color(0xFFF4A9B6) : violet, size: 25)),
+            const SizedBox(width: 13),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: const TextStyle(fontSize: 15, letterSpacing: .7, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 3),
+              Text(subtitle, style: const TextStyle(fontSize: 11, color: secondaryText)),
+            ])),
+            Icon(Icons.chevron_right_rounded, color: primary ? const Color(0xFFF4A9B6) : violet),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+class _AmbientCircle extends StatelessWidget {
+  final double size;
+  final Color color;
+  const _AmbientCircle({required this.size, required this.color});
+  @override Widget build(BuildContext context) => IgnorePointer(child:
+    Container(height: size, width: size, decoration: BoxDecoration(
+      shape: BoxShape.circle, boxShadow: [BoxShadow(
+        color: color.withValues(alpha: .11), blurRadius: 80, spreadRadius: 24)])));
 }
 
 class _BrandMark extends StatelessWidget {
