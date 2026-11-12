@@ -53,5 +53,9 @@ replace_once("bool fetching=false,startingVoice=false,muted=false,autoVoiceReque
 replace_once("MaterialPageRoute(builder:(_)=>const AdminPage()))",
              "MaterialPageRoute(builder:(_)=>const AdminPageV7()))")
 
+replace_once("players.where((p)=>p['active']==true).length>=4",
+             "players.where((p)=>p['active']==true).length>=3")
+replace_once("4 ou mais jogadores prontos",
+             "3 ou mais jogadores prontos")
 path.write_text(source, encoding='utf-8')
 print('Online V7: login unificado, configuração de sala e ativação manual do microfone.')
