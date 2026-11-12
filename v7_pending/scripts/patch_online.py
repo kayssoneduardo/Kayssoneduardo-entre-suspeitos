@@ -9,7 +9,7 @@ def replace_once(old: str, new: str):
         raise RuntimeError(f'Padrão do código online não encontrado: {old[:85]!r}')
     source = source.replace(old, new, 1)
 
-replace_once("import 'voice.dart';", "import 'voice.dart';\nimport 'auth_flow.dart';\nimport 'create_room_v7.dart';\nimport 'social_v7.dart';")
+replace_once("import 'voice.dart';", "import 'voice.dart';\nimport 'auth_flow.dart';\nimport 'create_room_v7.dart';\nimport 'social_v7.dart';\nimport 'admin_v7.dart';")
 
 # Centralizar login/recuperação/cadastro em uma única experiência:
 # nunca usar o AuthPanel antigo dentro das salas.
@@ -49,6 +49,9 @@ auto_start = """   if(!autoVoiceRequested && players.isNotEmpty){
 replace_once(auto_start, "")
 replace_once("bool fetching=false,startingVoice=false,muted=false,autoVoiceRequested=false;",
              "bool fetching=false,startingVoice=false,muted=false;")
+
+replace_once("MaterialPageRoute(builder:(_)=>const AdminPage()))",
+             "MaterialPageRoute(builder:(_)=>const AdminPageV7()))")
 
 path.write_text(source, encoding='utf-8')
 print('Online V7: login unificado, configuração de sala e ativação manual do microfone.')
