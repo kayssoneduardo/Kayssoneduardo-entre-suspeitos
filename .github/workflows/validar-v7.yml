@@ -40,6 +40,8 @@ jobs:
           cp ../../v6_overlay/lib/offline.dart lib/offline.dart
           cp ../../v7_pending/lib/main.dart lib/main.dart
           cp ../../v7_pending/lib/auth_flow.dart lib/auth_flow.dart
+          cp ../../v7_pending/lib/create_room_v7.dart lib/create_room_v7.dart
+          python3 ../../v7_pending/scripts/patch_online.py
           cp ../../v6_overlay/scripts/generate_assets.py scripts/generate_assets.py
           python3 -m pip install --quiet --break-system-packages Pillow
           python3 scripts/generate_assets.py
