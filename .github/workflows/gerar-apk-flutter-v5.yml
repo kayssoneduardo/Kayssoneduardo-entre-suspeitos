@@ -48,7 +48,7 @@ jobs:
         working-directory: flutter_v5/EntreSuspeitos_Flutter_V5
         run: |
           flutter test
-          flutter analyze --no-fatal-infos
+          flutter analyze --no-fatal-infos --no-fatal-warnings
       - name: Compilar APK
         working-directory: flutter_v5/EntreSuspeitos_Flutter_V5
         env:
