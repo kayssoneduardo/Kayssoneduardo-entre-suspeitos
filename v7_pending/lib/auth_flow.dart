@@ -180,11 +180,103 @@ class _AccountPageState extends State<AccountPage> {
           TextButton(onPressed: busy ? null : _resendConfirmation, child: const Text('Reenviar confirmação de e-mail')),
         ] else TextButton(onPressed: busy ? null : () => _mode(AccountMode.login), child: const Text('Voltar ao login')),
         const SizedBox(height: 14),
-        const Text('Ao confirmar o e-mail, o link deverá abrir o aplicativo. Se ele expirar, solicite outro.', textAlign: TextAlign.center,
-          style: TextStyle(color: _muted, fontSize: 12)),
+        OutlinedButton.icon(
+          onPressed: busy ? null : () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const ConfirmLinkPage())),
+          icon: const Icon(Icons.link_rounded),
+          label: const Text('Link do e-mail não abre? Confirmar aqui'),
+        ),
+        const SizedBox(height: 9),
+        const Text('Caso o link abra um site com erro, solicite outro e-mail, copie o endereço do botão sem abrir e cole na tela acima.',
+          textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 12)),
       ]),
     );
   }
+}
+
+
+/// Recuperação independente do endereço de redirecionamento externo.
+/// O usuário copia o endereço *original* do e-mail diretamente no próprio app.
+/// O token não é salvo, registrado ou enviado a qualquer destino que não o
+/// endpoint de verificação do Supabase do Entre Suspeitos.
+class ConfirmLinkPage extends StatefulWidget {
+  const ConfirmLinkPage({super.key});
+  @override State<ConfirmLinkPage> createState() => _ConfirmLinkPageState();
+}
+
+class _ConfirmLinkPageState extends State<ConfirmLinkPage> {
+  final link = TextEditingController();
+  bool busy = false;
+  String? feedback;
+  @override void dispose() { link.dispose(); super.dispose(); }
+
+  Future<void> _verify() async {
+    final raw = link.text.trim();
+    final uri = Uri.tryParse(raw);
+    if (uri == null || uri.scheme != 'https' ||
+        uri.host != 'lvnhwfctursuduboovub.supabase.co' ||
+        !uri.path.startsWith('/auth/v1/verify')) {
+      setState(() => feedback = 'Cole o endereço original de verificação recebido do Entre Suspeitos.');
+      return;
+    }
+    final token = uri.queryParameters['token_hash'] ?? uri.queryParameters['token'];
+    final typeRaw = uri.queryParameters['type']?.toLowerCase();
+    final type = switch(typeRaw) {
+      'signup' || 'email' => OtpType.signup,
+      'recovery' => OtpType.recovery,
+      _ => null,
+    };
+    if (token == null || token.isEmpty || type == null) {
+      setState(() => feedback = 'O link não contém os dados necessários. Solicite outro e-mail.');
+      return;
+    }
+    setState(() { busy = true; feedback = null; });
+    try {
+      await Supabase.instance.client.auth.verifyOTP(tokenHash: token, type: type);
+      if (!mounted) return;
+      link.clear();
+      if (type == OtpType.recovery) {
+        setState(() => feedback = 'Link verificado! Caso a tela de nova senha não abra, volte à conta e selecione “Definir ou alterar senha”.');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('E-mail confirmado! Sua conta está pronta para entrar.')));
+        Navigator.of(context).pop(true);
+      }
+    } on AuthException catch (ex) {
+      if (mounted) setState(() => feedback = _friendly(ex.message));
+    } catch (_) {
+      if (mounted) setState(() => feedback = 'Não foi possível verificar o link. Solicite um novo e tente novamente.');
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  @override Widget build(BuildContext context) => Scaffold(
+    backgroundColor: _bg,
+    appBar: AppBar(title: const Text('Confirmar pelo link')),
+    body: ListView(padding: const EdgeInsets.all(22), children: [
+      const Icon(Icons.mark_email_read_outlined, size: 62, color: _purple),
+      const SizedBox(height: 18),
+      const Text('Seu link abriu uma página com erro?', textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 23, fontWeight: FontWeight.w700)),
+      const SizedBox(height: 12),
+      const Text('No e-mail, mantenha o dedo pressionado no botão de confirmação e escolha “Copiar endereço do link”. Depois cole aqui sem abrir esse link no navegador. Funciona também para recuperação de senha.',
+        style: TextStyle(color: _muted, height: 1.45), textAlign: TextAlign.center),
+      const SizedBox(height: 20),
+      TextField(controller: link, maxLines: 3, autocorrect: false,
+        keyboardType: TextInputType.url,
+        decoration: const InputDecoration(labelText: 'Endereço do link recebido por e-mail',
+          hintText: 'https://…supabase.co/auth/v1/verify?...')),
+      const SizedBox(height: 15),
+      if (feedback != null) Padding(padding: const EdgeInsets.only(bottom: 14),
+        child: Text(feedback!, style: const TextStyle(color: _muted))),
+      FilledButton(onPressed: busy ? null : _verify,
+        child: Text(busy ? 'VERIFICANDO...' : 'VALIDAR LINK COM SEGURANÇA')),
+      const SizedBox(height: 15),
+      const Text('Não compartilhe esse link com ninguém. Ele permite confirmar ou recuperar sua conta.',
+        textAlign: TextAlign.center, style: TextStyle(color: _muted, fontSize: 12)),
+    ]),
+  );
 }
 
 class ChangePasswordPage extends StatefulWidget {
