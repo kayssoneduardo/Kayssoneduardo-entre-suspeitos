@@ -1,0 +1,53 @@
+name: Configurar redirecionamento de autenticacao V7
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/configurar-redirecionamento-v7.yml'
+permissions:
+  contents: read
+jobs:
+  config:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PAT: ${{ secrets.SUPABASE_PAT }}
+    steps:
+      - name: Autorizar callback de email e senha no Supabase (se token de gerenciamento existir)
+        run: |
+          python3 - <<'PY'
+          import os,json,sys,urllib.request,urllib.error
+          token = os.environ.get('SUPABASE_ACCESS_TOKEN') or os.environ.get('SUPABASE_PAT')
+          if not token:
+              print('PENDENCIA: nao ha SUPABASE_ACCESS_TOKEN ou SUPABASE_PAT como secret no repositorio.')
+              print('Adicione o deep link manualmente no Dashboard do Supabase em Auth > URL Configuration.')
+              sys.exit(0)
+          ref = 'lvnhwfctursuduboovub'
+          url = 'https://api.supabase.com/v1/projects/'+ref+'/config/auth'
+          headers = {'Authorization':'Bearer '+token,'Content-Type':'application/json'}
+          def request(method,data=None):
+              body = None if data is None else json.dumps(data).encode()
+              req=urllib.request.Request(url,data=body,headers=headers,method=method)
+              try:
+                  with urllib.request.urlopen(req,timeout=25) as r:
+                      return json.load(r)
+              except urllib.error.HTTPError as e:
+                  print('Auth config nao atualizada: HTTP',e.code)
+                  sys.exit(1)
+          current=request('GET')
+          before=current.get('uri_allow_list') or ''
+          urls=[x.strip() for x in before.split(',') if x.strip()]
+          required='br.com.entresuspeitos://auth-callback'
+          if required in urls:
+              print('Callback ja autorizado no Supabase.')
+              sys.exit(0)
+          urls.append(required)
+          request('PATCH', {'uri_allow_list':','.join(urls)})
+          confirmed=request('GET')
+          allowed=[x.strip() for x in (confirmed.get('uri_allow_list') or '').split(',') if x.strip()]
+          if required not in allowed:
+              print('Falha ao confirmar o callback apos atualizar.')
+              sys.exit(1)
+          print('Callback de confirmacao e recuperacao autorizado no Supabase.')
+          PY
