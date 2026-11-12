@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -27,9 +28,19 @@ class _AccountPageState extends State<AccountPage> {
   AccountMode mode = AccountMode.login;
   bool busy = false, hidePassword = true;
   String? notification;
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((event) {
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   void dispose() {
+    _authSubscription?.cancel();
     email.dispose(); password.dispose(); nickname.dispose();
     super.dispose();
   }
@@ -287,6 +298,13 @@ class _AccountOverviewPageState extends State<AccountOverviewPage> {
               icon: const Icon(Icons.admin_panel_settings_outlined), label: const Text('Painel Zero')),
           ]);
         }),
+        const SizedBox(height: 14),
+        OutlinedButton.icon(
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => const ChangePasswordPage())),
+          icon: const Icon(Icons.lock_reset_outlined),
+          label: const Text('Definir ou alterar senha'),
+        ),
         const SizedBox(height: 22),
         OutlinedButton.icon(onPressed: () async {
           await Supabase.instance.client.auth.signOut();
