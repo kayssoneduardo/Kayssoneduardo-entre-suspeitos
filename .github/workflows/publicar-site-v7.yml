@@ -100,3 +100,33 @@ jobs:
     steps:
       - name: Publicar na internet
         uses: actions/deploy-pages@v4
+
+  verificar-site-publico:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar site real no iPhone e computador
+        run: |
+          set -euo pipefail
+          URL="https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos"
+          echo "Verificando $URL"
+          for i in $(seq 1 12); do
+            if curl --silent --show-error --fail --location --max-time 20 \
+              -D /tmp/header -o /tmp/index "$URL/" \
+              && grep -qi '^content-type: *text/html' /tmp/header \
+              && grep -q 'ENTRE SUSPEITOS' /tmp/index; then
+              break
+            fi
+            sleep 5
+          done
+          grep -qi '^content-type: *text/html' /tmp/header
+          grep -q 'ENTRE SUSPEITOS' /tmp/index
+          for file in online.js app.js server-config.js words.js style.css; do
+            curl --silent --show-error --fail --location --retry 3 \
+              --max-time 25 "$URL/$file" -o "/tmp/$file"
+          done
+          node --check /tmp/online.js
+          node --check /tmp/app.js
+          grep -q 'MIN=3' /tmp/online.js
+          test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1322
+          echo "SITE PUBLICADO E VERIFICADO: $URL/"
