@@ -1,0 +1,405 @@
+/* Entre Suspeitos: cliente online beta, sem CDN e sem chaves privadas incorporadas.
+   O banco é Supabase/PostgREST, com RPCs SECURITY DEFINER e RLS. */
+(function(){
+'use strict';
+const PREFIX='es3_', MIN=3, MAX=10;
+const CATEGORIES=Object.keys(window.ES_WORD_BANK||{});
+const COMPILED_CLOUD=window.ES_SERVER_CONFIG||{url:'',key:''};
+const ESC=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
+function avatarSrc(cloud,path){if(!cloud||!path||!/^[-0-9a-f]{36}\/avatar\.jpg$/i.test(path))return null;return cloud.url+'/storage/v1/object/public/es-avatars/'+path+'?v='+Date.now().toString().slice(0,-4);}
+
+const btn=(id,txt,cls='')=>`<button type="button" class="btn ${cls}" id="${id}">${txt}</button>`;
+const save=(k,v)=>{try{localStorage.setItem(PREFIX+k,JSON.stringify(v));}catch{}};
+const load=k=>{try{return JSON.parse(localStorage.getItem(PREFIX+k));}catch{return null;}};
+function etext(msg){return ESC(msg instanceof Error?msg.message:msg);}
+function prettyError(e){let t=String(e?.message||e||'Erro desconhecido');return t.replace('Invalid login credentials','E-mail ou senha incorretos').replace('Email not confirmed','Confirme seu e-mail antes de entrar').replace('Failed to fetch','Falha na conexão com o servidor').replace('User already registered','Esse e-mail já está cadastrado');}
+function seconds(end){return Math.max(0,Math.ceil((new Date(end).getTime()-Date.now())/1000));}
+function countdown(end){const s=seconds(end);return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
+function pill(s){return `<span class="pill">${ESC(s)}</span>`;}
+const input=(id,label,type='text',value='',extra='')=>`<div class="field"><label for="${id}">${ESC(label)}</label><input id="${id}" type="${type}" value="${ESC(value)}" ${extra}></div>`;
+class Cloud{
+ constructor(url,key){this.url=url.replace(/\/+$/,'');this.key=key;this.session=load('session');}
+ async request(path,method='GET',data=null,auth=true){
+  if(auth)await this.refreshIfNeeded();
+  const headers={'apikey':this.key,'Content-Type':'application/json','Accept':'application/json'};
+  if(auth&&this.session?.access_token)headers.Authorization='Bearer '+this.session.access_token;
+  let response;
+  try{response=await fetch(this.url+path,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});}catch{throw new Error('Falha de conexão. Verifique sua internet e o endereço do Supabase.');}
+  let json;const text=await response.text();try{json=text?JSON.parse(text):null;}catch{json=text;}
+  if(!response.ok)throw new Error(json?.message||json?.msg||json?.error_description||json?.error||`Erro ${response.status}`);
+  return json;
+ }
+ async refreshIfNeeded(){
+  if(!this.session?.refresh_token)return;
+  if(Date.now()<(this.session.expires_at||0)*1000-120000)return;
+  // Chamamos o endpoint de refresh diretamente para evitar recursão.
+  const res=await fetch(this.url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:this.key,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:this.session.refresh_token})});
+  const data=await res.json();if(!res.ok){this.session=null;save('session',null);throw new Error('Sessão expirada. Entre novamente.');}
+  this.setSession(data);
+ }
+ setSession(data){this.session={...data,expires_at:data.expires_at||(Math.floor(Date.now()/1000)+data.expires_in)};save('session',this.session);}
+ async signIn(email,password){const r=await this.request('/auth/v1/token?grant_type=password','POST',{email,password},false);this.setSession(r);return r;}
+ async signUp(email,password,nickname){return this.request('/auth/v1/signup','POST',{email,password,data:{nickname}},false);}
+ async recover(email){return this.request('/auth/v1/recover','POST',{email},false);}
+ async verifyEmailLink(value){
+  let uri;
+  try{uri=new URL(value.trim());}catch{throw new Error('Cole o endereço completo recebido no e-mail.');}
+  const site=new URL(this.url);
+  if(uri.origin!==site.origin||uri.pathname!=='/auth/v1/verify')
+    throw new Error('O endereço precisa ser um link original do Supabase Entre Suspeitos.');
+  const token=uri.searchParams.get('token_hash')||uri.searchParams.get('token');
+  const rawType=uri.searchParams.get('type');
+  const type=rawType==='email'?'signup':rawType;
+  if(!token||!['signup','recovery'].includes(type))
+    throw new Error('Link incompleto ou não suportado. Solicite um novo e-mail.');
+  const result=await this.request('/auth/v1/verify','POST',{token_hash:token,type},false);
+  if(result?.access_token)this.setSession(result);
+  return {type,loggedIn:!!result?.access_token};
+ }
+ async signOut(){try{await this.request('/auth/v1/logout','POST',{});}catch{}this.session=null;save('session',null);}
+ async rpc(name,p={}){return this.request('/rest/v1/rpc/'+name,'POST',p);}
+ async uploadAvatar(blob){
+  await this.refreshIfNeeded();
+  if(!this.session?.access_token)throw new Error('Entre na conta para enviar a foto.');
+  if(blob.size>1048576)throw new Error('A foto deve ter até 1 MB.');
+  const path=this.userId+'/avatar.jpg';
+  const r=await fetch(this.url+'/storage/v1/object/es-avatars/'+path,{
+    method:'POST',headers:{apikey:this.key,Authorization:'Bearer '+this.session.access_token,
+     'Content-Type':'image/jpeg','x-upsert':'true','Cache-Control':'max-age=60'},body:blob
+  });
+  if(!r.ok){const data=await r.json().catch(()=>null);throw new Error(data?.message||'Não foi possível enviar a foto.');}
+  await this.rpc('es_set_avatar',{p_path:path});
+ }
+ get userId(){return this.session?.user?.id||null;}
+}
+class Voice{
+ constructor(cloud,room,id){this.cloud=cloud;this.room=room;this.id=id;this.stream=null;this.connections=new Map();this.lastSignal=0;this.audio=new Map();this.running=false;this.poll=null;this.error='';}
+ async start(players){
+  if(!navigator.mediaDevices?.getUserMedia||typeof RTCPeerConnection==='undefined')throw new Error('Este navegador não disponibiliza recursos de áudio WebRTC.');
+  try{this.stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});}
+  catch{throw new Error('Não foi possível acessar o microfone. Verifique a permissão de microfone do Safari, Chrome ou navegador utilizado.');}
+  this.running=true;await this.update(players);
+  this.poll=setInterval(()=>this.readSignals().catch(e=>{this.error=prettyError(e);}),1400);
+ }
+ async signal(to,kind,payload){if(!this.running)return;try{await this.cloud.rpc('es_signal_send',{p_room:this.room,p_to:to,p_kind:kind,p_payload:payload});}catch(e){this.error=prettyError(e);}}
+ createPeer(id){
+  if(this.connections.has(id))return this.connections.get(id);
+  const pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'}]});
+  const entry={pc,queued:[],offered:false};this.connections.set(id,entry);
+  this.stream?.getTracks().forEach(track=>pc.addTrack(track,this.stream));
+  pc.onicecandidate=e=>{if(e.candidate)this.signal(id,'ice',e.candidate.toJSON());};
+  pc.ontrack=e=>{
+   let audio=this.audio.get(id);
+   if(!audio){audio=document.createElement('audio');audio.autoplay=true;audio.playsInline=true;audio.dataset.peer=id;audio.style.display='none';document.body.appendChild(audio);this.audio.set(id,audio);}
+   audio.srcObject=e.streams[0];audio.play().catch(()=>{this.error='Toque em Ativar voz novamente para liberar áudio.';});
+  };
+  return entry;
+ }
+ async update(players){
+  if(!this.running)return;
+  const peers=players.filter(p=>p.active&&p.id!==this.id).map(p=>p.id);
+  for(const id of [...this.connections.keys()])if(!peers.includes(id)){this.connections.get(id).pc.close();this.connections.delete(id);this.audio.get(id)?.remove();this.audio.delete(id);}
+  for(const id of peers){const entry=this.createPeer(id);if(this.id<id&&!entry.offered){
+   entry.offered=true;try{const offer=await entry.pc.createOffer();await entry.pc.setLocalDescription(offer);await this.signal(id,'offer',{type:offer.type,sdp:offer.sdp});}catch(e){this.error=prettyError(e);entry.offered=false;}
+  }}
+ }
+ async readSignals(){
+  if(!this.running)return;
+  const msgs=await this.cloud.rpc('es_signal_poll',{p_room:this.room,p_after:this.lastSignal});
+  for(const s of msgs||[]){this.lastSignal=Math.max(this.lastSignal,Number(s.id));const e=this.createPeer(s.from_id);
+   try{
+    if(s.kind==='offer'){
+     await e.pc.setRemoteDescription(new RTCSessionDescription(s.payload));
+     const a=await e.pc.createAnswer();await e.pc.setLocalDescription(a);await this.signal(s.from_id,'answer',{type:a.type,sdp:a.sdp});
+    }else if(s.kind==='answer')await e.pc.setRemoteDescription(new RTCSessionDescription(s.payload));
+    else if(s.kind==='ice'){
+     if(e.pc.remoteDescription)await e.pc.addIceCandidate(new RTCIceCandidate(s.payload));
+     else e.queued.push(s.payload);
+    }
+    if(e.pc.remoteDescription){for(const c of e.queued.splice(0))await e.pc.addIceCandidate(new RTCIceCandidate(c));}
+   }catch(err){this.error=prettyError(err);}
+  }
+ }
+ close(){this.running=false;if(this.poll)clearInterval(this.poll);this.poll=null;for(const e of this.connections.values())e.pc.close();this.connections.clear();for(const a of this.audio.values())a.remove();this.audio.clear();this.stream?.getTracks().forEach(t=>t.stop());this.stream=null;}
+}
+class OnlineUI{
+ constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
+  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
+ open({app,topbar,back,sound,bank}){this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
+  const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.home();}
+  else this.setup();
+ }
+ header(title){this.topbar.hidden=false;this.topbar.innerHTML=`<button class="back" id="onlineBack">← Voltar</button><strong>${ESC(title)}</strong><span style="width:65px"></span>`;
+  $('onlineBack').onclick=()=>{if(['room','create','join','public','login','setup','home'].includes(this.currentPage))this.homeOrMenu();else this.home();};}
+ homeOrMenu(){if(this.roomId){if(confirm('Sair da sala? Após o início, não votar será considerado derrota.'))this.leave();}
+  else{this.destroy();this.back();}}
+ destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
+ stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);this.refreshTimer=null;this.tickTimer=null;}
+ error(e){const msg=prettyError(e);let box=$('onlineError');if(box){box.textContent=msg;box.hidden=false;}else alert(msg);}
+ note(text){const el=$('onlineInfo');if(el)el.textContent=text;else alert(text);}
+ setup(){this.currentPage='setup';this.header('Ativar modo online');const c=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:(load('cloud')||{});
+  this.app.innerHTML=`<section class="card"><h2>Conectar servidor</h2><p class="subtext">O offline funciona sem internet. Para jogar online é necessário conectar um projeto Supabase configurado com o banco do Entre Suspeitos.</p>
+  ${input('cloudUrl','URL do projeto Supabase','url',c.url||'','placeholder="https://seu-projeto.supabase.co"')}
+  ${input('cloudKey','Chave pública (anon / publishable)','text',c.key||'','autocomplete="off"')}
+  ${btn('cloudSave','Conectar servidor')}
+  <p class="notice">Não coloque a chave <b>service_role</b> aqui. Ela é secreta. Use apenas a chave pública de acesso.</p>
+  <p id="onlineError" class="error"></p></section>`;
+  $('cloudSave').onclick=()=>{const url=$('cloudUrl').value.trim(),key=$('cloudKey').value.trim();
+   if(!/^https:\/\/[^\s]+\.supabase\.co$/.test(url)||key.length<20)return this.error('Informe uma URL Supabase e uma chave pública válidas.');
+   save('cloud',{url,key});this.cloud=new Cloud(url,key);this.home();};
+ }
+ home(){this.stopLoop();this.roomId=null;this.room=null;this.voice?.close();this.voice=null;
+  if(!this.cloud){this.setup();return;}
+  if(!this.cloud.userId){this.login();return;}
+  this.currentPage='home';this.header('Jogar online');
+  this.app.innerHTML=`<section class="card center"><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
+  ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
+  ${btn('public','Buscar salas públicas')}${btn('create','Criar sala')}${btn('join','Entrar com código','secondary')}${btn('invitesOn','Convites de amigos','secondary')}
+  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
+  ${btn('adminOn','Painel administrativo','secondary')}${btn('serverOn','Configurar servidor','secondary')}${btn('logout','Sair da conta','ghost')}
+  <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
+  if($('resumeOn'))$('resumeOn').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_rejoin',{p_room:load('lastRoom')}));}catch(e){this.error(e);}};
+  $('invitesOn').onclick=()=>this.invites();
+  $('public').onclick=()=>this.publicRooms();$('create').onclick=()=>this.createRoom();$('join').onclick=()=>this.joinCode();
+  $('profileOn').onclick=()=>this.profile();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();
+  $('feedbackOn').onclick=()=>this.feedback();$('adminOn').onclick=()=>this.admin();
+  $('serverOn').onclick=()=>{this.cloud.session=null;save('session',null);this.setup();};
+  $('logout').onclick=async()=>{try{await this.cloud.signOut();this.login();}catch(e){this.error(e);}};
+ }
+ login(){this.currentPage='login';this.header('Sua conta');
+  this.app.innerHTML=`<section class="card"><h2>Entrar no Entre Suspeitos</h2><p class="subtext">O modo online exige conta. O offline continua livre.</p>
+  ${input('emailOn','E-mail','email','','autocomplete="email"')}${input('passwordOn','Senha','password','','autocomplete="current-password"')}
+  <div id="nickWrap" hidden>${input('nickOn','Apelido público','text','','maxlength="28"')}</div>
+  ${btn('loginOn','Entrar')}${btn('signupOn','Criar conta','secondary')}${btn('recoverOn','Recuperar senha','ghost')}
+  ${btn('facebookOn','Entrar pelo Facebook (configuração adicional)','secondary')}${btn('serverOnLogin','Alterar endereço do servidor','ghost')}
+  <p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p></section>`;
+  $('loginOn').onclick=async()=>{try{await this.cloud.signIn($('emailOn').value.trim(),$('passwordOn').value);this.home();}catch(e){this.error(e);}};
+  $('signupOn').onclick=async()=>{try{const nick=$('nickOn')?.value.trim()||'';
+   if(!$('nickWrap').hidden && nick.length<2)return this.error('Escolha um apelido com pelo menos dois caracteres.');
+   if($('nickWrap').hidden){$('nickWrap').hidden=false;this.note('Escolha um apelido e toque em Criar conta novamente.');return;}
+   const r=await this.cloud.signUp($('emailOn').value.trim(),$('passwordOn').value,nick);
+   if(r?.access_token){this.cloud.setSession(r);this.home();}else this.note('Conta criada! Confirme seu e-mail e depois toque em Entrar.');
+  }catch(e){this.error(e);}};
+  $('recoverOn').onclick=async()=>{try{const email=$('emailOn').value.trim();if(!email)return this.error('Informe seu e-mail.');await this.cloud.recover(email);this.note('Se o endereço estiver cadastrado, receberá um e-mail de recuperação.');}catch(e){this.error(e);}};
+  $('facebookOn').onclick=()=>this.note('Facebook: habilite o provedor no Supabase e configure o retorno OAuth para Android. O login por e-mail já está disponível.');
+  const fallback=document.createElement('section');
+  fallback.className='card';
+  fallback.innerHTML='<h3>O link do e-mail não abre?</h3>'+
+    '<p class="subtext">No e-mail, pressione o botão e escolha “Copiar endereço do link”. Cole-o abaixo para confirmar sua conta ou recuperar seu acesso sem abrir o site com erro.</p>'+
+    '<div class="field"><label for="emailLinkOn">Link original de confirmação ou recuperação</label>'+
+    '<textarea id="emailLinkOn" rows="3" style="width:100%;box-sizing:border-box" autocapitalize="off" spellcheck="false"></textarea></div>'+
+    '<button class="btn secondary" type="button" id="checkEmailLinkOn">VALIDAR LINK DO E-MAIL</button>'+
+    '<p class="small muted">Este link é secreto. Não compartilhe com outras pessoas.</p>';
+  this.app.appendChild(fallback);
+  $('checkEmailLinkOn').onclick=async()=>{
+    try{
+      const r=await this.cloud.verifyEmailLink($('emailLinkOn').value);
+      $('emailLinkOn').value='';
+      if(r.type==='recovery'&&r.loggedIn){
+        const pwd=prompt('Link validado! Digite uma NOVA senha com pelo menos 8 caracteres:');
+        if(!pwd || pwd.length<8) return this.note('A senha deve ter pelo menos 8 caracteres.');
+        await this.cloud.request('/auth/v1/user','PUT',{password:pwd});
+        this.note('Senha atualizada. Você já pode jogar com sua conta.');
+        this.home();
+      } else if(r.loggedIn){this.home();}
+      else this.note('E-mail confirmado. Use o botão Entrar.');
+    }catch(e){this.error(e);}
+  };
+  $('serverOnLogin').onclick=()=>this.setup();
+ }
+ async publicRooms(){this.currentPage='public';this.header('Salas públicas');
+  this.app.innerHTML=`<section class="card"><h2>Partidas esperando jogadores</h2><p class="subtext">Você pode entrar numa sala com vagas ou criar a sua.</p>
+  ${btn('quickOn','Entrada rápida')}${btn('reloadOn','Atualizar lista','secondary')}<div id="publicList"><p>Carregando...</p></div><p id="onlineError" class="error"></p></section>`;
+  let rooms=[];try{rooms=await this.cloud.rpc('es_public_rooms');}catch(e){return this.error(e);}
+  $('publicList').innerHTML=rooms.length?rooms.map((r,i)=>`<div class="member"><div class="member-info"><strong>${ESC(r.categories?.slice(0,2).join(', ')||'Categorias variadas')}</strong><small>${ESC(r.difficulty)} · ${r.impostors} imp. · ${r.players}/${r.max_players} jogadores</small></div><button class="back" data-room="${i}">Entrar</button></div>`).join(''):'<p class="notice">Não há salas públicas abertas agora. Crie uma e convide seus amigos!</p>';
+  this.app.querySelectorAll('[data-room]').forEach(b=>b.onclick=async()=>{try{const r=await this.cloud.rpc('es_join',{p_room:rooms[+b.dataset.room].id});this.enterRoom(r);}catch(e){this.error(e);}});
+  $('quickOn').onclick=async()=>{const available=rooms.find(r=>r.players<r.max_players);if(!available)return this.note('Não existem salas com vagas. Crie uma sala.');try{this.enterRoom(await this.cloud.rpc('es_join',{p_room:available.id}));}catch(e){this.error(e);}};
+  $('reloadOn').onclick=()=>this.publicRooms();
+ }
+ joinCode(){this.currentPage='join';this.header('Entrar em sala');this.app.innerHTML=`<section class="card"><h2>Código da sala</h2>${input('roomCode','Código de 6 caracteres','text','','maxlength="6" autocapitalize="characters"')}${btn('enterCode','Entrar')}<p id="onlineError" class="error"></p></section>`;
+  $('enterCode').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_join_code',{p_code:$('roomCode').value.trim()}));}catch(e){this.error(e);}};
+ }
+ formRules(c={}){
+  const val=c.categories||CATEGORIES, max=c.max||10,imp=c.impostors||2;
+  return `<div class="option-grid">${input('maxOn','Máximo de jogadores','number',max,'min="3" max="10"')}${input('impOn','Impostores','number',imp,'min="1" max="4"')}</div>
+   <div class="field"><label>Dificuldade</label><select id="difficultyOn">${['Fácil','Médio','Difícil','Misturado'].map(x=>`<option ${c.difficulty===x?'selected':''}>${x}</option>`).join('')}</select></div>
+   <div class="field"><label>Dicas para o impostor</label><select id="clueOn">${[['both','Categoria e dica'],['category','Só categoria'],['hint','Só dica'],['none','Nenhuma']].map(x=>`<option value="${x[0]}" ${c.clue===x[0]?'selected':''}>${x[1]}</option>`).join('')}</select></div>
+   <label class="check"><input type="checkbox" id="knowOn" ${c.know?'checked':''}> Impostores conhecem seus parceiros</label>
+   <h3>Categorias</h3><div class="online-words">${CATEGORIES.map((x,i)=>`<label class="check"><input type="checkbox" data-oc="${i}" ${val.includes(x)?'checked':''}>${ESC(x)}</label>`).join('')}</div>`;
+ }
+ getRules(){const max=Number($('maxOn').value),imp=Number($('impOn').value),categories=[...this.app.querySelectorAll('[data-oc]:checked')].map(x=>CATEGORIES[Number(x.dataset.oc)]);
+  if(max<MIN||max>MAX||imp<1||imp>Math.floor((max-1)/2)||!categories.length)throw new Error('Escolha 3 a 10 jogadores, uma quantidade válida de impostores e pelo menos uma categoria.');
+  return {p_max:max,p_impostors:imp,p_categories:categories,p_difficulty:$('difficultyOn').value,p_clue:$('clueOn').value,p_know:$('knowOn').checked};}
+ createRoom(){this.currentPage='create';this.header('Criar sala');
+  this.app.innerHTML=`<section class="card"><h2>Preparar partida online</h2><p class="subtext">O jogo inicia com pelo menos 3 jogadores prontos. A sala fica aberta até o anfitrião começar.</p>
+  <div class="field"><label>Visibilidade</label><select id="publicOn"><option value="true">Pública — aparece na lista</option><option value="false">Privada — somente com código</option></select></div>
+  ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
+  $('makeRoom').onclick=async()=>{try{const p=this.getRules();this.enterRoom(await this.cloud.rpc('es_create',{p_public:$('publicOn').value==='true',...p}));}catch(e){this.error(e);}};
+ }
+ enterRoom(id){this.stopLoop();save('lastRoom',id);this.roomId=id;this.room=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
+  this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
+  let lastPing=0;
+  this.refreshTimer=setInterval(async()=>{
+   if(!this.roomId)return;
+   try{if(Date.now()-lastPing>9000){await this.cloud.rpc('es_touch',{p_room:this.roomId});lastPing=Date.now();}
+    await this.refresh();}catch(e){this.error(e);}
+  },2200);
+  this.tickTimer=setInterval(()=>{const c=$('timerOnline');if(c&&this.room?.phaseEnds){const remaining=seconds(this.room.phaseEnds);c.textContent=countdown(this.room.phaseEnds);
+   if(remaining===0&&this.room.status==='discussion'&&this.lastPhase==='discussion'&&!this.timerPlayed){this.sound('timer');this.timerPlayed=true;}
+  }},300);
+ }
+ async refresh(){if(!this.roomId||this.refreshing)return;this.refreshing=true;
+  try{const r=await this.cloud.rpc('es_room_view',{p_room:this.roomId});if(!this.roomId)return;
+   this.room=r;if(r.status==='discussion'&&seconds(r.phaseEnds)===0){await this.cloud.rpc('es_begin_vote',{p_room:this.roomId}).catch(()=>{});}
+   if(r.status==='voting'){await this.cloud.rpc('es_finalize',{p_room:this.roomId}).catch(()=>{});}
+   const sig=JSON.stringify(r);if(sig!==this.lastFingerprint){
+    // Evita apagar uma carta revelada ou um formulário enquanto o usuário interage.
+    if(this.app.querySelector('.card-reveal.revealed')||this.app.querySelector('.online-editing'))return;
+    this.lastFingerprint=sig;this.renderRoom(r);}
+   if(this.voice)this.voice.update(r.players).catch(e=>{this.voice.error=prettyError(e);});
+  }catch(e){this.error(e);}finally{this.refreshing=false;}
+ }
+ renderRoom(r){this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
+  if(r.status!==this.lastPhase){this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;}
+  const head=`<section class="card"><div class="statusbar"><div><span class="eyebrow">${r.public?'SALA PÚBLICA':'SALA PRIVADA'}</span><div class="room-code">${ESC(r.code)}</div></div><span class="pill">${joined.length}/${r.max} jogadores</span></div>
+  <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
+  <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
+  ${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
+  <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
+  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}${p.title?' · Título equipado':''}</small></div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${p.ready?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):i+1}</span></div>`).join('')}</section>`;
+  let phase='';
+  if(r.status==='lobby'){
+   const myReady=!!r.players.find(p=>p.id===me)?.ready,allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors<=Math.floor((joined.length-1)/2);
+   phase=`<section class="card"><h2>Aguardando jogadores</h2><p class="subtext">O anfitrião pode alterar as regras. Qualquer alteração zera o estado “Pronto” de todos.</p>
+   ${btn('readyOn',myReady?'Cancelar “Pronto”':'ESTOU PRONTO',myReady?'secondary':'')}
+   ${owner?`${btn('editRules','Alterar regras','secondary')}${btn('inviteFriends','Convidar amigos','secondary')}${btn('startOn','INICIAR PARTIDA')}`:''}
+   <p class="small muted">${allReady&&validImps?'Todos prontos: partida liberada.':!validImps?'Reduza o número de impostores para esta quantidade de jogadores.':'Mínimo de 4 participantes, todos prontos.'}</p></section>`;
+  }else if(r.status==='discussion'){
+   const secret=r.me.impostor?'IMPOSTOR':ESC(r.me.word);
+   const info=r.me.impostor?[r.me.category?'Categoria: '+r.me.category:'',r.me.hint?'Dica: '+r.me.hint:'',r.me.partners?.length?'Parceiros: '+r.players.filter(x=>r.me.partners.includes(x.id)).map(x=>x.nick).join(', '):''].filter(Boolean).join(' · '):'Categoria: '+r.me.category;
+   const first=r.players.find(p=>p.id===r.starter)?.nick||'Sorteado';
+   phase=`<section class="card center"><h2>Discussão por voz</h2><div id="timerOnline" class="countdown">${countdown(r.phaseEnds)}</div><p class="subtext">Quem começa: <b>${ESC(first)}</b>. Quando o tempo acabar, o som avisará, mas a voz continuará ligada.</p>
+   <div id="onlineSecret" class="card-reveal" tabindex="0"><div id="onlineSecretContent"><span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p></div></div>
+   <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Solte a carta para ocultar sua informação.</p></section>`;
+  }else if(r.status==='voting'){
+   const myVote=r.me.voted;
+   phase=`<section class="card"><h2>Votação secreta</h2><div id="timerOnline" class="countdown">${countdown(r.phaseEnds)}</div>
+    <p class="subtext">Escolha ${r.impostors} suspeito(s), sem repetir nomes. Os votos dos outros permanecem secretos.</p>
+    ${myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check"><input type="checkbox" data-vote="${ESC(p.id)}">${ESC(p.nick)}</label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
+    <p id="onlineError" class="error"></p></section>`;
+  }else if(r.status==='results'){
+   const impostors=r.players.filter(p=>r.me.impostors?.includes(p.id));
+   phase=`<section class="card center"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p><h3>Impostores</h3>
+    ${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
+    <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
+    ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
+  }
+  this.currentPage='room';this.app.innerHTML=head+phase+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
+  this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
+  this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
+  $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
+  $('voiceOn').onclick=()=>this.toggleVoice();
+  if(r.status==='lobby'){
+   $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
+   if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(joined.length>=3&&joined.every(p=>p.ready)&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
+  }else if(r.status==='discussion'){
+   const card=$('onlineSecret'),content=$('onlineSecretContent');const val=$('onlineSecretValue');
+   const hide=()=>{card.classList.remove('revealed');content.innerHTML='<span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p>';};
+   const show=e=>{e.preventDefault();if(e.pointerId!==undefined)try{card.setPointerCapture(e.pointerId);}catch{}card.classList.add('revealed');content.innerHTML=`<div class="secret-label">${r.me.impostor?'SUA IDENTIDADE':'SUA PALAVRA'}</div><div class="secret-name ${r.me.impostor?'impostor':''}">${ESC(val.dataset.secret)}</div><p class="secret-detail">${ESC(val.dataset.info)}</p>`;};
+   card.addEventListener('pointerdown',show);['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(ev=>card.addEventListener(ev,hide));
+   card.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key))show(e);});card.addEventListener('keyup',hide);
+   document.addEventListener('visibilitychange',()=>{if(document.hidden)hide();},{once:true});
+  }else if(r.status==='voting'&&!r.me.voted){$('submitVote').onclick=async()=>{
+   const targets=[...this.app.querySelectorAll('[data-vote]:checked')].map(x=>x.dataset.vote);
+   if(targets.length!==r.impostors)return this.error('Escolha exatamente '+r.impostors+' suspeito(s).');
+   await this.action('es_vote',{p_room:r.id,p_targets:targets});this.sound('vote');};
+  }else if(r.status==='results'&&owner){$('newRound').onclick=()=>this.action('es_next',{p_room:r.id});}
+ }
+ async action(name,p){try{await this.cloud.rpc(name,p);this.lastFingerprint='';await this.refresh();}catch(e){this.error(e);}}
+ editRules(){const r=this.room;this.stopLoop();this.header('Alterar regras');this.app.innerHTML=`<section class="card online-editing"><h2>Regras da sala</h2><p class="subtext">Depois de salvar, todos precisarão confirmar “Pronto” novamente.</p>${this.formRules(r)}${btn('saveRules','SALVAR REGRAS')}<p id="onlineError" class="error"></p></section>`;
+  $('saveRules').onclick=async()=>{try{const p=this.getRules();await this.cloud.rpc('es_rules',{p_room:r.id,...p});this.enterRoom(r.id);}catch(e){this.error(e);}};}
+ async leave(){const room=this.roomId;save('lastRoom',null);this.destroy();try{await this.cloud.rpc('es_leave',{p_room:room});}catch{}this.home();}
+ async toggleVoice(){try{if(this.voice?.running){this.voice.close();this.voice=null;}else{
+   this.voice=new Voice(this.cloud,this.roomId,this.cloud.userId);await this.voice.start(this.room?.players||[]);
+  }this.lastFingerprint='';this.renderRoom(this.room);
+ }catch(e){this.voice?.close();this.voice=null;this.error(e);}}
+ async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[];try{[p,titles]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles')]);}catch(e){return this.error(e);}
+  this.app.innerHTML=`<section class="card"><h2>Meu perfil</h2>
+   <div class="profile-heading"><div class="avatar profile-avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
+   <div class="field"><label for="photoOn">Foto de perfil (opcional, até 1 MB)</label><input type="file" id="photoOn" accept="image/*"></div>${btn('uploadPhoto','Salvar foto de perfil','secondary')}
+   ${input('nicknameOn','Apelido','text',p.nickname,'maxlength="28"')}${btn('saveNick','Salvar apelido')}
+   <div class="divider"></div><div class="option-grid"><p><b>${p.xp}</b><br>XP público</p><p><b>${p.ranking_points}</b><br>Pontos de ranking</p>
+   <p><b>${p.online_wins} / ${p.online_losses}</b><br>Vitórias / derrotas públicas</p>
+   <p><b>${p.private_wins} / ${p.private_losses}</b><br>Vitórias / derrotas privadas</p>
+   <p><b>${p.impostor_wins} / ${p.impostor_losses}</b><br>Impostor: vitórias / derrotas</p>
+   <p><b>${p.common_wins} / ${p.common_losses}</b><br>Comum: vitórias / derrotas</p></div>
+   <div class="divider"></div><h3>Meus títulos</h3>
+   <p class="subtext">Ganhe títulos em partidas públicas. Selecione um para destacar no seu perfil.</p>
+   <div class="title-list">${titles.map((t,i)=>`<div class="member"><div class="member-info"><strong class="title-${ESC(t.rarity)}">${ESC(t.name)}</strong><small>${ESC(t.description)} · ${ESC(t.rarity)}</small></div><button type="button" class="back" data-equip="${i}" ${t.equipped?'disabled':''}>${t.equipped?'Equipado':'Usar'}</button></div>`).join('')||'<p class="notice">Ainda sem títulos. Continue jogando partidas públicas!</p>'}</div>
+   <p class="notice">Títulos Místicos continuam ocultos até sua primeira conquista. Molduras e fotos serão adicionadas após a implantação e o teste da infraestrutura online.</p><p id="onlineError" class="error"></p></section>`;
+   this.app.querySelectorAll('[data-equip]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_equip_title',{p_title:titles[+b.dataset.equip].code});this.profile();}catch(e){this.error(e);}});
+  $('uploadPhoto').onclick=async()=>{try{
+    const file=$('photoOn').files?.[0];if(!file)throw new Error('Escolha uma imagem primeiro.');
+    if(!file.type.startsWith('image/'))throw new Error('Escolha uma foto válida.');
+    if(file.size>8000000)throw new Error('Imagem original muito grande. Use uma de até 8 MB.');
+    const bitmap=await createImageBitmap(file);
+    const canvas=document.createElement('canvas');canvas.width=canvas.height=480;
+    const ctx=canvas.getContext('2d');ctx.fillStyle='#16131d';ctx.fillRect(0,0,480,480);
+    const size=Math.min(bitmap.width,bitmap.height),sx=(bitmap.width-size)/2,sy=(bitmap.height-size)/2;
+    ctx.drawImage(bitmap,sx,sy,size,size,0,0,480,480);bitmap.close?.();
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.82));
+    if(!blob)throw new Error('Não foi possível preparar a foto.');
+    await this.cloud.uploadAvatar(blob);this.profile();
+  }catch(e){this.error(e);}};
+  $('saveNick').onclick=async()=>{try{await this.cloud.rpc('es_set_nickname',{p_nick:$('nicknameOn').value});this.profile();}catch(e){this.error(e);}};
+ }
+ async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_leaderboard'),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
+  this.app.innerHTML=`<section class="card"><h2>Melhores jogadores</h2><p class="subtext">Somente partidas públicas valem pontos e XP.</p>${rank.map((p,i)=>`<div class="member"><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:i+1}</div><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.online_wins} vitórias · ${p.xp} XP</small>${p.equipped_title&&catalog?.find(t=>t.code===p.equipped_title)?`<small class="title-${ESC(catalog.find(t=>t.code===p.equipped_title).rarity)}">${ESC(catalog.find(t=>t.code===p.equipped_title).name)}</small>`:''}</div><b>${p.ranking_points} pts</b></div>`).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
+ async friends(){this.currentPage='friends';this.header('Amigos');let all=[];try{all=await this.cloud.rpc('es_friend_list');}catch(e){return this.error(e);}
+  this.app.innerHTML=`<section class="card"><h2>Adicionar amigos</h2>${input('searchNick','Pesquisar apelido','text','','placeholder="Apelido do jogador"')}${btn('searchFriends','Pesquisar','secondary')}<div id="searchFriendsResult"></div><h3>Minha lista</h3>
+   ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?'Amigo':'Pedido pendente'}</small></div>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}
+   <p class="subtext">Para convidar para uma sala privada, compartilhe o código da sala. Convites diretos serão adicionados numa atualização posterior.</p><p id="onlineError" class="error"></p></section>`;
+  this.app.querySelectorAll('[data-accept]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_friend_accept',{p_from:all[+b.dataset.accept].id});this.friends();}catch(e){this.error(e);}});
+  $('searchFriends').onclick=async()=>{try{const r=await this.cloud.rpc('es_find_players',{p_query:$('searchNick').value});
+   $('searchFriendsResult').innerHTML=r.map((p,i)=>`<div class="member"><div class="member-info">${ESC(p.nickname)}</div><button class="back" data-add="${i}">Adicionar</button></div>`).join('')||'<p>Ninguém encontrado.</p>';
+   this.app.querySelectorAll('[data-add]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_friend_send',{p_to:r[+b.dataset.add].id});this.friends();}catch(e){this.error(e);}});
+  }catch(e){this.error(e);}};
+ }
+
+ async invites(){this.currentPage='invites';this.header('Convites de amigos');let list=[];try{list=await this.cloud.rpc('es_invite_list');}catch(e){return this.error(e);}
+  this.app.innerHTML=`<section class="card"><h2>Convites recebidos</h2>${list.map((v,i)=>`<div class="member"><div class="member-info"><strong>${ESC(v.from_nick)}</strong><small>Sala ${ESC(v.code)} · ${v.is_public?'Pública':'Privada'}</small></div><button class="back" data-invite="${i}">Entrar</button></div>`).join('')||'<p>Nenhum convite pendente.</p>'}<p id="onlineError" class="error"></p></section>`;
+  this.app.querySelectorAll('[data-invite]').forEach(b=>b.onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_invite_accept',{p_invite:list[+b.dataset.invite].id}));}catch(e){this.error(e);}});
+ }
+ async inviteFriends(){const room=this.roomId;this.stopLoop();this.header('Convidar amigos');let all=[];try{all=await this.cloud.rpc('es_friend_list');}catch(e){return this.error(e);}
+  const friends=all.filter(x=>x.accepted);this.app.innerHTML=`<section class="card"><h2>Convites diretos</h2><p class="subtext">Seus amigos receberão o convite na área Convites de amigos.</p>
+  ${friends.map((p,i)=>`<div class="member"><div class="member-info">${ESC(p.nickname)}</div><button class="back" data-send="${i}">Convidar</button></div>`).join('')||'<p>Você ainda não tem amigos adicionados.</p>'}
+  ${btn('backRoom','Voltar para sala','secondary')}<p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p></section>`;
+  this.app.querySelectorAll('[data-send]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_invite_send',{p_room:room,p_to:friends[+b.dataset.send].id});this.note('Convite enviado!');}catch(e){this.error(e);}});
+  $('backRoom').onclick=()=>this.enterRoom(room);
+ }
+ feedback(){this.currentPage='feedback';this.header('Ajuda e sugestões');
+  this.app.innerHTML=`<section class="card"><h2>Ajude a melhorar o jogo</h2><div class="field"><label>Tipo de mensagem</label><select id="feedbackType">
+   <option value="categoria">Sugerir categoria</option><option value="palavra">Sugerir palavra</option><option value="reclamacao">Reclamação</option><option value="denuncia">Denúncia</option></select></div>
+   <div class="field"><label>Detalhes</label><textarea id="feedbackBody" rows="5" maxlength="1500" placeholder="Descreva sua sugestão ou denúncia..."></textarea></div>
+   ${btn('feedbackSend','Enviar ao administrador')}<p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p></section>`;
+  $('feedbackSend').onclick=async()=>{try{await this.cloud.rpc('es_feedback_send',{p_type:$('feedbackType').value,p_body:$('feedbackBody').value,p_target:null});
+   $('feedbackBody').value='';this.note('Mensagem recebida. Obrigado!');}catch(e){this.error(e);}};
+ }
+ async admin(){this.currentPage='admin';this.header('Administração');let data;try{data=await this.cloud.rpc('es_admin_dashboard');}catch(e){
+   this.app.innerHTML='<section class="card"><h2>Área administrativa</h2><p>Somente o administrador principal pode acessar este painel.</p></section>';return;}
+  this.app.innerHTML=`<section class="card"><h2>Painel administrativo</h2><div class="option-grid"><p><b>${data.contas}</b><br>Contas</p><p><b>${data.jogadoresOnline}</b><br>Jogadores online</p>
+   <p><b>${data.salas}</b><br>Salas abertas</p><p><b>${data.partidas}</b><br>Partidas realizadas</p></div>
+   <p><b>${data.pendencias}</b> solicitações pendentes</p>${btn('seedWords','Publicar as 1.322 palavras no servidor','secondary')}
+   <p class="notice">A publicação envia o banco já existente, sem exibir previamente as palavras.</p><p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p></section>
+   <section class="card"><h3>Solicitações e denúncias</h3>${(data.solicitacoes||[]).map((x,i)=>`<div class="member"><div class="member-info"><strong>${ESC(x.type)} — ${ESC(x.status)}</strong><small>${ESC(x.body)}</small></div><button class="back" data-resolve="${i}">Resolver</button>${x.reported_user?`<button class="back" data-suspend="${i}">Suspender</button>`:''}</div>`).join('')||'<p>Não há solicitações.</p>'}</section>`;
+  $('seedWords').onclick=async()=>{try{const all=Object.entries(this.bank).flatMap(([category,items])=>items.map(w=>({category,word:w.w,hint:w.h,difficulty:w.d})));
+   let total=0;for(let i=0;i<all.length;i+=100){total+=await this.cloud.rpc('es_admin_seed',{p_entries:all.slice(i,i+100)});this.note(`Enviadas ${Math.min(i+100,all.length)} de ${all.length} palavras...`);}
+   this.note(`Banco publicado no servidor: ${total} palavras processadas.`);
+  }catch(e){this.error(e);}};
+  this.app.querySelectorAll('[data-suspend]').forEach(b=>b.onclick=async()=>{const x=data.solicitacoes[+b.dataset.suspend];if(!confirm('Suspender este usuário por 7 dias após análise da denúncia?'))return;try{await this.cloud.rpc('es_admin_sanction',{p_target:x.reported_user,p_days:7,p_reason:x.body});this.note('Suspensão aplicada por 7 dias.');}catch(e){this.error(e);}});
+  this.app.querySelectorAll('[data-resolve]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_admin_resolve',{p_id:data.solicitacoes[+b.dataset.resolve].id,p_status:'resolvido'});this.admin();}catch(e){this.error(e);}});
+ }
+}
+const online=new OnlineUI();window.ESOnline={open:args=>online.open(args)};
+})();
