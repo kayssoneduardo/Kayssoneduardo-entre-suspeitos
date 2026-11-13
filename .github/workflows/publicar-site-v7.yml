@@ -1,0 +1,77 @@
+name: Publicar site Entre Suspeitos Web V7
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'v7_pending/scripts/patch_web_v7.py'
+      - '.github/workflows/publicar-site-v7.yml'
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      url: https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos/
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extrair o cliente Web V4 completo
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p web
+          unzip -oq EntreSuspeitos_Android.zip 'www/*' -d /tmp/es_original
+          cp -R /tmp/es_original/www/. web/
+      - name: Integrar Web V7 ao Supabase e adaptar iPhone/desktop
+        env:
+          ES_URL: ${{ vars.SUPABASE_URL }}
+          ES_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          python3 v7_pending/scripts/patch_web_v7.py
+          python3 - <<'PY'
+          import json,os,pathlib
+          url=os.environ.get('ES_URL','').strip()
+          key=os.environ.get('ES_KEY','').strip()
+          if url!='https://lvnhwfctursuduboovub.supabase.co' or not key:
+              raise SystemExit('Configuração pública de Supabase ausente/inválida no GitHub Vars.')
+          pathlib.Path('web/server-config.js').write_text('window.ES_SERVER_CONFIG = '+json.dumps({'url':url,'key':key})+';\n')
+          print('Supabase configurado com chave pública.')
+          PY
+      - name: Testes automáticos do site
+        run: |
+          set -euo pipefail
+          for f in web/*.js; do node --check "$f"; done
+          python3 - <<'PY'
+          from pathlib import Path
+          assert 'MIN=3' in Path('web/online.js').read_text()
+          assert 'joined.length>=3' in Path('web/online.js').read_text()
+          assert Path('web/words.js').read_text().count('"w":')==1322
+          assert 'ES_SERVER_CONFIG' in Path('web/server-config.js').read_text()
+          assert 'verifyEmailLink' in Path('web/online.js').read_text()
+          print('Verificações de site, multiplayer e dicionário aprovadas.')
+          PY
+      - name: Versionar arquivos web estáticos
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add web
+          if ! git diff --cached --quiet; then
+            git commit -m "release(web): site universal V7 com salas compartilhadas Android iOS PC"
+            git push origin HEAD:main
+          fi
+      - name: Empacotar site para GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos/
+    steps:
+      - name: Publicar na internet
+        uses: actions/deploy-pages@v4
