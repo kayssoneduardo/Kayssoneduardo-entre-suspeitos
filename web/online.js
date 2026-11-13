@@ -71,6 +71,21 @@ class Cloud{
   if(result?.access_token)this.setSession(result);
   return {type,loggedIn:!!result?.access_token};
  }
+ async completeFromUrl(){
+  const params=new URLSearchParams(window.location.hash.replace(/^#/,''));
+  const problem=params.get('error_description')||params.get('error');
+  if(problem){window.history.replaceState(null,'',window.location.pathname);throw new Error(decodeURIComponent(problem));}
+  const access=params.get('access_token'),refresh=params.get('refresh_token');
+  if(!access||!refresh)return null;
+  const expires=Math.max(30,Number(params.get('expires_in'))||3600);
+  this.setSession({access_token:access,refresh_token:refresh,expires_in:expires,token_type:'bearer'});
+  try{
+    const user=await this.request('/auth/v1/user');
+    this.setSession({...this.session,user});
+  }catch(err){this.session=null;save('session',null);throw err;}
+  window.history.replaceState(null,'',window.location.pathname);
+  return params.get('type')==='recovery'?'recovery':'confirmed';
+ }
  async signOut(){try{await this.request('/auth/v1/logout','POST',{});}catch{}this.session=null;save('session',null);}
  async rpc(name,p={}){return this.request('/rest/v1/rpc/'+name,'POST',p);}
  async uploadAvatar(blob){
@@ -141,7 +156,7 @@ class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
   this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
  open({app,topbar,back,sound,bank}){this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
-  const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.home();}
+  const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
  }
  header(title){this.topbar.hidden=false;this.topbar.innerHTML=`<button class="back" id="onlineBack">← Voltar</button><strong>${ESC(title)}</strong><span style="width:65px"></span>`;
