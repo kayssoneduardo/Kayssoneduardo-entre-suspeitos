@@ -160,7 +160,7 @@ class OnlineUI{
   else this.setup();
  }
  header(title){this.topbar.hidden=false;this.topbar.innerHTML=`<button class="back" id="onlineBack">← Voltar</button><strong>${ESC(title)}</strong><span style="width:65px"></span>`;
-  $('onlineBack').onclick=()=>{if(['room','create','join','public','login','setup','home'].includes(this.currentPage))this.homeOrMenu();else this.home();};}
+  $('onlineBack').onclick=()=>{if(['signup','recover','reset'].includes(this.currentPage))this.login();else if(['room','create','join','public','login','setup','home'].includes(this.currentPage))this.homeOrMenu();else this.home();};}
  homeOrMenu(){if(this.roomId){if(confirm('Sair da sala? Após o início, não votar será considerado derrota.'))this.leave();}
   else{this.destroy();this.back();}}
  destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
@@ -199,13 +199,13 @@ class OnlineUI{
  async authAction(fn){
   if(this.authBusy)return;
   this.authBusy=true;
-  for(const id of ['loginOn','signupOn','recoverOn','checkEmailLinkOn']){
+  for(const id of ['loginOn','signupOn','recoverOn','signupSubmitOn','recoverSubmitOn','checkEmailLinkOn']){
    const el=$(id);if(el)el.disabled=true;
   }
   try{await fn();}catch(e){this.error(e);}
   finally{
    this.authBusy=false;
-   for(const id of ['loginOn','signupOn','recoverOn','checkEmailLinkOn']){
+   for(const id of ['loginOn','signupOn','recoverOn','signupSubmitOn','recoverSubmitOn','checkEmailLinkOn']){
     const el=$(id);if(el)el.disabled=false;
    }
   }
@@ -227,55 +227,98 @@ class OnlineUI{
     finally{if(button.isConnected)button.disabled=false;}
   };
  }
- login(){this.currentPage='login';this.header('Sua conta');
-  this.app.innerHTML=`<section class="card"><h2>Entrar no Entre Suspeitos</h2><p class="subtext">O modo online exige conta. O offline continua livre.</p>
-  ${input('emailOn','E-mail','email','','autocomplete="email"')}${input('passwordOn','Senha','password','','autocomplete="current-password"')}
-  <div id="nickWrap"><p class="small muted">Para criar uma conta, informe seu apelido. Para entrar em uma conta existente, o apelido não é necessário.</p>${input('nickOn','Apelido público','text','','maxlength="28"')}</div>
-  ${btn('loginOn','Entrar')}${btn('signupOn','Criar conta','secondary')}${btn('recoverOn','Recuperar senha','ghost')}
-  <p class="small muted">Os cadastros exigem confirmação de e-mail. Se o servidor informar que atingiu o limite de envios, não repita a solicitação.</p>
-  <p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p></section>`;
+
+ authEnter(ids,buttonId){
+  for(const id of ids){
+   $(id).addEventListener('keydown',e=>{
+    if(e.key==='Enter'){e.preventDefault();$(buttonId).click();}
+   });
+  }
+ }
+ login(email='',message=''){
+  this.currentPage='login';this.header('Entrar');
+  this.app.innerHTML='<section class="card auth-card">'+
+   '<div class="auth-intro"><span class="eyebrow">ENTRE SUSPEITOS ONLINE</span><h2>Entrar na conta</h2>'+
+   '<p class="subtext">Use sua conta para jogar com os amigos.</p></div>'+
+   (message?'<p class="auth-success" id="authNotice" role="status">'+ESC(message)+'</p>':'')+
+   input('emailOn','E-mail','email',email,'autocomplete="email" inputmode="email"')+
+   input('passwordOn','Senha','password','','autocomplete="current-password"')+
+   btn('loginOn','ENTRAR')+
+   '<div class="auth-actions"><p class="small muted">Ainda não tem uma conta?</p>'+
+   btn('signupOn','CRIAR CONTA','secondary')+
+   btn('recoverOn','Esqueci minha senha','ghost')+'</div>'+
+   '<p id="onlineError" class="error" role="alert"></p></section>';
   $('loginOn').onclick=()=>this.authAction(async()=>{
-    const email=$('emailOn').value.trim().toLowerCase(),pwd=$('passwordOn').value;
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe um e-mail válido.');
-    if(!pwd)throw new Error('Digite sua senha.');
-    await this.cloud.signIn(email,pwd);
-    this.home();
+   const email=$('emailOn').value.trim().toLowerCase(),pwd=$('passwordOn').value;
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe um e-mail válido.');
+   if(!pwd)throw new Error('Digite sua senha.');
+   await this.cloud.signIn(email,pwd);
+   this.home();
   });
-  $('signupOn').onclick=()=>this.authAction(async()=>{
-    const email=$('emailOn').value.trim().toLowerCase(),pwd=$('passwordOn').value;
-    const nick=$('nickOn').value.trim();
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe um e-mail válido.');
-    if(pwd.length<8)throw new Error('Para criar uma conta, escolha uma senha com pelo menos 8 caracteres.');
-    if(nick.length<2||nick.length>28)throw new Error('Escolha um apelido com 2 a 28 caracteres.');
-    if(nick.toLowerCase().replace(/\s+/g,'')==='zero')throw new Error('O apelido Zero está reservado.');
-    const r=await this.cloud.signUp(email,pwd,nick);
-    if(r?.access_token){this.cloud.setSession(r);this.home();}
-    else this.note('Solicitação recebida. Se o cadastro for aceito, verifique seu e-mail para confirmar. Não crie outra conta repetidamente.');
+  $('signupOn').onclick=()=>this.signup($('emailOn').value.trim());
+  $('recoverOn').onclick=()=>this.recover($('emailOn').value.trim());
+  this.authEnter(['emailOn','passwordOn'],'loginOn');
+ }
+ signup(prefilledEmail=''){
+  this.currentPage='signup';this.header('Criar conta');
+  this.app.innerHTML='<section class="card auth-card">'+
+   '<div class="auth-intro"><span class="eyebrow">NOVA CONTA</span><h2>Crie sua conta</h2>'+
+   '<p class="subtext">Escolha um apelido, informe seu e-mail e crie uma senha para jogar online.</p></div>'+
+   input('signupNickOn','Apelido público','text','','autocomplete="nickname" maxlength="28"')+
+   input('signupEmailOn','E-mail','email',prefilledEmail,'autocomplete="email" inputmode="email"')+
+   input('signupPassOn','Senha (mínimo 8 caracteres)','password','','autocomplete="new-password" minlength="8"')+
+   input('signupConfirmOn','Confirmar senha','password','','autocomplete="new-password" minlength="8"')+
+   '<p class="small muted">A confirmação por e-mail pode ser necessária antes do primeiro acesso.</p>'+
+   btn('signupSubmitOn','CRIAR MINHA CONTA')+
+   btn('signupBackOn','← Voltar para entrar','ghost')+
+   '<p id="onlineError" class="error" role="alert"></p></section>';
+  $('signupBackOn').onclick=()=>this.login($('signupEmailOn').value.trim());
+  $('signupSubmitOn').onclick=()=>this.authAction(async()=>{
+   const email=$('signupEmailOn').value.trim().toLowerCase();
+   const nick=$('signupNickOn').value.trim(),pwd=$('signupPassOn').value;
+   if(nick.length<2||nick.length>28)throw new Error('Escolha um apelido com 2 a 28 caracteres.');
+   if(nick.toLowerCase().replace(/\s+/g,'')==='zero')throw new Error('O apelido Zero está reservado.');
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe um e-mail válido.');
+   if(pwd.length<8)throw new Error('Escolha uma senha com pelo menos 8 caracteres.');
+   if(pwd!==$('signupConfirmOn').value)throw new Error('As senhas não conferem.');
+   const r=await this.cloud.signUp(email,pwd,nick);
+   if(r?.access_token){this.cloud.setSession(r);this.home();}
+   else this.login(email,'Solicitação de cadastro recebida. Verifique seu e-mail e confirme a conta antes de entrar. Se a mensagem não chegar, confira o spam.');
   });
-  $('recoverOn').onclick=()=>this.authAction(async()=>{
-    const email=$('emailOn').value.trim().toLowerCase();
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe seu e-mail antes de recuperar.');
-    await this.cloud.recover(email);
-    this.note('Se este endereço estiver cadastrado e o servidor puder enviar mensagens, você receberá um link. Não solicite várias vezes.');
+  this.authEnter(['signupNickOn','signupEmailOn','signupPassOn','signupConfirmOn'],'signupSubmitOn');
+ }
+ recover(prefilledEmail=''){
+  this.currentPage='recover';this.header('Recuperar senha');
+  this.app.innerHTML='<section class="card auth-card">'+
+   '<div class="auth-intro"><span class="eyebrow">RECUPERAÇÃO</span><h2>Esqueceu sua senha?</h2>'+
+   '<p class="subtext">Informe o e-mail da conta. Enviaremos um link para redefinir a senha.</p></div>'+
+   input('recoverEmailOn','E-mail cadastrado','email',prefilledEmail,'autocomplete="email" inputmode="email"')+
+   btn('recoverSubmitOn','ENVIAR LINK DE RECUPERAÇÃO')+
+   btn('recoverBackOn','← Voltar para entrar','ghost')+
+   '<p id="onlineError" class="error" role="alert"></p><p id="onlineInfo" class="subtext" role="status"></p></section>'+
+   '<section class="card auth-card"><h3>O link do e-mail não abre?</h3>'+
+   '<p class="subtext">Copie o endereço original recebido no e-mail e cole abaixo para confirmar a conta ou recuperar o acesso.</p>'+
+   '<div class="field"><label for="emailLinkOn">Link original de confirmação ou recuperação</label>'+
+   '<textarea id="emailLinkOn" rows="3" autocapitalize="off" spellcheck="false"></textarea></div>'+
+   btn('checkEmailLinkOn','VALIDAR LINK DO E-MAIL','secondary')+
+   '<p class="small muted">O link é secreto. Nunca compartilhe com outras pessoas.</p></section>';
+  $('recoverBackOn').onclick=()=>this.login($('recoverEmailOn').value.trim());
+  $('recoverSubmitOn').onclick=()=>this.authAction(async()=>{
+   const email=$('recoverEmailOn').value.trim().toLowerCase();
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))throw new Error('Informe um e-mail válido.');
+   await this.cloud.recover(email);
+   this.note('Se este endereço estiver cadastrado e o envio estiver funcionando, chegará um link por e-mail. Confira também o spam.');
   });
-  const fallback=document.createElement('section');
-  fallback.className='card';
-  fallback.innerHTML='<h3>O link do e-mail não abre?</h3>'+
-    '<p class="subtext">No e-mail, pressione o botão e escolha “Copiar endereço do link”. Cole-o abaixo para confirmar sua conta ou recuperar seu acesso sem abrir o site com erro.</p>'+
-    '<div class="field"><label for="emailLinkOn">Link original de confirmação ou recuperação</label>'+
-    '<textarea id="emailLinkOn" rows="3" style="width:100%;box-sizing:border-box" autocapitalize="off" spellcheck="false"></textarea></div>'+
-    '<button class="btn secondary" type="button" id="checkEmailLinkOn">VALIDAR LINK DO E-MAIL</button>'+
-    '<p class="small muted">Este link é secreto. Não compartilhe com outras pessoas.</p>';
-  this.app.appendChild(fallback);
   $('checkEmailLinkOn').onclick=()=>this.authAction(async()=>{
-    const original=$('emailLinkOn').value.trim();
-    if(!original)throw new Error('Cole o endereço original do e-mail.');
-    const result=await this.cloud.verifyEmailLink(original);
-    const input=$('emailLinkOn');if(input)input.value='';
-    if(result.type==='recovery'&&result.loggedIn)this.showRecoveryForm();
-    else if(result.loggedIn)this.home();
-    else this.note('E-mail confirmado! Você já pode entrar.');
+   const original=$('emailLinkOn').value.trim();
+   if(!original)throw new Error('Cole o endereço original do e-mail.');
+   const result=await this.cloud.verifyEmailLink(original);
+   $('emailLinkOn').value='';
+   if(result.type==='recovery'&&result.loggedIn)this.showRecoveryForm();
+   else if(result.loggedIn)this.home();
+   else this.login($('recoverEmailOn').value.trim(),'Link validado. Tente entrar na sua conta.');
   });
+  this.authEnter(['recoverEmailOn'],'recoverSubmitOn');
  }
  async publicRooms(){this.currentPage='public';this.header('Salas públicas');
   this.app.innerHTML=`<section class="card"><h2>Partidas esperando jogadores</h2><p class="subtext">Você pode entrar numa sala com vagas ou criar a sua.</p>
