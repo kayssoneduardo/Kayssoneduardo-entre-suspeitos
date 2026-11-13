@@ -1,0 +1,28 @@
+name: Verificar site publico Entre Suspeitos
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/verificar-site-publicado.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confirmar site iPhone e PC no Supabase
+        run: |
+          set -euo pipefail
+          SITE="https://lvnhwfctursuduboovub.supabase.co/functions/v1/entre-suspeitos-web"
+          curl --fail --location --retry 3 --max-time 40 --silent --show-error "$SITE" -o /tmp/es_index.html
+          grep -q 'ENTRE SUSPEITOS' /tmp/es_index.html
+          grep -q '<base href=' /tmp/es_index.html
+          curl --fail --location --retry 3 --max-time 40 --silent --show-error "$SITE/online.js" -o /tmp/es_online.js
+          curl --fail --location --retry 3 --max-time 40 --silent --show-error "$SITE/server-config.js" -o /tmp/es_server-config.js
+          curl --fail --location --retry 3 --max-time 40 --silent --show-error "$SITE/words.js" -o /tmp/es_words.js
+          node --check /tmp/es_online.js
+          node --check /tmp/es_server-config.js
+          grep -q 'MIN=3' /tmp/es_online.js
+          grep -q 'sb_publishable_' /tmp/es_server-config.js
+          test "$(grep -o '"w":' /tmp/es_words.js | wc -l)" -eq 1322
+          echo "SITE ONLINE DISPONIVEL: $SITE"
