@@ -2,7 +2,7 @@
 
 ## Jogue pelo navegador (Web V7.1)
 
-**Site público:** https://rawcdn.githack.com/kayssoneduardo/Kayssoneduardo-entre-suspeitos/3bf924b2e26ef99005a281d96538e691524094b7/web/index.html
+**Site público:** https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos/
 
 - iPhone: abrir no Safari; nenhum APK necessário.
 - Computador: abrir no Chrome, Edge, Firefox ou Safari.
@@ -25,8 +25,8 @@
 
 ### Código e hospedagem
 - Código estático gerado em `web/` pelo workflow `publicar-site-v7.yml` a partir do projeto web original.
-- A publicação via GitHub Pages exige ativar Pages em `Settings > Pages` (o primeiro deploy retornou 404). É a hospedagem de longo prazo recomendada.
-- O **link público provisório usa RawGitHack CDN** para apresentar o HTML corretamente; ele carrega apenas arquivos públicos versionados no GitHub, enquanto login e partidas continuam no Supabase. O link antigo do Supabase agora redireciona para essa página. Essa hospedagem de terceiros não tem garantia de disponibilidade; migrar para GitHub Pages assim que for habilitado.
+- **GitHub Pages está ativado e publicado**. Compilação e teste HTTP concluídos: https://github.com/kayssoneduardo/Kayssoneduardo-entre-suspeitos/actions/runs/43338419581
+- O site oficial gratuito está em **GitHub Pages**. Supabase permanece como backend online; o endereço anterior redireciona para o Pages.
 - O teste automatizado HTTP/HTTPS está em `.github/workflows/verificar-site-publicado.yml`.
 - Código Android/Flutter e acompanhamento da V7: [issue #1](https://github.com/kayssoneduardo/Kayssoneduardo-entre-suspeitos/issues/1).
 
