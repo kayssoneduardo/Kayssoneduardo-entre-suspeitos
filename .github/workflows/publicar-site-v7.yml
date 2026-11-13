@@ -5,6 +5,7 @@ on:
     paths:
       - 'v7_pending/scripts/patch_web_v7.py'
       - 'web/**'
+      - 'v7_pending/tests/**'
       - '.github/workflows/publicar-site-v7.yml'
 permissions:
   contents: write
@@ -53,6 +54,7 @@ jobs:
         run: |
           set -euo pipefail
           for f in web/*.js; do node --check "$f"; done
+          node v7_pending/tests/web_auth_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
