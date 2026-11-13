@@ -335,6 +335,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
 String _friendly(String s) {
   final text = s.toLowerCase();
+  if (text.contains('error sending confirmation email') || text.contains('unexpected_failure') || text.contains('535 5.7.8') || text.contains('authentication failed') || text.contains('smtp')) {
+    return 'Falha no servidor de e-mail do Entre Suspeitos. Não foi possível concluir o cadastro ou enviar a confirmação. A administração precisa corrigir a autenticação SMTP. Tente novamente após a correção.';
+  }
   if (text.contains('expired') || text.contains('invalid token')) return 'Este link expirou ou já foi utilizado. Solicite outro e-mail.';
   if (text.contains('rate limit')) return 'Muitas tentativas em pouco tempo. Aguarde e tente novamente.';
   if (text.contains('already registered')) return 'Este e-mail já está cadastrado. Entre ou recupere sua senha.';
