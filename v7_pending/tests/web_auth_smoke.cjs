@@ -70,9 +70,9 @@ const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
   const topbar={hidden:false,set innerHTML(v){addIds(v);}};
   context.document={getElementById:id=>elements.get(id)||null};
   const ui=new OnlineUI();ui.app=app;ui.topbar=topbar;
-  const calls=[];
+  const signupCalls=[];
   ui.cloud={
-   signUp:async(...a)=>{calls.push(a);return {};},
+   signUp:async(...a)=>{signupCalls.push(a);return {};},
    recover:async()=>{},
    signIn:async()=>{},
    setSession:()=>{}
@@ -91,7 +91,7 @@ const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
   elements.get('signupPassOn').value='senhaSegura123';
   elements.get('signupConfirmOn').value='senhaSegura123';
   await elements.get('signupSubmitOn').onclick();
-  assert.equal(calls.length,1);
+  assert.equal(signupCalls.length,1);
   assert.equal(ui.currentPage,'login');
   assert.match(app.html,/Verifique seu e-mail/);
   assert.match(app.html,/value="novo@example.com"/);
