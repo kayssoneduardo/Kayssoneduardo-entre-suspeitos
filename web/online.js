@@ -230,9 +230,9 @@ class OnlineUI{
  login(){this.currentPage='login';this.header('Sua conta');
   this.app.innerHTML=`<section class="card"><h2>Entrar no Entre Suspeitos</h2><p class="subtext">O modo online exige conta. O offline continua livre.</p>
   ${input('emailOn','E-mail','email','','autocomplete="email"')}${input('passwordOn','Senha','password','','autocomplete="current-password"')}
-  <div id="nickWrap" hidden>${input('nickOn','Apelido público','text','','maxlength="28"')}</div>
+  <div id="nickWrap"><p class="small muted">Para criar uma conta, informe seu apelido. Para entrar em uma conta existente, o apelido não é necessário.</p>${input('nickOn','Apelido público','text','','maxlength="28"')}</div>
   ${btn('loginOn','Entrar')}${btn('signupOn','Criar conta','secondary')}${btn('recoverOn','Recuperar senha','ghost')}
-  ${btn('facebookOn','Entrar pelo Facebook (configuração adicional)','secondary')}${btn('serverOnLogin','Alterar endereço do servidor','ghost')}
+  <p class="small muted">Os cadastros exigem confirmação de e-mail. Se o servidor informar que atingiu o limite de envios, não repita a solicitação.</p>
   <p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p></section>`;
   $('loginOn').onclick=async()=>{try{await this.cloud.signIn($('emailOn').value.trim(),$('passwordOn').value);this.home();}catch(e){this.error(e);}};
   $('signupOn').onclick=async()=>{try{const nick=$('nickOn')?.value.trim()||'';
@@ -242,7 +242,6 @@ class OnlineUI{
    if(r?.access_token){this.cloud.setSession(r);this.home();}else this.note('Conta criada! Confirme seu e-mail e depois toque em Entrar.');
   }catch(e){this.error(e);}};
   $('recoverOn').onclick=async()=>{try{const email=$('emailOn').value.trim();if(!email)return this.error('Informe seu e-mail.');await this.cloud.recover(email);this.note('Se o endereço estiver cadastrado, receberá um e-mail de recuperação.');}catch(e){this.error(e);}};
-  $('facebookOn').onclick=()=>this.note('Facebook: habilite o provedor no Supabase e configure o retorno OAuth para Android. O login por e-mail já está disponível.');
   const fallback=document.createElement('section');
   fallback.className='card';
   fallback.innerHTML='<h3>O link do e-mail não abre?</h3>'+
@@ -266,7 +265,6 @@ class OnlineUI{
       else this.note('E-mail confirmado. Use o botão Entrar.');
     }catch(e){this.error(e);}
   };
-  $('serverOnLogin').onclick=()=>this.setup();
  }
  async publicRooms(){this.currentPage='public';this.header('Salas públicas');
   this.app.innerHTML=`<section class="card"><h2>Partidas esperando jogadores</h2><p class="subtext">Você pode entrar numa sala com vagas ou criar a sua.</p>
