@@ -196,6 +196,37 @@ class OnlineUI{
   $('serverOn').onclick=()=>{this.cloud.session=null;save('session',null);this.setup();};
   $('logout').onclick=async()=>{try{await this.cloud.signOut();this.login();}catch(e){this.error(e);}};
  }
+ async authAction(fn){
+  if(this.authBusy)return;
+  this.authBusy=true;
+  for(const id of ['loginOn','signupOn','recoverOn','checkEmailLinkOn']){
+   const el=$(id);if(el)el.disabled=true;
+  }
+  try{await fn();}catch(e){this.error(e);}
+  finally{
+   this.authBusy=false;
+   for(const id of ['loginOn','signupOn','recoverOn','checkEmailLinkOn']){
+    const el=$(id);if(el)el.disabled=false;
+   }
+  }
+ }
+ showRecoveryForm(){
+  this.currentPage='reset';
+  this.header('Definir nova senha');
+  this.app.innerHTML='<section class="card"><h2>Recuperar sua conta</h2><p class="subtext">Link confirmado. Digite uma senha nova com pelo menos 8 caracteres.</p>'+
+    '<div class="field"><label for="newPassOn">Nova senha</label><input id="newPassOn" type="password" minlength="8" autocomplete="new-password"></div>'+
+    '<div class="field"><label for="confirmPassOn">Confirmar senha</label><input id="confirmPassOn" type="password" minlength="8" autocomplete="new-password"></div>'+
+    '<button class="btn" type="button" id="saveNewPassOn">SALVAR NOVA SENHA</button><p id="onlineError" class="error"></p></section>';
+  $('saveNewPassOn').onclick=async()=>{
+    const pwd=$('newPassOn').value;
+    if(pwd.length<8)return this.error('A senha deve conter pelo menos 8 caracteres.');
+    if(pwd!==$('confirmPassOn').value)return this.error('As senhas não conferem.');
+    const button=$('saveNewPassOn');button.disabled=true;
+    try{await this.cloud.request('/auth/v1/user','PUT',{password:pwd});this.home();}
+    catch(e){this.error(e);}
+    finally{if(button.isConnected)button.disabled=false;}
+  };
+ }
  login(){this.currentPage='login';this.header('Sua conta');
   this.app.innerHTML=`<section class="card"><h2>Entrar no Entre Suspeitos</h2><p class="subtext">O modo online exige conta. O offline continua livre.</p>
   ${input('emailOn','E-mail','email','','autocomplete="email"')}${input('passwordOn','Senha','password','','autocomplete="current-password"')}
