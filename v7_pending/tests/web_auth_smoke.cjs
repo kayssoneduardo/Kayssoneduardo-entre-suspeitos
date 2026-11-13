@@ -23,7 +23,7 @@ const window={
 };
 const context={window,localStorage,URL,URLSearchParams,Date,Math,Number,String,Map,Set,Error,JSON,console};
 vm.runInNewContext(source,context,{filename:'online.js'});
-const {Cloud,prettyError}=window.__ES_TEST__;
+const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
 (async()=>{
   const rate=Error('email rate limit exceeded');
   rate.code='over_email_send_rate_limit';rate.status=429;
@@ -55,5 +55,54 @@ const {Cloud,prettyError}=window.__ES_TEST__;
   assert.match(source,/if\(this\.authBusy\)return;/);
   assert.match(source,/showRecoveryForm\(\)/);
   assert.match(source,/checkEmailLinkOn/);
+
+  // Teste do fluxo visual sem navegador real: telas e retornos separados.
+  const elements=new Map();
+  const addIds=html=>{
+   for(const m of html.matchAll(/id="([^"]+)"[^>]*>/g)){
+    if(!elements.has(m[1]))elements.set(m[1],{value:'',disabled:false,isConnected:true,
+      addEventListener:()=>{},click(){return this.onclick?.();}});
+    const el=elements.get(m[1]);
+    const value=/value="([^"]*)"/.exec(m[0]);el.value=value?value[1]:'';
+   }
+  };
+  const app={html:'',set innerHTML(v){this.html=v;addIds(v);},get innerHTML(){return this.html;},appendChild:()=>{}};
+  const topbar={hidden:false,set innerHTML(v){addIds(v);}};
+  context.document={getElementById:id=>elements.get(id)||null};
+  const ui=new OnlineUI();ui.app=app;ui.topbar=topbar;
+  const calls=[];
+  ui.cloud={
+   signUp:async(...a)=>{calls.push(a);return {};},
+   recover:async()=>{},
+   signIn:async()=>{},
+   setSession:()=>{}
+  };
+  ui.login();
+  assert.equal(ui.currentPage,'login');
+  assert.match(app.html,/Entrar na conta/);
+  assert.doesNotMatch(app.html,/Apelido público|Confirmar senha/);
+  elements.get('signupOn').onclick();
+  assert.equal(ui.currentPage,'signup');
+  assert.match(app.html,/Apelido público/);
+  assert.match(app.html,/Confirmar senha/);
+  assert.doesNotMatch(app.html,/id="loginOn"/);
+  elements.get('signupNickOn').value='JogadorNovo';
+  elements.get('signupEmailOn').value='novo@example.com';
+  elements.get('signupPassOn').value='senhaSegura123';
+  elements.get('signupConfirmOn').value='senhaSegura123';
+  await elements.get('signupSubmitOn').onclick();
+  assert.equal(calls.length,1);
+  assert.equal(ui.currentPage,'login');
+  assert.match(app.html,/Verifique seu e-mail/);
+  assert.match(app.html,/value="novo@example.com"/);
+  elements.get('recoverOn').onclick();
+  assert.equal(ui.currentPage,'recover');
+  assert.match(app.html,/Esqueceu sua senha/);
+  assert.match(app.html,/id="checkEmailLinkOn"/);
+  assert.doesNotMatch(app.html,/id="signupSubmitOn"/);
+  elements.get('recoverBackOn').onclick();
+  assert.equal(ui.currentPage,'login');
+  console.log('PASSOU: telas independentes, cadastro concluído redireciona ao login e recuperação retorna ao login.');
+
   console.log('PASSOU: limitações de e-mail, cadastro, recuperação, callback e bloqueio de cliques duplicados.');
 })().catch(e=>{console.error(e);process.exit(1);});
