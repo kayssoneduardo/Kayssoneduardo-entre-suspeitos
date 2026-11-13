@@ -18,6 +18,8 @@ function prettyError(e){
  const t=String(e?.message||e||'Erro desconhecido');
  if(e?.status===429||code==='over_email_send_rate_limit'||t.toLowerCase().includes('email rate limit'))
   return 'O servidor atingiu o limite de envio de e-mails. O cadastro NÃO foi concluído. Aguarde a liberação do serviço ou a configuração de um provedor de e-mail para o jogo. Não tente repetidamente.';
+ if(code==='unexpected_failure' && /confirmation|email|smtp|authentication failed/i.test(t) || /error sending confirmation email|535 5\.7\.8/i.test(t))
+  return 'O servidor de e-mail do Entre Suspeitos está com falha de autenticação SMTP. O cadastro não foi concluído. A administração precisa corrigir a senha SMTP; tente novamente após a correção.';
  if(code==='email_address_not_authorized')return 'O servidor de e-mail do jogo ainda não permite enviar mensagens para este endereço. Configure o SMTP antes de continuar.';
  if(code==='invalid_credentials'||t.includes('Invalid login credentials'))
   return 'E-mail ou senha incorretos, ou conta ainda não criada. Confira o cadastro antes de tentar novamente.';
