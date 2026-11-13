@@ -16,6 +16,31 @@ jobs:
       url: https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos/
     steps:
       - uses: actions/checkout@v4
+      - name: Verificar e tentar ativar o GitHub Pages gratuitamente
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          API="https://api.github.com/repos/${GITHUB_REPOSITORY}/pages"
+          HEADERS=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28")
+          CODE=$(curl -sS -o /tmp/pages-get.json -w '%{http_code}' "${HEADERS[@]}" "$API")
+          if [ "$CODE" = "200" ]; then
+            echo "GitHub Pages já ativado."
+          elif [ "$CODE" = "404" ]; then
+            echo "Tentando habilitar Pages diretamente..."
+            POST=$(curl -sS -o /tmp/pages-post.json -w '%{http_code}' -X POST "${HEADERS[@]}" \
+              -H "Content-Type: application/json" -d '{"build_type":"workflow"}' "$API")
+            if [ "$POST" != "201" ] && [ "$POST" != "409" ]; then
+              echo "Pages precisa de autorização do proprietário (HTTP $POST)."
+              echo "Abrir: https://github.com/${GITHUB_REPOSITORY}/settings/pages"
+              echo "Em Build and deployment > Source, escolher GitHub Actions."
+              exit 1
+            fi
+            echo "GitHub Pages ativado!"
+          else
+            echo "Falha ao consultar Pages (HTTP $CODE)."
+            exit 1
+          fi
       - name: Extrair o cliente Web V4 completo
         shell: bash
         run: |
