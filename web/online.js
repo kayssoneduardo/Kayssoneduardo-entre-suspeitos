@@ -41,7 +41,7 @@ class Cloud{
   let response;
   try{response=await fetch(this.url+path,{method,headers,body:data===null?undefined:JSON.stringify(data),cache:'no-store'});}catch{throw new Error('Falha de conexão. Verifique sua internet e o endereço do Supabase.');}
   let json;const text=await response.text();try{json=text?JSON.parse(text):null;}catch{json=text;}
-  if(!response.ok)throw new Error(json?.message||json?.msg||json?.error_description||json?.error||`Erro ${response.status}`);
+  if(!response.ok){const e=new Error(json?.message||json?.msg||json?.error_description||json?.error||('Erro '+response.status));e.status=response.status;e.code=json?.code||json?.error_code||'';throw e;}
   return json;
  }
  async refreshIfNeeded(){
@@ -54,8 +54,8 @@ class Cloud{
  }
  setSession(data){this.session={...data,expires_at:data.expires_at||(Math.floor(Date.now()/1000)+data.expires_in)};save('session',this.session);}
  async signIn(email,password){const r=await this.request('/auth/v1/token?grant_type=password','POST',{email,password},false);this.setSession(r);return r;}
- async signUp(email,password,nickname){return this.request('/auth/v1/signup','POST',{email,password,data:{nickname}},false);}
- async recover(email){return this.request('/auth/v1/recover','POST',{email},false);}
+ async signUp(email,password,nickname){const redir=window.location.origin+window.location.pathname;return this.request('/auth/v1/signup?redirect_to='+encodeURIComponent(redir),'POST',{email,password,data:{nickname}},false);}
+ async recover(email){const redir=window.location.origin+window.location.pathname;return this.request('/auth/v1/recover?redirect_to='+encodeURIComponent(redir),'POST',{email},false);}
  async verifyEmailLink(value){
   let uri;
   try{uri=new URL(value.trim());}catch{throw new Error('Cole o endereço completo recebido no e-mail.');}
