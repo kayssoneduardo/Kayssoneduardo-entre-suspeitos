@@ -13,7 +13,21 @@ const btn=(id,txt,cls='')=>`<button type="button" class="btn ${cls}" id="${id}">
 const save=(k,v)=>{try{localStorage.setItem(PREFIX+k,JSON.stringify(v));}catch{}};
 const load=k=>{try{return JSON.parse(localStorage.getItem(PREFIX+k));}catch{return null;}};
 function etext(msg){return ESC(msg instanceof Error?msg.message:msg);}
-function prettyError(e){let t=String(e?.message||e||'Erro desconhecido');return t.replace('Invalid login credentials','E-mail ou senha incorretos').replace('Email not confirmed','Confirme seu e-mail antes de entrar').replace('Failed to fetch','Falha na conexão com o servidor').replace('User already registered','Esse e-mail já está cadastrado');}
+function prettyError(e){
+ const code=String(e?.code||'').toLowerCase();
+ const t=String(e?.message||e||'Erro desconhecido');
+ if(e?.status===429||code==='over_email_send_rate_limit'||t.toLowerCase().includes('email rate limit'))
+  return 'O servidor atingiu o limite de envio de e-mails. O cadastro NÃO foi concluído. Aguarde a liberação do serviço ou a configuração de um provedor de e-mail para o jogo. Não tente repetidamente.';
+ if(code==='email_address_not_authorized')return 'O servidor de e-mail do jogo ainda não permite enviar mensagens para este endereço. Configure o SMTP antes de continuar.';
+ if(code==='invalid_credentials'||t.includes('Invalid login credentials'))
+  return 'E-mail ou senha incorretos, ou conta ainda não criada. Confira o cadastro antes de tentar novamente.';
+ if(code==='email_not_confirmed'||t.includes('Email not confirmed'))
+  return 'Confirme seu e-mail antes de entrar. Se o link não abrir, use a opção de colar o link recebido.';
+ if(code==='user_already_exists'||t.includes('User already registered'))return 'Este e-mail já está cadastrado. Entre ou recupere sua senha.';
+ if(code==='over_request_rate_limit')return 'Muitas tentativas seguidas. Aguarde alguns minutos e tente novamente.';
+ if(t.includes('Failed to fetch'))return 'Falha de conexão com o servidor. Verifique a internet.';
+ return t;
+}
 function seconds(end){return Math.max(0,Math.ceil((new Date(end).getTime()-Date.now())/1000));}
 function countdown(end){const s=seconds(end);return `${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;}
 function pill(s){return `<span class="pill">${ESC(s)}</span>`;}
