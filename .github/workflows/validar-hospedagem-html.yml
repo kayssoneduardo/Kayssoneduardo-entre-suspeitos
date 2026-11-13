@@ -1,0 +1,33 @@
+name: Validar hospedagem HTML alternativa
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/validar-hospedagem-html.yml'
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar resposta HTML real, CSS, JS e Supabase
+        run: |
+          set -euo pipefail
+          SHA="3bf924b2e26ef99005a281d96538e691524094b7"
+          URL="https://rawcdn.githack.com/kayssoneduardo/Kayssoneduardo-entre-suspeitos/$SHA/web"
+          echo "Endereço web: $URL/index.html"
+          for f in index.html style.css app.js online.js words.js server-config.js; do
+            echo "Verificando $f"
+            curl --fail --show-error --silent --location --retry 3 --max-time 50 \
+              -D "/tmp/h-$f" -o "/tmp/b-$f" "$URL/$f"
+            cat "/tmp/h-$f" | grep -i '^content-type:'
+          done
+          grep -qiE '^content-type: *text/html' /tmp/h-index.html
+          grep -qiE '^content-type: *text/css' /tmp/h-style.css
+          grep -qiE '^content-type: *(application|text)/javascript' /tmp/h-app.js
+          grep -q 'ENTRE SUSPEITOS' /tmp/b-index.html
+          grep -q 'MIN=3' /tmp/b-online.js
+          grep -q 'sb_publishable_' /tmp/b-server-config.js
+          test "$(grep -o '"w":' /tmp/b-words.js | wc -l)" -eq 1322
+          echo "HTML RENDERIZAVEL - TODOS OS ASSETS PRESENTES"
