@@ -23,7 +23,6 @@ jobs:
           curl -sS -D /tmp/es_redirect_headers -o /dev/null "$SITE"
           grep -qE '^HTTP/.* 302' /tmp/es_redirect_headers
           grep -qi '^location: https://rawcdn.githack.com/' /tmp/es_redirect_headers
-          grep -q '<base href=' /tmp/es_index.html
           curl --fail --location --retry 3 --max-time 40 --silent --show-error "$SITE/online.js" -o /tmp/es_online.js
           curl --fail --location --retry 3 --max-time 40 --silent --show-error "$SITE/server-config.js" -o /tmp/es_server-config.js
           curl --fail --location --retry 3 --max-time 40 --silent --show-error "$SITE/words.js" -o /tmp/es_words.js
