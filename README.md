@@ -1,3 +1,38 @@
+# Entre Suspeitos — Android, iPhone e computador
+
+## Jogue pelo navegador (Web V7.1)
+
+**Site público:** https://lvnhwfctursuduboovub.supabase.co/functions/v1/entre-suspeitos-web
+
+- iPhone: abrir no Safari; nenhum APK necessário.
+- Computador: abrir no Chrome, Edge, Firefox ou Safari.
+- Android: usar o APK V7 ou o site no navegador.
+- **As contas e salas online são compartilhadas** porque o site e o APK utilizam o mesmo projeto Supabase.
+- As salas começam com **3 pessoas prontas** (1 impostor para grupo de 3); partidas maiores seguem o limite de configuração no servidor.
+- **1.322 palavras, 12 categorias**, nos modos offline e online.
+
+### Como jogar juntos
+1. Cada pessoa abre o site ou instala o APK Android.
+2. Entre em **Jogar online** e faça login com sua conta.
+3. Uma pessoa escolhe **Criar sala**, decide as regras e copia o código.
+4. Os demais selecionam **Entrar com código** e digitam o mesmo código.
+5. Quando todos marcarem **Estou pronto**, o anfitrião inicia a partida.
+
+### Atenções técnicas
+- **Áudio integrado é experimental.** É necessário permitir o microfone no Safari/Chrome/Android. Redes com NAT restritivo podem precisar de TURN; ainda não houve teste de voz cruzando todas as plataformas.
+- **Confirmação de e-mail:** o redirecionamento automático do Supabase pode depender da autorização da URL. O site tem um campo para colar o link original do e-mail e verificar a conta diretamente. Nunca compartilhe o link de confirmação com outros.
+- A versão web foi construída a partir do cliente HTML anterior, atualizada para o mesmo backend do Flutter. Alguns detalhes do layout e funções podem divergir da V7 Android; a paridade visual completa ainda está em andamento.
+
+### Código e hospedagem
+- Código estático gerado em `web/` pelo workflow `publicar-site-v7.yml` a partir do projeto web original.
+- A publicação via GitHub Pages exige ativar Pages em `Settings > Pages` (o primeiro deploy retornou 404).
+- O **site público em produção atualmente é uma Edge Function do Supabase**, que entrega os assets públicos versionados no repositório.
+- O teste automatizado HTTP/HTTPS está em `.github/workflows/verificar-site-publicado.yml`.
+- Código Android/Flutter e acompanhamento da V7: [issue #1](https://github.com/kayssoneduardo/Kayssoneduardo-entre-suspeitos/issues/1).
+
+---
+
+## Histórico
 # Entre Suspeitos — Android offline (protótipo)
 
 Protótipo offline para jogar passando um único celular de mão em mão.
