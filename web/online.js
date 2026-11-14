@@ -359,7 +359,8 @@ class OnlineUI{
    try{if(Date.now()-lastPing>9000){await this.cloud.rpc('es_touch',{p_room:this.roomId});lastPing=Date.now();}
     await this.refresh();}catch(e){this.error(e);}
   },2200);
-  this.tickTimer=setInterval(()=>{const c=$('timerOnline');if(c&&this.room?.phaseEnds){const remaining=seconds(this.room.phaseEnds);c.textContent=countdown(this.room.phaseEnds);
+  this.tickTimer=setInterval(()=>{const c=$('timerOnline');if(c&&this.room?.phaseEnds){const remaining=seconds(this.room.phaseEnds);const reveal=this.room.status==='discussion'&&this.room.revealEnds&&seconds(this.room.revealEnds)>0;c.textContent=countdown(reveal?this.room.revealEnds:this.room.phaseEnds);
+   if(this.room.status==='discussion'&&this.showingReveal&&!reveal){this.showingReveal=false;this.renderRoom(this.room);}
    if(remaining===0&&this.room.status==='discussion'&&this.lastPhase==='discussion'&&!this.timerPlayed){this.sound('timer');this.timerPlayed=true;}
   }},300);
  }
@@ -369,7 +370,7 @@ class OnlineUI{
    if(r.status==='voting'){await this.cloud.rpc('es_finalize',{p_room:this.roomId}).catch(()=>{});}
    const sig=JSON.stringify(r);if(sig!==this.lastFingerprint){
     // Evita apagar uma carta revelada ou um formulário enquanto o usuário interage.
-    if(this.app.querySelector('.card-reveal.revealed')||this.app.querySelector('.online-editing'))return;
+    if((this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))||this.app.querySelector('.online-editing'))return;
     this.lastFingerprint=sig;this.renderRoom(r);}
    if(this.voice)this.voice.update(r.players).catch(e=>{this.voice.error=prettyError(e);});
   }catch(e){this.error(e);}finally{this.refreshing=false;}
@@ -391,15 +392,16 @@ class OnlineUI{
    ${owner?`${btn('editRules','Alterar regras','secondary')}${btn('inviteFriends','Convidar amigos','secondary')}${btn('startOn','INICIAR PARTIDA')}`:''}
    <p class="small muted">${allReady&&validImps?'Todos prontos: partida liberada.':!validImps?'Reduza o número de impostores para esta quantidade de jogadores.':'Mínimo de 3 participantes, todos prontos.'}</p></section>`;
   }else if(r.status==='discussion'){
+   const revealing=!!r.revealEnds&&seconds(r.revealEnds)>0;this.showingReveal=revealing;
    const secret=r.me.impostor?'IMPOSTOR':ESC(r.me.word);
    const info=r.me.impostor?[r.me.category?'Categoria: '+r.me.category:'',r.me.hint?'Dica: '+r.me.hint:'',r.me.partners?.length?'Parceiros: '+r.players.filter(x=>r.me.partners.includes(x.id)).map(x=>x.nick).join(', '):''].filter(Boolean).join(' · '):'Categoria: '+r.me.category;
    const first=r.players.find(p=>p.id===r.starter)?.nick||'Sorteado';
-   phase=`<section class="card center"><h2>Discussão por voz</h2><div id="timerOnline" class="countdown">${countdown(r.phaseEnds)}</div><p class="subtext">Quem começa: <b>${ESC(first)}</b>. Quando o tempo acabar, o som avisará, mas a voz continuará ligada.</p>
-   <div id="onlineSecret" class="card-reveal" tabindex="0"><div id="onlineSecretContent"><span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p></div></div>
-   <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Solte a carta para ocultar sua informação.</p></section>`;
+   phase=`<section class="card center"><h2>${revealing?'Veja sua carta':'Discussão por voz'}</h2><div id="timerOnline" class="countdown">${countdown(revealing?r.revealEnds:r.phaseEnds)}</div><p class="subtext">Quem começa: <b>${ESC(first)}</b>. Quando o tempo acabar, o som avisará, mas a voz continuará ligada.</p>
+   ${revealing?`<div id="onlineSecret" class="card-reveal" tabindex="0"><div id="onlineSecretContent"><span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p></div></div>
+   <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Você tem 30 segundos para memorizar sua carta. Solte para ocultar.</p>`:'<p class="notice">Tempo de visualização encerrado. Conversem antes da votação.</p>'}</section>`;
   }else if(r.status==='voting'){
    const myVote=r.me.voted;
-   phase=`<section class="card"><h2>Votação secreta</h2><div id="timerOnline" class="countdown">${countdown(r.phaseEnds)}</div>
+   phase=`<section class="card"><h2>Votação secreta</h2><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
     <p class="subtext">Escolha ${r.impostors} suspeito(s), sem repetir nomes. Os votos dos outros permanecem secretos.</p>
     ${myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check"><input type="checkbox" data-vote="${ESC(p.id)}">${ESC(p.nick)}</label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
     <p id="onlineError" class="error"></p></section>`;
@@ -418,7 +420,7 @@ class OnlineUI{
   if(r.status==='lobby'){
    $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
    if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(allReady&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
-  }else if(r.status==='discussion'){
+  }else if(r.status==='discussion'&&this.showingReveal){
    const card=$('onlineSecret'),content=$('onlineSecretContent');const val=$('onlineSecretValue');
    const hide=()=>{card.classList.remove('revealed');content.innerHTML='<span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p>';};
    const show=e=>{e.preventDefault();if(e.pointerId!==undefined)try{card.setPointerCapture(e.pointerId);}catch{}card.classList.add('revealed');content.innerHTML=`<div class="secret-label">${r.me.impostor?'SUA IDENTIDADE':'SUA PALAVRA'}</div><div class="secret-name ${r.me.impostor?'impostor':''}">${ESC(val.dataset.secret)}</div><p class="secret-detail">${ESC(val.dataset.info)}</p>`;};

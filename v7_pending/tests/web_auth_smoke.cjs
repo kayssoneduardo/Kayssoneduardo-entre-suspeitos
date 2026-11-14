@@ -120,6 +120,18 @@ const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
   assert.equal(elements.get('startOn').disabled,true);
   room.impostors=1;room.players.pop();ui.renderRoom(room);
   assert.equal(elements.get('startOn').disabled,true);
+  context.document.addEventListener=()=>{};ui.sound=()=>{};
+  room.status='discussion';room.me={impostor:false,word:'Gato',category:'Animais'};
+  room.phaseEnds=new Date(Date.now()+210000).toISOString();
+  room.revealEnds=new Date(Date.now()+30000).toISOString();
+  ui.renderRoom(room);assert.match(app.html,/id="onlineSecret"/);
+  room.revealEnds=new Date(Date.now()-1000).toISOString();
+  ui.renderRoom(room);assert.doesNotMatch(app.html,/id="onlineSecret"/);
+  assert.match(app.html,/Tempo de visualização encerrado/);
+  room.status='voting';room.phaseEnds=null;room.me={voted:false};
+  ui.renderRoom(room);assert.doesNotMatch(app.html,/id="timerOnline"/);
+  assert.match(app.html,/Sem limite de tempo/);
+  console.log('PASSOU: carta por 30 segundos e votação sem cronômetro.');
   console.log('PASSOU: início de sala com 3 prontos; bloqueio sem quórum, sem pronto e com impostores excessivos.');
 
   console.log('PASSOU: telas independentes, cadastro concluído redireciona ao login e recuperação retorna ao login.');
