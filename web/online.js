@@ -396,9 +396,9 @@ class OnlineUI{
    const secret=r.me.impostor?'IMPOSTOR':ESC(r.me.word);
    const info=r.me.impostor?[r.me.category?'Categoria: '+r.me.category:'',r.me.hint?'Dica: '+r.me.hint:'',r.me.partners?.length?'Parceiros: '+r.players.filter(x=>r.me.partners.includes(x.id)).map(x=>x.nick).join(', '):''].filter(Boolean).join(' · '):'Categoria: '+r.me.category;
    const first=r.players.find(p=>p.id===r.starter)?.nick||'Sorteado';
-   phase=`<section class="card center"><h2>${revealing?'Veja sua carta':'Discussão por voz'}</h2><div id="timerOnline" class="countdown">${countdown(revealing?r.revealEnds:r.phaseEnds)}</div><p class="subtext">Quem começa: <b>${ESC(first)}</b>. Quando o tempo acabar, o som avisará, mas a voz continuará ligada.</p>
+   phase=`<section class="card center"><h2>${revealing?'Veja sua carta':'Abrindo votação'}</h2><div id="timerOnline" class="countdown">${countdown(revealing?r.revealEnds:r.phaseEnds)}</div><p class="subtext">Quem começa: <b>${ESC(first)}</b>. Após os 30 segundos, a votação abre e vocês podem conversar enquanto votam.</p>
    ${revealing?`<div id="onlineSecret" class="card-reveal" tabindex="0"><div id="onlineSecretContent"><span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p></div></div>
-   <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Você tem 30 segundos para memorizar sua carta. Solte para ocultar.</p>`:'<p class="notice">Tempo de visualização encerrado. Conversem antes da votação.</p>'}</section>`;
+   <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Você tem 30 segundos para memorizar sua carta. Solte para ocultar.</p>`:'<p class="notice">Tempo de visualização encerrado. A votação vai começar.</p>'}</section>`;
   }else if(r.status==='voting'){
    const myVote=r.me.voted;
    phase=`<section class="card"><h2>Votação secreta</h2><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
