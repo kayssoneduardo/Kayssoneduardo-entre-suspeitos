@@ -200,17 +200,19 @@ class OnlineUI{
   if(destination==='profile')return this.profile();
   if(destination==='ranking')return this.ranking();
   if(destination==='friends')return this.friends();
+   if(destination==='missions')return this.progressHub();
+   if(destination==='stats')return this.statsPage();
   this.currentPage='home';this.header('Jogar online');
   this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
   <div class="hub-primary">${btn('public','▣ &nbsp; Buscar salas públicas')}${btn('create','＋ &nbsp; Criar sala')}</div><div class="hub-divider">ENTRAR COM OPÇÕES</div><div class="hub-secondary">${btn('join','‹ › &nbsp; Entrar com código','secondary')}${btn('invitesOn','♧ &nbsp; Convites de amigos','secondary')}</div>
-  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
+  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="missionsOn">✦ Missões e eventos</button><button class="tile" id="statsOn">▤ Estatísticas</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
   ${btn('adminOn','Painel administrativo','secondary')}${btn('serverOn','Configurar servidor','secondary')}${btn('logout','Sair da conta','ghost')}
   <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
   if($('resumeOn'))$('resumeOn').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_rejoin',{p_room:load('lastRoom')}));}catch(e){this.error(e);}};
   $('invitesOn').onclick=()=>this.invites();
   $('public').onclick=()=>this.publicRooms();$('create').onclick=()=>this.createRoom();$('join').onclick=()=>this.joinCode();
-  $('profileOn').onclick=()=>this.profile();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();
+  $('profileOn').onclick=()=>this.profile();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();
   $('feedbackOn').onclick=()=>this.feedback();$('adminOn').onclick=()=>this.admin();
   $('serverOn').onclick=()=>{this.cloud.session=null;save('session',null);this.setup();};
   $('logout').onclick=async()=>{try{await this.cloud.signOut();this.login();}catch(e){this.error(e);}};
@@ -463,10 +465,32 @@ class OnlineUI{
    this.voice=new Voice(this.cloud,this.roomId,this.cloud.userId);await this.voice.start(this.room?.players||[]);
   }this.lastFingerprint='';this.renderRoom(this.room);
  }catch(e){this.voice?.close();this.voice=null;this.error(e);}}
- async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[];try{[p,titles]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles')]);}catch(e){return this.error(e);}
+
+ async progressHub(){
+  this.stopLoop();this.currentPage='missions';this.header('Missões e eventos');
+  this.app.innerHTML='<section class="card"><h2>Missões e eventos</h2><p>Carregando...</p><p id="onlineError" class="error"></p></section>';
+  try{
+   const [missions,events]=await Promise.all([this.cloud.rpc('es_v74_missions'),this.cloud.rpc('es_v74_events_list')]);
+   if(this.currentPage!=='missions')return;
+   const mission=m=>`<div class="member"><div class="member-info"><strong>${ESC(m.title)}</strong><small>${ESC(m.period)} · ${m.progress}/${m.target} · ${m.complete?'Concluída':'Em andamento'}</small><progress class="mission-progress" value="${m.progress}" max="${m.target}"></progress></div></div>`;
+   const event=e=>`<section class="card"><h3>${ESC(e.name)}</h3><p class="subtext">${ESC(e.description)}</p><p>${e.active?'Ativo':'Encerrado ou futuro'} · ${Math.min(e.progress,e.target)}/${e.target}</p><progress class="mission-progress" value="${Math.min(e.progress,e.target)}" max="${e.target}"></progress><p class="small muted">Até ${new Date(e.ends_at).toLocaleDateString('pt-BR')} · Moldura: ${ESC(e.reward_frame||'nenhuma')}</p></section>`;
+   this.app.innerHTML=`<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">Recompensas de XP de missão ainda não ativadas; molduras de eventos são desbloqueadas automaticamente.</p>`;
+  }catch(e){this.error(e);}
+ }
+ async statsPage(){
+  this.stopLoop();this.currentPage='stats';this.header('Estatísticas avançadas');
+  this.app.innerHTML='<section class="card"><h2>Estatísticas</h2><p>Carregando...</p><p id="onlineError" class="error"></p></section>';
+  try{
+   const d=await this.cloud.rpc('es_v74_stats');if(this.currentPage!=='stats')return;
+   const stat=(v,label)=>`<div class="v74-stat"><strong>${v}</strong><small>${label}</small></div>`;
+   const rate=(n,d)=>d?(100*n/d).toFixed(1)+'%':'—';
+   this.app.innerHTML=`<section class="card"><h2>Seu histórico</h2><div class="v74-stats-grid">${stat(d.games,'Partidas concluídas')}${stat(rate(d.wins,d.games),'Taxa de vitórias')}${stat(d.public_games,'Públicas')}${stat(d.private_games,'Privadas')}${stat(rate(d.impostor_wins,d.impostor_games),'Vitórias impostor')}${stat(rate(d.common_wins,d.common_games),'Vitórias comum')}${stat(d.correct_votes,'Acertos nos votos')}${stat(d.votes_received,'Votos recebidos')}</div></section><section class="card"><h3>Últimas partidas</h3>${(d.recent||[]).map(x=>`<div class="member"><div class="member-info"><strong>${x.win?'Vitória':'Derrota'} · ${x.is_impostor?'Impostor':'Comum'}</strong><small>${x.is_public?'Pública':'Privada'} · ${new Date(x.finished_at).toLocaleString('pt-BR')} · ${x.votes_received} votos</small></div><span class="pill">${x.is_public?'+'+x.xp_earned+' XP':'Privada'}</span></div>`).join('')||'<p>Sem partidas concluídas.</p>'}</section>`;
+  }catch(e){this.error(e);}
+ }
+ async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[],frames=[];try{[p,titles,frames]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles'),this.cloud.rpc('es_v74_frames')]);}catch(e){return this.error(e);}
   const progress=xpProgress(p.xp);
   this.app.innerHTML=`<section class="card"><h2>Meu perfil</h2>
-   <div class="profile-heading"><div class="avatar profile-avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
+   <div class="profile-heading"><div class="avatar profile-avatar v74-frame ${['bronze','ouro','nevoa'].includes(p.equipped_frame)?p.equipped_frame:'classica'}">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
    <section class="level-panel" aria-label="Seu nível e experiência"><div class="level-summary"><strong>Nível ${progress.level}</strong><span>${progress.xp.toLocaleString('pt-BR')} XP acumulado</span></div>
    <progress class="xp-progress" value="${progress.earned}" max="${progress.needed}" aria-label="Progresso até o nível ${progress.level+1}"></progress>
    <p>${progress.earned.toLocaleString('pt-BR')} / ${progress.needed.toLocaleString('pt-BR')} XP neste nível · ${progress.percent}%</p>
@@ -479,10 +503,15 @@ class OnlineUI{
    <p><b>${p.private_wins} / ${p.private_losses}</b><br>Vitórias / derrotas privadas</p>
    <p><b>${p.impostor_wins} / ${p.impostor_losses}</b><br>Impostor: vitórias / derrotas</p>
    <p><b>${p.common_wins} / ${p.common_losses}</b><br>Comum: vitórias / derrotas</p></div>
-   <div class="divider"></div><h3>Meus títulos</h3>
+   <div class="divider"></div><h3>Molduras do perfil</h3><p class="subtext">Desbloqueadas por vitórias públicas ou eventos; sem vantagens competitivas.</p>
+    ${frames.map((x,i)=>`<div class="v74-frame-choice"><span class="v74-frame ${ESC(x.code)}">${ESC(x.name)}</span><button type="button" class="back" data-frame="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipada':x.unlocked?'Equipar':'Bloqueada'}</button></div>`).join('')}
+    ${btn('viewStatsProfile','Ver estatísticas avançadas','secondary')}
+    <div class="divider"></div><h3>Meus títulos</h3>
    <p class="subtext">Ganhe títulos em partidas públicas. Selecione um para destacar no seu perfil.</p>
    <div class="title-list">${titles.map((t,i)=>`<div class="member"><div class="member-info"><strong class="title-${ESC(t.rarity)}">${ESC(t.name)}</strong><small>${ESC(t.description)} · ${ESC(t.rarity)}</small></div><button type="button" class="back" data-equip="${i}" ${t.equipped?'disabled':''}>${t.equipped?'Equipado':'Usar'}</button></div>`).join('')||'<p class="notice">Ainda sem títulos. Continue jogando partidas públicas!</p>'}</div>
-   <p class="notice">Títulos Místicos continuam ocultos até sua primeira conquista. Molduras e fotos serão adicionadas após a implantação e o teste da infraestrutura online.</p><p id="onlineError" class="error"></p></section>`;
+   <p class="notice">Títulos Místicos permanecem ocultos até a conquista e sujeitos às regras de exclusividade.</p><p id="onlineError" class="error"></p></section>`;
+   this.app.querySelectorAll('[data-frame]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_v74_equip_frame',{p_frame:frames[+b.dataset.frame].code});this.profile();}catch(e){this.error(e);}});
+   $('viewStatsProfile').onclick=()=>this.statsPage();
    this.app.querySelectorAll('[data-equip]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_equip_title',{p_title:titles[+b.dataset.equip].code});this.profile();}catch(e){this.error(e);}});
   $('uploadPhoto').onclick=async()=>{try{
     const file=$('photoOn').files?.[0];if(!file)throw new Error('Escolha uma imagem primeiro.');
