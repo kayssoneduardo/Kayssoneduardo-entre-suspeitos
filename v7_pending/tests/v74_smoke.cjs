@@ -30,6 +30,6 @@ ui.cloud={userId:'user',rpc:async(name,params)=>{calls.push([name,params]);if(na
  assert.match(source,/connectionFailed\(e\)/);
  assert.match(source,/this\.nextRefreshAt/);
  assert.match(source,/v74-reveal/);
- assert.match(source,/\?room/,'Room deep-link check');
+ assert.match(source,/searchParams\.set\('room'/,'Room deep-link check');
  console.log('PASSOU: V7.4 progress dashboard, event, statistics zero-case and static navigation.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
