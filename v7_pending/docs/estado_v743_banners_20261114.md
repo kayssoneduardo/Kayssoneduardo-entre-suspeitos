@@ -33,3 +33,11 @@ Em 14/11/2026 o usuário solicitou que banners sigam a MESMA hierarquia de desta
 - `web/style.css`: cinco níveis visuais progressivos de saturação, brilho, contorno e iluminação. **As próprias ilustrações aprovadas não foram alteradas.** Evitar efeitos chamativos em comuns/incomuns e excesso de animação em celulares modestos.
 - `v7_pending/tests/v743_banner_assets_smoke.cjs`: cobertura de 16 níveis de raridade.
 - A branch permanece DRAFT; **não mesclar/publicar** sem imagens WebP anexadas, validação em celular e autorização do usuário.
+
+## Fechamento do lote e integração antes da publicação (14/11/2026)
+- Os 16 WebP `1080×360` foram finalmente enviados como **blobs binários** ao GitHub na pasta `web/assets/banners/` (sem uso de textos base64 no site).
+- As quatro molduras aprovadas `ouro` (raro), `nevoa` (épico), `coroa_arcana` e `chamas_eternas` (lendárias) foram anexadas como WebP RGBA na pasta `web/assets/frames/`. As outras 12 continuam usando SVG.
+- A nova função `avatar()` seleciona as quatro artes aprovadas; todo o catálogo segue os critérios de raridade definidos em `es_cosmetic_catalog`.
+- Os 20 binários foram confirmados na árvore GitHub; o arquivo `web/index.html` identifica a versão web `7.4.3 RC`.
+- O fluxo de publicação agora testa os 20 cabeçalhos WebP depois do deploy, para não sinalizar êxito caso algum arquivo esteja ausente.
+- A publicação depende de merge em `main` e de êxito no GitHub Pages; o resultado dessa etapa deve ser registrado na continuidade após verificação, não presumido antecipadamente.
