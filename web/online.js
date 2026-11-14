@@ -167,7 +167,7 @@ class Voice{
 }
 class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
-  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
+  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.nextRefreshAt=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
  open({app,topbar,back,sound,bank,destination}){const invite=new URLSearchParams(window.location.search).get('room');if(invite&&/^[a-z0-9]{6}$/i.test(invite))this.pendingJoinCode=invite.toUpperCase();this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
   const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
@@ -179,8 +179,8 @@ class OnlineUI{
  destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
  stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);this.refreshTimer=null;this.tickTimer=null;}
  error(e){const msg=prettyError(e);let box=$('onlineError');if(box){box.textContent=msg;box.hidden=false;}else alert(msg);}
- connectionFailed(e){this.connectionFailures++;const box=$('onlineError');if(box){box.textContent='Conexão interrompida. Tentando recuperar a sala automaticamente. '+prettyError(e);box.hidden=false;box.dataset.connectionError='1';}}
- connectionRestored(){if(!this.connectionFailures)return;this.connectionFailures=0;const box=$('onlineError');if(box?.dataset.connectionError==='1'){box.textContent='';box.hidden=true;delete box.dataset.connectionError;}}
+ connectionFailed(e){this.connectionFailures++;this.nextRefreshAt=Date.now()+Math.min(30000,1500*2**Math.min(this.connectionFailures-1,5));const box=$('onlineError');if(box){box.textContent='Conexão interrompida. Tentando recuperar a sala automaticamente. '+prettyError(e);box.hidden=false;box.dataset.connectionError='1';}}
+ connectionRestored(){if(!this.connectionFailures)return;this.connectionFailures=0;this.nextRefreshAt=0;const box=$('onlineError');if(box?.dataset.connectionError==='1'){box.textContent='';box.hidden=true;delete box.dataset.connectionError;}}
  note(text){const el=$('onlineInfo');if(el)el.textContent=text;else alert(text);}
  setup(){this.currentPage='setup';this.header('Ativar modo online');const c=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:(load('cloud')||{});
   this.app.innerHTML=`<section class="card"><h2>Conectar servidor</h2><p class="subtext">O offline funciona sem internet. Para jogar online é necessário conectar um projeto Supabase configurado com o banco do Entre Suspeitos.</p>
@@ -372,11 +372,11 @@ class OnlineUI{
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
   $('makeRoom').onclick=async()=>{try{const p=this.getRules(),name=$('roomNameOn').value.replace(/\s+/g,' ').trim();if(name&&([...name].length<3||[...name].length>50))throw new Error('Use de 3 a 50 caracteres no nome da sala.');this.enterRoom(await this.cloud.rpc('es_create_named',{p_public:$('publicOn').value==='true',p_name:name,...p}));}catch(e){this.error(e);}};
  }
- enterRoom(id){this.stopLoop();this.connectionFailures=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
+ enterRoom(id){this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
-   if(!this.roomId)return;
+   if(!this.roomId||Date.now()<this.nextRefreshAt)return;
    try{if(Date.now()-lastPing>9000){await this.cloud.rpc('es_touch',{p_room:this.roomId});lastPing=Date.now();}
     await this.refresh();}catch(e){this.connectionFailed(e);}
   },2200);
@@ -431,9 +431,13 @@ class OnlineUI{
     <p id="onlineError" class="error"></p></section>`;
   }else if(r.status==='results'){
    const impostors=r.players.filter(p=>r.me.impostors?.includes(p.id));
-   phase=`<section class="card center"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p><h3>Impostores</h3>
-    ${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
-    <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
+   const mine=(r.results||[]).find(x=>x.user===me);const totalWins=(r.results||[]).filter(x=>x.win).length;
+   phase=`<section class="card center v74-reveal"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p>
+    <p class="notice">${impostors.length} impostor(es) revelado(s) · ${totalWins} vencedor(es).</p>
+    ${mine?`<div class="card ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
+    <h3>Os impostores eram</h3>${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
+    <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member ${x.win?'v74-result-good':'v74-result-bad'}"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
+    <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
     ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
   }
   this.currentPage='room';this.app.innerHTML=head+phase+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
