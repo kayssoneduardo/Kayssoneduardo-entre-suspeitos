@@ -173,7 +173,7 @@ class OnlineUI{
   else this.setup();
  }
  header(title){this.topbar.hidden=false;this.topbar.innerHTML=`<button class="back" id="onlineBack">← Voltar</button><strong>${ESC(title)}</strong><span style="width:65px"></span>`;
-  $('onlineBack').onclick=()=>{if(['signup','recover','reset'].includes(this.currentPage))this.login();else if(['room','create','join','public','login','setup','home'].includes(this.currentPage))this.homeOrMenu();else this.home();};}
+  $('onlineBack').onclick=()=>{if(['signup','recover','reset'].includes(this.currentPage))this.login();else if(this.currentPage==='cosmetics'&&this.roomId)this.enterRoom(this.roomId);else if(['room','create','join','public','login','setup','home'].includes(this.currentPage))this.homeOrMenu();else this.home();};}
  homeOrMenu(){if(this.roomId){if(confirm('Sair da sala? Após o início, não votar será considerado derrota.'))this.leave();}
   else{this.destroy();this.back();}}
  destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
@@ -569,9 +569,10 @@ class OnlineUI{
    }).join('');
    this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC((selectedPreview?.kind==='frame'?selectedPreview.name:equippedFrame?.name)||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC((selectedPreview?.kind==='banner'?selectedPreview.name:equippedBanner?.name)||'Sombras Originais')}</span></section>
     ${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
-    <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery">${tiles}</div><p id="onlineError" class="error"></p></section>${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
+    <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery">${tiles}</div><p id="onlineError" class="error"></p></section>${this.roomId?btn('cosmeticsBackRoom','← Voltar à sala','secondary'):''}${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
    $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticPreview=null;this.cosmeticsPage();};
    $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticPreview=null;this.cosmeticsPage();};
+   if($('cosmeticsBackRoom'))$('cosmeticsBackRoom').onclick=()=>this.enterRoom(this.roomId);
    $('cosmeticsBack').onclick=()=>this.profile();
    this.app.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{const x=selected[Number(b.dataset.preview)];this.cosmeticPreview={kind:x.kind,code:x.code};this.cosmeticsPage();});
    this.app.querySelectorAll('[data-cosmetic]').forEach(b=>b.onclick=async()=>{const x=selected[Number(b.dataset.cosmetic)];b.disabled=true;try{await this.cloud.rpc('es_cosmetic_equip',{p_kind:x.kind,p_code:x.code});this.cosmeticsPage();}catch(e){this.error(e);b.disabled=false;}});
