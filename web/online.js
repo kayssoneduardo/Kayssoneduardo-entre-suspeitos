@@ -167,7 +167,7 @@ class Voice{
 }
 class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
-  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
+  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
  open({app,topbar,back,sound,bank,destination}){this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
   const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
@@ -179,6 +179,8 @@ class OnlineUI{
  destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
  stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);this.refreshTimer=null;this.tickTimer=null;}
  error(e){const msg=prettyError(e);let box=$('onlineError');if(box){box.textContent=msg;box.hidden=false;}else alert(msg);}
+ connectionFailed(e){this.connectionFailures++;const box=$('onlineError');if(box){box.textContent='Conexão interrompida. Tentando recuperar a sala automaticamente. '+prettyError(e);box.hidden=false;box.dataset.connectionError='1';}}
+ connectionRestored(){if(!this.connectionFailures)return;this.connectionFailures=0;const box=$('onlineError');if(box?.dataset.connectionError==='1'){box.textContent='';box.hidden=true;delete box.dataset.connectionError;}}
  note(text){const el=$('onlineInfo');if(el)el.textContent=text;else alert(text);}
  setup(){this.currentPage='setup';this.header('Ativar modo online');const c=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:(load('cloud')||{});
   this.app.innerHTML=`<section class="card"><h2>Conectar servidor</h2><p class="subtext">O offline funciona sem internet. Para jogar online é necessário conectar um projeto Supabase configurado com o banco do Entre Suspeitos.</p>
@@ -367,13 +369,13 @@ class OnlineUI{
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
   $('makeRoom').onclick=async()=>{try{const p=this.getRules(),name=$('roomNameOn').value.replace(/\s+/g,' ').trim();if(name&&([...name].length<3||[...name].length>50))throw new Error('Use de 3 a 50 caracteres no nome da sala.');this.enterRoom(await this.cloud.rpc('es_create_named',{p_public:$('publicOn').value==='true',p_name:name,...p}));}catch(e){this.error(e);}};
  }
- enterRoom(id){this.stopLoop();save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
+ enterRoom(id){this.stopLoop();this.connectionFailures=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
    if(!this.roomId)return;
    try{if(Date.now()-lastPing>9000){await this.cloud.rpc('es_touch',{p_room:this.roomId});lastPing=Date.now();}
-    await this.refresh();}catch(e){this.error(e);}
+    await this.refresh();}catch(e){this.connectionFailed(e);}
   },2200);
   this.tickTimer=setInterval(()=>{const c=$('timerOnline');if(c&&this.room?.phaseEnds){const remaining=seconds(this.room.phaseEnds);const reveal=this.room.status==='discussion'&&this.room.revealEnds&&seconds(this.room.revealEnds)>0;c.textContent=countdown(reveal?this.room.revealEnds:this.room.phaseEnds);
    if(this.room.status==='discussion'&&this.showingReveal&&!reveal){this.showingReveal=false;this.renderRoom(this.room);}
@@ -383,14 +385,14 @@ class OnlineUI{
  async refresh(){if(!this.roomId||this.refreshing)return;this.refreshing=true;
   try{const [r,catalog]=await Promise.all([this.cloud.rpc('es_room_view',{p_room:this.roomId}),this.titleCatalog?Promise.resolve(this.titleCatalog):this.cloud.rpc('es_title_catalog').catch(()=>null)]);if(!this.roomId)return;
    const titlesChanged=catalog!==this.titleCatalog;this.titleCatalog=catalog;
-   this.room=r;if(r.status==='discussion'&&seconds(r.phaseEnds)===0){await this.cloud.rpc('es_begin_vote',{p_room:this.roomId}).catch(()=>{});}
+   this.connectionRestored();this.room=r;if(r.status==='discussion'&&seconds(r.phaseEnds)===0){await this.cloud.rpc('es_begin_vote',{p_room:this.roomId}).catch(()=>{});}
    if(r.status==='voting'){await this.cloud.rpc('es_finalize',{p_room:this.roomId}).catch(()=>{});}
    const sig=JSON.stringify(r);if(sig!==this.lastFingerprint||titlesChanged){
     // Evita apagar uma carta revelada ou um formulário enquanto o usuário interage.
     if((this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))||this.app.querySelector('.online-editing'))return;
     this.lastFingerprint=sig;this.renderRoom(r);}
    if(this.voice)this.voice.update(r.players).catch(e=>{this.voice.error=prettyError(e);});
-  }catch(e){this.error(e);}finally{this.refreshing=false;}
+  }catch(e){this.connectionFailed(e);}finally{this.refreshing=false;}
  }
  renderRoom(r){this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
   const allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors>=1&&r.impostors<=Math.floor((joined.length-1)/2);
@@ -399,7 +401,7 @@ class OnlineUI{
   <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
-  ${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
+  ${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
   const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div>`).join('')}</section>`;
@@ -435,7 +437,8 @@ class OnlineUI{
   this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
-  $('voiceOn').onclick=()=>this.toggleVoice();
+  $('copyCodeOn').onclick=async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('Cópia automática indisponível.');await navigator.clipboard.writeText(r.code);this.note('Código da sala copiado: '+r.code);}catch(e){this.note('Copie este código e compartilhe com seu amigo: '+r.code);}};
+   $('voiceOn').onclick=()=>this.toggleVoice();
   if(r.status==='lobby'){
    $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
    if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(allReady&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
@@ -510,7 +513,7 @@ class OnlineUI{
  async friends(){this.currentPage='friends';this.header('Amigos');let all=[];try{all=await this.cloud.rpc('es_friend_list');}catch(e){return this.error(e);}
   this.app.innerHTML=`<section class="card"><h2>Adicionar amigos</h2>${input('searchNick','Pesquisar apelido','text','','placeholder="Apelido do jogador"')}${btn('searchFriends','Pesquisar','secondary')}<div id="searchFriendsResult"></div><h3>Minha lista</h3>
    ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?'Amigo':'Pedido pendente'}</small></div>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}
-   <p class="subtext">Para convidar para uma sala privada, compartilhe o código da sala. Convites diretos serão adicionados numa atualização posterior.</p><p id="onlineError" class="error"></p></section>`;
+   <p class="subtext">Convites diretos já estão disponíveis pelo botão Convidar amigos na sala. Para entrar por código, use Entrar com código.</p><p id="onlineError" class="error"></p></section>`;
   this.app.querySelectorAll('[data-accept]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_friend_accept',{p_from:all[+b.dataset.accept].id});this.friends();}catch(e){this.error(e);}});
   $('searchFriends').onclick=async()=>{try{const r=await this.cloud.rpc('es_find_players',{p_query:$('searchNick').value});
    $('searchFriendsResult').innerHTML=r.map((p,i)=>`<div class="member"><div class="member-info">${ESC(p.nickname)}</div><button class="back" data-add="${i}">Adicionar</button></div>`).join('')||'<p>Ninguém encontrado.</p>';
