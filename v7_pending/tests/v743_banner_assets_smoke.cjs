@@ -44,6 +44,8 @@ for(const [rarity,codes] of Object.entries(expected)){
  }
 }
 assert.equal(cat.safeBanner('"><script>'),'padrao');
+assert.match(cat.banner('trono_arcano'), /banner-code-trono_arcano/);
+assert.match(cat.banner('cacada_sombria'), /banner-code-cacada_sombria/);
 assert.equal(cat.frameRarity('nonexistent'),'comum');
 // Distinct items must have distinct actual imagery, not just palette swaps.
 for(const kind of ['banners','frames']){
@@ -61,6 +63,8 @@ for(const kind of ['banners','frames']){
  assert.match(index,/cosmetics\.js\?v=v744-cachefix-20261114-r2/);
  const css=fs.readFileSync('web/style.css','utf8');
 assert.match(css,/\.cosmetic-banner-illustration/);
+assert.match(css,/\.banner-code-trono_arcano \.cosmetic-banner-illustration\{object-fit:contain/);
+assert.match(css,/\.banner-code-cacada_sombria::after\{box-shadow:/);
 assert.match(css,/\.cosmetic-frame-illustration/);
 for(const rarity of Object.keys(expected)){
  assert(css.includes('.banner-rarity-'+rarity+'::after'),'Missing banner rarity '+rarity);
