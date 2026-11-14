@@ -8,7 +8,7 @@ assert(app.includes('id="cosmetics"'),'Entry point missing on home');
 assert(app.includes("openOnline('cosmetics')"),'Home entry handler missing');
 assert(online.includes('id="cosmeticsOn"'),'Online hub entry missing');
 assert(online.includes("cosmeticsOn').onclick"),'Online hub handler missing');
-assert(online.includes('id="roomCosmeticsOn"'),'Room entry missing');
+assert(online.includes("btn('roomCosmeticsOn'"),'Room entry missing');
 assert(online.includes("roomCosmeticsOn').onclick"),'Room entry handler missing');
 assert(online.includes('data-preview='),'Preview button missing');
 assert(online.includes("this.cosmeticPreview={kind:x.kind,code:x.code}"),'Preview behavior missing');
