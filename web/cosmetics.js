@@ -98,7 +98,7 @@ function bannerSvg(code){
 // All 16 frames now have their own transparent WebP artwork.
 // The four approved artworks remain unchanged; the 12 others follow their
 // original cosmetics rarity and shared ornament style.
-const COSMETIC_ASSET_VERSION='v744-image-refresh-20261114-r2';
+const COSMETIC_ASSET_VERSION='v745-approved-cinematic-20261114-r1';
 const frameArtwork=Object.freeze(Object.keys(frames));
 const frameRarities=Object.freeze({
  classica:'comum',bronze:'comum',
