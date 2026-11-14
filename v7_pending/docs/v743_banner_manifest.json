@@ -86,5 +86,25 @@
       "name": "Vidro Estilhaçado",
       "path": "web/assets/banners/vidro_estilhacado.webp"
     }
-  ]
+  ],
+  "assetsCommitted": true,
+  "frameAssets": [
+    {
+      "code": "ouro",
+      "path": "web/assets/frames/ouro.webp"
+    },
+    {
+      "code": "nevoa",
+      "path": "web/assets/frames/nevoa.webp"
+    },
+    {
+      "code": "coroa_arcana",
+      "path": "web/assets/frames/coroa_arcana.webp"
+    },
+    {
+      "code": "chamas_eternas",
+      "path": "web/assets/frames/chamas_eternas.webp"
+    }
+  ],
+  "releaseTarget": "web 7.4.3 RC"
 }
