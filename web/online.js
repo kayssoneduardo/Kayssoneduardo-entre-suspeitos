@@ -167,8 +167,8 @@ class Voice{
 }
 class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
-  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
- open({app,topbar,back,sound,bank,destination}){this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
+  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.nextRefreshAt=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
+ open({app,topbar,back,sound,bank,destination}){const invite=new URLSearchParams(window.location.search).get('room');if(invite&&/^[a-z0-9]{6}$/i.test(invite))this.pendingJoinCode=invite.toUpperCase();this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
   const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
  }
@@ -179,6 +179,8 @@ class OnlineUI{
  destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
  stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);this.refreshTimer=null;this.tickTimer=null;}
  error(e){const msg=prettyError(e);let box=$('onlineError');if(box){box.textContent=msg;box.hidden=false;}else alert(msg);}
+ connectionFailed(e){this.connectionFailures++;this.nextRefreshAt=Date.now()+Math.min(30000,1500*2**Math.min(this.connectionFailures-1,5));const box=$('onlineError');if(box){box.textContent='Conexão interrompida. Tentando recuperar a sala automaticamente. '+prettyError(e);box.hidden=false;box.dataset.connectionError='1';}}
+ connectionRestored(){if(!this.connectionFailures)return;this.connectionFailures=0;this.nextRefreshAt=0;const box=$('onlineError');if(box?.dataset.connectionError==='1'){box.textContent='';box.hidden=true;delete box.dataset.connectionError;}}
  note(text){const el=$('onlineInfo');if(el)el.textContent=text;else alert(text);}
  setup(){this.currentPage='setup';this.header('Ativar modo online');const c=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:(load('cloud')||{});
   this.app.innerHTML=`<section class="card"><h2>Conectar servidor</h2><p class="subtext">O offline funciona sem internet. Para jogar online é necessário conectar um projeto Supabase configurado com o banco do Entre Suspeitos.</p>
@@ -198,17 +200,20 @@ class OnlineUI{
   if(destination==='profile')return this.profile();
   if(destination==='ranking')return this.ranking();
   if(destination==='friends')return this.friends();
+   if(destination==='missions')return this.progressHub();
+   if(destination==='stats')return this.statsPage();
+   if(this.pendingJoinCode){const code=this.pendingJoinCode;this.pendingJoinCode=null;const u=new URL(window.location.href);u.searchParams.delete('room');window.history.replaceState(null,'',u.pathname+u.search+u.hash);return this.joinCode(code);}
   this.currentPage='home';this.header('Jogar online');
   this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
   <div class="hub-primary">${btn('public','▣ &nbsp; Buscar salas públicas')}${btn('create','＋ &nbsp; Criar sala')}</div><div class="hub-divider">ENTRAR COM OPÇÕES</div><div class="hub-secondary">${btn('join','‹ › &nbsp; Entrar com código','secondary')}${btn('invitesOn','♧ &nbsp; Convites de amigos','secondary')}</div>
-  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
+  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="missionsOn">✦ Missões e eventos</button><button class="tile" id="statsOn">▤ Estatísticas</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
   ${btn('adminOn','Painel administrativo','secondary')}${btn('serverOn','Configurar servidor','secondary')}${btn('logout','Sair da conta','ghost')}
   <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
   if($('resumeOn'))$('resumeOn').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_rejoin',{p_room:load('lastRoom')}));}catch(e){this.error(e);}};
   $('invitesOn').onclick=()=>this.invites();
   $('public').onclick=()=>this.publicRooms();$('create').onclick=()=>this.createRoom();$('join').onclick=()=>this.joinCode();
-  $('profileOn').onclick=()=>this.profile();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();
+  $('profileOn').onclick=()=>this.profile();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();
   $('feedbackOn').onclick=()=>this.feedback();$('adminOn').onclick=()=>this.admin();
   $('serverOn').onclick=()=>{this.cloud.session=null;save('session',null);this.setup();};
   $('logout').onclick=async()=>{try{await this.cloud.signOut();this.login();}catch(e){this.error(e);}};
@@ -346,7 +351,7 @@ class OnlineUI{
   $('quickOn').onclick=async()=>{const available=rooms.find(r=>r.players<r.max_players);if(!available)return this.note('Não existem salas com vagas. Crie uma sala.');try{this.enterRoom(await this.cloud.rpc('es_join',{p_room:available.id}));}catch(e){this.error(e);}};
   $('reloadOn').onclick=()=>this.publicRooms();
  }
- joinCode(){this.currentPage='join';this.header('Entrar em sala');this.app.innerHTML=`<section class="card"><h2>Código da sala</h2>${input('roomCode','Código de 6 caracteres','text','','maxlength="6" autocapitalize="characters"')}${btn('enterCode','Entrar')}<p id="onlineError" class="error"></p></section>`;
+ joinCode(prefill=''){this.currentPage='join';this.header('Entrar em sala');this.app.innerHTML=`<section class="card"><h2>Código da sala</h2>${input('roomCode','Código de 6 caracteres','text',prefill,'maxlength="6" autocapitalize="characters"')}${btn('enterCode','Entrar')}<p id="onlineError" class="error"></p></section>`;
   $('enterCode').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_join_code',{p_code:$('roomCode').value.trim()}));}catch(e){this.error(e);}};
  }
  formRules(c={}){
@@ -367,13 +372,13 @@ class OnlineUI{
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
   $('makeRoom').onclick=async()=>{try{const p=this.getRules(),name=$('roomNameOn').value.replace(/\s+/g,' ').trim();if(name&&([...name].length<3||[...name].length>50))throw new Error('Use de 3 a 50 caracteres no nome da sala.');this.enterRoom(await this.cloud.rpc('es_create_named',{p_public:$('publicOn').value==='true',p_name:name,...p}));}catch(e){this.error(e);}};
  }
- enterRoom(id){this.stopLoop();save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
+ enterRoom(id){this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
-   if(!this.roomId)return;
+   if(!this.roomId||Date.now()<this.nextRefreshAt)return;
    try{if(Date.now()-lastPing>9000){await this.cloud.rpc('es_touch',{p_room:this.roomId});lastPing=Date.now();}
-    await this.refresh();}catch(e){this.error(e);}
+    await this.refresh();}catch(e){this.connectionFailed(e);}
   },2200);
   this.tickTimer=setInterval(()=>{const c=$('timerOnline');if(c&&this.room?.phaseEnds){const remaining=seconds(this.room.phaseEnds);const reveal=this.room.status==='discussion'&&this.room.revealEnds&&seconds(this.room.revealEnds)>0;c.textContent=countdown(reveal?this.room.revealEnds:this.room.phaseEnds);
    if(this.room.status==='discussion'&&this.showingReveal&&!reveal){this.showingReveal=false;this.renderRoom(this.room);}
@@ -383,14 +388,14 @@ class OnlineUI{
  async refresh(){if(!this.roomId||this.refreshing)return;this.refreshing=true;
   try{const [r,catalog]=await Promise.all([this.cloud.rpc('es_room_view',{p_room:this.roomId}),this.titleCatalog?Promise.resolve(this.titleCatalog):this.cloud.rpc('es_title_catalog').catch(()=>null)]);if(!this.roomId)return;
    const titlesChanged=catalog!==this.titleCatalog;this.titleCatalog=catalog;
-   this.room=r;if(r.status==='discussion'&&seconds(r.phaseEnds)===0){await this.cloud.rpc('es_begin_vote',{p_room:this.roomId}).catch(()=>{});}
+   this.connectionRestored();this.room=r;if(r.status==='discussion'&&seconds(r.phaseEnds)===0){await this.cloud.rpc('es_begin_vote',{p_room:this.roomId}).catch(()=>{});}
    if(r.status==='voting'){await this.cloud.rpc('es_finalize',{p_room:this.roomId}).catch(()=>{});}
    const sig=JSON.stringify(r);if(sig!==this.lastFingerprint||titlesChanged){
     // Evita apagar uma carta revelada ou um formulário enquanto o usuário interage.
     if((this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))||this.app.querySelector('.online-editing'))return;
     this.lastFingerprint=sig;this.renderRoom(r);}
    if(this.voice)this.voice.update(r.players).catch(e=>{this.voice.error=prettyError(e);});
-  }catch(e){this.error(e);}finally{this.refreshing=false;}
+  }catch(e){this.connectionFailed(e);}finally{this.refreshing=false;}
  }
  renderRoom(r){this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
   const allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors>=1&&r.impostors<=Math.floor((joined.length-1)/2);
@@ -399,7 +404,7 @@ class OnlineUI{
   <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
-  ${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
+  ${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('shareLinkOn','Compartilhar convite por link','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
   const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div>`).join('')}</section>`;
@@ -426,16 +431,22 @@ class OnlineUI{
     <p id="onlineError" class="error"></p></section>`;
   }else if(r.status==='results'){
    const impostors=r.players.filter(p=>r.me.impostors?.includes(p.id));
-   phase=`<section class="card center"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p><h3>Impostores</h3>
-    ${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
-    <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
+   const mine=(r.results||[]).find(x=>x.user===me);const totalWins=(r.results||[]).filter(x=>x.win).length;
+   phase=`<section class="card center v74-reveal"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p>
+    <p class="notice">${impostors.length} impostor(es) revelado(s) · ${totalWins} vencedor(es).</p>
+    ${mine?`<div class="card ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
+    <h3>Os impostores eram</h3>${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
+    <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member ${x.win?'v74-result-good':'v74-result-bad'}"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
+    <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
     ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
   }
   this.currentPage='room';this.app.innerHTML=head+phase+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
   this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
-  $('voiceOn').onclick=()=>this.toggleVoice();
+  $('copyCodeOn').onclick=async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('Cópia automática indisponível.');await navigator.clipboard.writeText(r.code);this.note('Código da sala copiado: '+r.code);}catch(e){this.note('Copie este código e compartilhe com seu amigo: '+r.code);}};
+   $('shareLinkOn').onclick=async()=>{const u=new URL(window.location.origin+window.location.pathname);u.searchParams.set('room',r.code);const link=u.toString();try{if(navigator.share)await navigator.share({title:'Entre Suspeitos',text:'Entre na minha sala',url:link});else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(link);this.note('Link de convite copiado!');}else this.note('Convide pelo link: '+link);}catch(e){if(e?.name!=='AbortError')this.note('Convide pelo link: '+link);}};
+   $('voiceOn').onclick=()=>this.toggleVoice();
   if(r.status==='lobby'){
    $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
    if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(allReady&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
@@ -460,10 +471,33 @@ class OnlineUI{
    this.voice=new Voice(this.cloud,this.roomId,this.cloud.userId);await this.voice.start(this.room?.players||[]);
   }this.lastFingerprint='';this.renderRoom(this.room);
  }catch(e){this.voice?.close();this.voice=null;this.error(e);}}
- async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[];try{[p,titles]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles')]);}catch(e){return this.error(e);}
+
+ async progressHub(){
+  this.stopLoop();this.currentPage='missions';this.header('Missões e eventos');
+  this.app.innerHTML='<section class="card"><h2>Missões e eventos</h2><p>Carregando...</p><p id="onlineError" class="error"></p></section>';
+  try{
+   const [missions,events,claims]=await Promise.all([this.cloud.rpc('es_v74_missions'),this.cloud.rpc('es_v74_events_list'),this.cloud.rpc('es_v74_claims')]);
+   if(this.currentPage!=='missions')return;
+   const mission=(m,i)=>{const claimed=claims.some(c=>c.code===m.code&&Date.parse(c.period_end)===Date.parse(m.renews_at));return `<div class="member"><div class="member-info"><strong>${ESC(m.title)}</strong><small>${ESC(m.period)} · ${m.progress}/${m.target} · ${claimed?'Recompensa resgatada':m.complete?'Concluída':'Em andamento'}</small><progress class="mission-progress" value="${m.progress}" max="${m.target}"></progress></div>${m.complete&&!claimed?`<button class="back" data-claim="${i}">Resgatar ${m.code.startsWith('daily')?15:40} XP</button>`:''}</div>`;};
+   const event=e=>`<section class="card"><h3>${ESC(e.name)}</h3><p class="subtext">${ESC(e.description)}</p><p>${e.active?'Ativo':'Encerrado ou futuro'} · ${Math.min(e.progress,e.target)}/${e.target}</p><progress class="mission-progress" value="${Math.min(e.progress,e.target)}" max="${e.target}"></progress><p class="small muted">Até ${new Date(e.ends_at).toLocaleDateString('pt-BR')} · Moldura: ${ESC(e.reward_frame||'nenhuma')}</p></section>`;
+   this.app.innerHTML=`<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">XP de missões soma ao nível, sem alterar o ranking. Molduras de eventos são desbloqueadas por participação.</p><p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p>`;
+   this.app.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{const m=missions[Number(b.dataset.claim)];b.disabled=true;try{const result=await this.cloud.rpc('es_v74_mission_claim',{p_code:m.code});this.note('Recompensa recebida: '+result.xp_awarded+' XP.');await this.progressHub();}catch(e){this.error(e);b.disabled=false;}});
+  }catch(e){this.error(e);}
+ }
+ async statsPage(){
+  this.stopLoop();this.currentPage='stats';this.header('Estatísticas avançadas');
+  this.app.innerHTML='<section class="card"><h2>Estatísticas</h2><p>Carregando...</p><p id="onlineError" class="error"></p></section>';
+  try{
+   const d=await this.cloud.rpc('es_v74_stats');if(this.currentPage!=='stats')return;
+   const stat=(v,label)=>`<div class="v74-stat"><strong>${v}</strong><small>${label}</small></div>`;
+   const rate=(n,d)=>d?(100*n/d).toFixed(1)+'%':'—';
+   this.app.innerHTML=`<section class="card"><h2>Seu histórico</h2><div class="v74-stats-grid">${stat(d.games,'Partidas concluídas')}${stat(rate(d.wins,d.games),'Taxa de vitórias')}${stat(d.public_games,'Públicas')}${stat(d.private_games,'Privadas')}${stat(rate(d.impostor_wins,d.impostor_games),'Vitórias impostor')}${stat(rate(d.common_wins,d.common_games),'Vitórias comum')}${stat(d.correct_votes,'Acertos nos votos')}${stat(d.votes_received,'Votos recebidos')}</div></section><section class="card"><h3>Últimas partidas</h3>${(d.recent||[]).map(x=>`<div class="member"><div class="member-info"><strong>${x.win?'Vitória':'Derrota'} · ${x.is_impostor?'Impostor':'Comum'}</strong><small>${x.is_public?'Pública':'Privada'} · ${new Date(x.finished_at).toLocaleString('pt-BR')} · ${x.votes_received} votos</small></div><span class="pill">${x.is_public?'+'+x.xp_earned+' XP':'Privada'}</span></div>`).join('')||'<p>Sem partidas concluídas.</p>'}</section>`;
+  }catch(e){this.error(e);}
+ }
+ async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[],frames=[];try{[p,titles,frames]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles'),this.cloud.rpc('es_v74_frames')]);}catch(e){return this.error(e);}
   const progress=xpProgress(p.xp);
   this.app.innerHTML=`<section class="card"><h2>Meu perfil</h2>
-   <div class="profile-heading"><div class="avatar profile-avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
+   <div class="profile-heading"><div class="avatar profile-avatar v74-frame ${['bronze','ouro','nevoa'].includes(p.equipped_frame)?p.equipped_frame:'classica'}">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
    <section class="level-panel" aria-label="Seu nível e experiência"><div class="level-summary"><strong>Nível ${progress.level}</strong><span>${progress.xp.toLocaleString('pt-BR')} XP acumulado</span></div>
    <progress class="xp-progress" value="${progress.earned}" max="${progress.needed}" aria-label="Progresso até o nível ${progress.level+1}"></progress>
    <p>${progress.earned.toLocaleString('pt-BR')} / ${progress.needed.toLocaleString('pt-BR')} XP neste nível · ${progress.percent}%</p>
@@ -476,10 +510,15 @@ class OnlineUI{
    <p><b>${p.private_wins} / ${p.private_losses}</b><br>Vitórias / derrotas privadas</p>
    <p><b>${p.impostor_wins} / ${p.impostor_losses}</b><br>Impostor: vitórias / derrotas</p>
    <p><b>${p.common_wins} / ${p.common_losses}</b><br>Comum: vitórias / derrotas</p></div>
-   <div class="divider"></div><h3>Meus títulos</h3>
+   <div class="divider"></div><h3>Molduras do perfil</h3><p class="subtext">Desbloqueadas por vitórias públicas ou eventos; sem vantagens competitivas.</p>
+    ${frames.map((x,i)=>`<div class="v74-frame-choice"><span class="v74-frame ${ESC(x.code)}">${ESC(x.name)}</span><button type="button" class="back" data-frame="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipada':x.unlocked?'Equipar':'Bloqueada'}</button></div>`).join('')}
+    ${btn('viewStatsProfile','Ver estatísticas avançadas','secondary')}
+    <div class="divider"></div><h3>Meus títulos</h3>
    <p class="subtext">Ganhe títulos em partidas públicas. Selecione um para destacar no seu perfil.</p>
    <div class="title-list">${titles.map((t,i)=>`<div class="member"><div class="member-info"><strong class="title-${ESC(t.rarity)}">${ESC(t.name)}</strong><small>${ESC(t.description)} · ${ESC(t.rarity)}</small></div><button type="button" class="back" data-equip="${i}" ${t.equipped?'disabled':''}>${t.equipped?'Equipado':'Usar'}</button></div>`).join('')||'<p class="notice">Ainda sem títulos. Continue jogando partidas públicas!</p>'}</div>
-   <p class="notice">Títulos Místicos continuam ocultos até sua primeira conquista. Molduras e fotos serão adicionadas após a implantação e o teste da infraestrutura online.</p><p id="onlineError" class="error"></p></section>`;
+   <p class="notice">Títulos Místicos permanecem ocultos até a conquista e sujeitos às regras de exclusividade.</p><p id="onlineError" class="error"></p></section>`;
+   this.app.querySelectorAll('[data-frame]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_v74_equip_frame',{p_frame:frames[+b.dataset.frame].code});this.profile();}catch(e){this.error(e);}});
+   $('viewStatsProfile').onclick=()=>this.statsPage();
    this.app.querySelectorAll('[data-equip]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_equip_title',{p_title:titles[+b.dataset.equip].code});this.profile();}catch(e){this.error(e);}});
   $('uploadPhoto').onclick=async()=>{try{
     const file=$('photoOn').files?.[0];if(!file)throw new Error('Escolha uma imagem primeiro.');
@@ -507,10 +546,10 @@ class OnlineUI{
    <h3>Classificação · até 50 jogadores</h3>
    ${ranked.map(p=>{const title=catalog?.find(t=>t.code===p.equipped_title);return `<div class="member rank-member"><span class="rank-position">${p.position}º</span><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:ESC((p.nickname||'?').charAt(0))}</div><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>Nível ${xpProgress(p.xp).level} · ${p.online_wins} vitórias</small><small>${p.xp} XP acumulado</small>${title?`<small class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</small>`:''}</div><b class="rank-score">${p.ranking_points}<small>pontos</small></b></div>`;}).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
 
- async friends(){this.currentPage='friends';this.header('Amigos');let all=[];try{all=await this.cloud.rpc('es_friend_list');}catch(e){return this.error(e);}
+ async friends(){this.currentPage='friends';this.header('Amigos');let all=[],presence=[];try{[all,presence]=await Promise.all([this.cloud.rpc('es_friend_list'),this.cloud.rpc('es_v74_friend_presence')]);}catch(e){return this.error(e);}
   this.app.innerHTML=`<section class="card"><h2>Adicionar amigos</h2>${input('searchNick','Pesquisar apelido','text','','placeholder="Apelido do jogador"')}${btn('searchFriends','Pesquisar','secondary')}<div id="searchFriendsResult"></div><h3>Minha lista</h3>
-   ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?'Amigo':'Pedido pendente'}</small></div>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}
-   <p class="subtext">Para convidar para uma sala privada, compartilhe o código da sala. Convites diretos serão adicionados numa atualização posterior.</p><p id="onlineError" class="error"></p></section>`;
+   ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?(presence.some(x=>x.id===p.id&&x.online)?'Amigo · Online agora':'Amigo · Offline'):'Pedido pendente'}</small></div>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}
+   <p class="subtext">Convites diretos já estão disponíveis pelo botão Convidar amigos na sala. Para entrar por código, use Entrar com código.</p><p id="onlineError" class="error"></p></section>`;
   this.app.querySelectorAll('[data-accept]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_friend_accept',{p_from:all[+b.dataset.accept].id});this.friends();}catch(e){this.error(e);}});
   $('searchFriends').onclick=async()=>{try{const r=await this.cloud.rpc('es_find_players',{p_query:$('searchNick').value});
    $('searchFriendsResult').innerHTML=r.map((p,i)=>`<div class="member"><div class="member-info">${ESC(p.nickname)}</div><button class="back" data-add="${i}">Adicionar</button></div>`).join('')||'<p>Ninguém encontrado.</p>';

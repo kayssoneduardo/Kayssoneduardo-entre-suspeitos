@@ -1,0 +1,44 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=fs.readFileSync('web/online.js','utf8');
+const patched=source.replace('const online=new OnlineUI();window.ESOnline={open:args=>online.open(args)};','window.__V74__={OnlineUI};');
+assert.notEqual(patched,source,'Test harness export anchor changed');
+const elements=new Map();
+function remember(html){for(const m of html.matchAll(/id="([^"]+)"[^>]*>/g)){if(!elements.has(m[1]))elements.set(m[1],{disabled:false,value:'',onclick:null});}}
+const app={html:'',set innerHTML(s){this.html=s;remember(s);},get innerHTML(){return this.html;},querySelectorAll(sel){return sel==='[data-claim]'?[...this.claimButtons||[]]:[];}};
+const topbar={hidden:false,set innerHTML(s){remember(s);}};
+const document={getElementById:id=>elements.get(id)||null};
+const store=new Map(),localStorage={getItem:k=>store.get(k)||null,setItem:(k,v)=>store.set(k,v)};
+const window={ES_WORD_BANK:{},ES_SERVER_CONFIG:{url:'https://example.supabase.co',key:'demo'},location:{origin:'https://example.com',pathname:'/game/',search:'',hash:'',href:'https://example.com/game/'},history:{replaceState(){}}};
+vm.runInNewContext(patched,{window,document,localStorage,URL,URLSearchParams,Date,Math,Number,String,Map,Set,JSON,Error,console,setInterval,clearInterval},{filename:'online.js'});
+const ui=new window.__V74__.OnlineUI();ui.app=app;ui.topbar=topbar;
+let calls=[];
+const missions=[{code:'daily_play',title:'Jogue 3 partidas',period:'Diária',progress:3,target:3,complete:true,renews_at:'2026-11-15T00:00:00Z'},{code:'weekly_play',title:'Jogue 10 partidas',period:'Semanal',progress:2,target:10,complete:false,renews_at:'2026-11-16T00:00:00Z'}];
+const events=[{code:'nevoa_2026',name:'Operação Névoa',description:'Jogue 5 vezes',active:true,progress:2,target:5,ends_at:'2026-12-01T03:00:00Z',reward_frame:'nevoa'}];
+ui.cloud={userId:'user',rpc:async(name,params)=>{calls.push([name,params]);if(name==='es_v74_missions')return missions;if(name==='es_v74_events_list')return events;if(name==='es_v74_claims')return [];if(name==='es_v74_mission_claim')return {xp_awarded:15,total_xp:115};if(name==='es_v74_stats')return {games:0,wins:0,public_games:0,private_games:0,impostor_games:0,impostor_wins:0,common_games:0,common_wins:0,correct_votes:0,votes_received:0,recent:[]};if(name==='es_me')return {nickname:'Teste',avatar_url:null,xp:400,ranking_points:25,online_wins:5,online_losses:1,private_wins:0,private_losses:0,impostor_wins:2,impostor_losses:1,common_wins:3,common_losses:0,equipped_frame:'bronze'};if(name==='es_my_titles')return [];if(name==='es_v74_frames')return [{code:'bronze',name:'Vigilante Bronze',unlocked:true,equipped:true},{code:'ouro',name:'Olhar de Ouro',unlocked:false,equipped:false}];throw new Error('Unexpected RPC '+name);}};
+(async()=>{
+ await ui.progressHub();
+ assert.match(app.html,/Missões diárias e semanais/);
+ assert.match(app.html,/Operação Névoa/);
+ assert.match(app.html,/Resgatar 15 XP/);
+ assert.doesNotMatch(app.html,/Resgatar 40 XP/);
+ await ui.statsPage();assert.match(app.html,/Seu histórico/);
+ assert.doesNotMatch(app.html,/NaN|Infinity/);
+ assert.match(app.html,/Sem partidas concluídas/);
+ assert.equal(ui.currentPage,'stats');
+ await ui.profile();assert.match(app.html,/Molduras do perfil/);
+ assert.match(app.html,/Vigilante Bronze/);
+ assert.match(app.html,/Olhar de Ouro/);
+ assert.match(app.html,/v74-frame bronze/);
+ assert.match(app.html,/Bloqueada/);
+ ui.cloud.userId='host';ui.sound=()=>{};
+ const room={id:'room123',code:'ABC123',owner:'host',status:'results',max:5,impostors:1,categories:['Animais'],difficulty:'Fácil',clue:'none',know:false,public:true,name:'Teste',players:[{id:'host',nick:'Host',active:true,ready:true},{id:'guest',nick:'Guest',active:true,ready:true}],me:{impostors:['guest'],word:'Gato',category:'Animais'},results:[{user:'host',impostor:false,win:true,votes:0,xp:75},{user:'guest',impostor:true,win:false,votes:1,xp:20}]};
+ ui.renderRoom(room);assert.match(app.html,/VOCÊ VENCEU/);assert.match(app.html,/SEGREDOS REVELADOS/);assert.match(app.html,/Compartilhar convite por link/);assert.match(app.html,/\+75 XP de partida/);
+
+ assert.match(source,/navigator\.share/);
+ assert.match(source,/connectionFailed\(e\)/);
+ assert.match(source,/this\.nextRefreshAt/);
+ assert.match(source,/v74-reveal/);
+ assert.match(source,/searchParams\.set\('room'/,'Room deep-link check');
+ console.log('PASSOU: V7.4 progress dashboard, event, statistics zero-case and static navigation.');
+})().catch(e=>{console.error(e);process.exitCode=1;});

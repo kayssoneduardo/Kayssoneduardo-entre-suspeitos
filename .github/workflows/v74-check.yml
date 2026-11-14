@@ -1,0 +1,25 @@
+name: Verificar desenvolvimento Entre Suspeitos V7.4
+on:
+  push:
+    branches: ['feature/v7-4-preparacao-20261114']
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar JavaScript
+        run: |
+          for file in web/*.js; do node --check "$file"; done
+          node v7_pending/tests/web_auth_smoke.cjs
+          node v7_pending/tests/word_bank_smoke.cjs
+          node v7_pending/tests/v74_smoke.cjs
+      - name: Verificar arquivos e permissões da V7.4
+        run: |
+          test -f v7_pending/sql/v74_social_progress.sql
+          test -f v7_pending/sql/v74_mission_rewards.sql
+          grep -q 'branches: \[main\]' .github/workflows/publicar-site-v7.yml
+          echo 'Testes de branch concluídos, sem publicação.'

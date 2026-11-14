@@ -76,7 +76,7 @@ function renderHowTo(){
  <p class="subtext">Todos os jogadores comuns recebem a mesma palavra. O impostor não recebe a palavra: ele precisa se misturar, ouvir as pistas e tentar não ser descoberto.</p>
  <h3>Modo offline</h3><p class="subtext">Cadastre os nomes, escolha as categorias e o número de impostores. Passe o celular de mão em mão. Cada jogador segura a carta para ver seu papel e solta o dedo para escondê-lo. Depois, conversem e revelem os impostores quando decidirem.</p>
  <h3>Dicas para impostores</h3><p class="subtext">O anfitrião decide se o impostor vê categoria, dica, as duas ou nenhuma. Com mais de um impostor, também é possível escolher se eles se conhecem.</p>
- <h3>Modo online</h3><p class="subtext">Com um servidor configurado, os participantes entram em salas, discutem por voz durante três minutos e votam secretamente por trinta segundos. Empates pela última vaga favorecem quem conseguiu escapar.</p>
+ <h3>Modo online</h3><p class="subtext">Com um servidor configurado, os participantes entram em salas com pelo menos 3 jogadores prontos, visualizam a carta por 30 segundos e seguem diretamente para uma votação secreta sem limite de tempo. A votação encerra quando todos os participantes que continuam na sala votam. Empates pela última vaga favorecem quem conseguiu escapar.</p>
  <p class="notice">Não diga a palavra secreta em voz alta e nunca mostre sua carta aos outros. As partidas públicas são as únicas que concedem XP e pontos no ranking online.</p>
  ${button('backHow','VOLTAR AO MENU','secondary')}</section>`;
  document.getElementById('backHow').onclick=renderMenu;
@@ -85,7 +85,7 @@ function renderFuture(name,desc){page='future';setTop(name,renderMenu);app.inner
 function renderSettings(){
  page='settings';setTop('Configurações',renderMenu);
  app.innerHTML=`<section class="card"><h2>Visual e som</h2><p class="subtext">Escolha o tema e ajuste o áudio deste aparelho.</p>
- <div class="field"><label for="theme">Tema do aplicativo</label><select id="theme"><option value="shadow">Sombra — preto e vermelho</option><option value="night">Noturno — azul e roxo</option></select></div>
+ <div class="field"><label for="theme">Tema do aplicativo</label><select id="theme"><option value="shadow">Vermelho e preto — Rubro Sombrio</option><option value="night">Roxo profundo — Noite Violeta</option></select></div>
  <div class="check"><input class="switch" type="checkbox" id="music"><label for="music">Música ambiente de suspense</label></div>
  <div class="check"><input class="switch" type="checkbox" id="effects"><label for="effects">Efeitos sonoros do jogo</label></div>
  <div class="notice">A trilha é original e gerada pelo aplicativo. O som é opcional e funciona sem internet. Por segurança, as informações secretas só aparecem enquanto você mantém o dedo na carta.</div></section>
@@ -109,7 +109,7 @@ function renderSetup(){
  <div class="check"><input type="checkbox" id="know" class="switch"><label for="know">Impostores conhecem os parceiros</label></div>
  <p class="subtext">No modo offline, não há cronômetro ou votação automática. Vocês decidem verbalmente.</p></section>
  <section class="card"><div class="section-header"><h2>Categorias</h2><span class="pill">${counts.total.toLocaleString('pt-BR')} palavras</span></div>
- <p class="subtext">Escolha uma ou mais categorias. Cada uma possui pelo menos 100 palavras.</p>
+ <p class="subtext">Escolha uma ou mais categorias. A categoria Pessoas de Loreto é uma coleção local especial; nas demais categorias, o banco mantém pelo menos 100 palavras.</p>
  <div class="row"><button class="btn secondary" id="all">Todas</button><button class="btn ghost" id="none">Limpar</button></div>
  <div class="catGrid" id="catGrid"></div></section>
  <p id="error" class="error" role="alert"></p>
