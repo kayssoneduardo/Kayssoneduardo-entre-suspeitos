@@ -51,8 +51,8 @@ function openOnline(destination){ESAudio.activate();sound('tap');if(window.ESOnl
 function renderMenu(){
  page='menu';setTop();theme();
  app.innerHTML=`${title(true)}<section class="narrow">
- ${button('offline','◈ &nbsp; JOGAR OFFLINE<span class="subtitle">Um celular, vários suspeitos</span>','secondary')}
  ${button('online','◎ &nbsp; JOGAR ONLINE<span class="subtitle">Salas · Amigos · Voz (em testes)</span>')}
+ ${button('offline','◈ &nbsp; JOGAR OFFLINE<span class="subtitle">Um celular, vários suspeitos</span>','secondary')}
  ${button('howto','? &nbsp; COMO JOGAR','ghost')}
  <div class="tiles">
   <button class="tile" id="profile"><span class="tile-icon">♟</span>Meu perfil</button>
