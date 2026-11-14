@@ -581,6 +581,58 @@ class OnlineUI{
    this.app.querySelectorAll('[data-cosmetic]').forEach(b=>b.onclick=async()=>{const x=selected[Number(b.dataset.cosmetic)];b.disabled=true;try{await this.cloud.rpc('es_cosmetic_equip',{p_kind:x.kind,p_code:x.code});this.cosmeticsPage();}catch(e){this.error(e);b.disabled=false;}});
   }catch(e){this.error(e);}
  }
+
+ motionSettings(){
+  return '<div class="es-v75-motion-controls"><label for="motionModeOn">Animações de cosméticos</label><select id="motionModeOn"><option value="auto">Automático · economiza bateria</option><option value="on">Ativado</option><option value="off">Desativado</option></select></div><p class="small muted">Apenas efeito visual; votação, cartas e microfone não são alterados.</p>';
+ }
+ bindMotionSettings(){
+  const el=$('motionModeOn');if(!el)return;
+  el.value=window.ESMotion?.mode()||'auto';
+  el.onchange=()=>window.ESMotion?.setMode(el.value);
+ }
+ bindPublicProfiles(){
+  this.app.querySelectorAll('[data-social]').forEach(b=>b.onclick=()=>this.publicProfile(b.dataset.social));
+ }
+ async publicProfile(id){
+  if(!/^[a-f0-9-]{36}$/i.test(id))return this.error('Perfil inválido');
+  this.stopLoop();this.currentPage='publicProfile';this.header('Perfil público');
+  this.app.innerHTML='<section class="card"><h2>Perfil público</h2><p>Carregando...</p></section>';
+  try{
+   const [p,catalog]=await Promise.all([this.cloud.rpc('es_v75_public_profile',{p_user:id}),this.cloud.rpc('es_title_catalog')]);
+   if(this.currentPage!=='publicProfile')return;
+   const c=window.ESCosmetics,t=catalog.find(x=>x.code===p.equipped_title);
+   const picture=avatarSrc(this.cloud,p.avatar_url),rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?'title-'+t.rarity:'';
+   this.app.innerHTML='<section class="card"><h2>Perfil de '+ESC(p.nickname)+'</h2><div class="cosmetic-profile-hero">'
+    +(c?c.banner(p.equipped_banner||'padrao'):'')+'<div class="cosmetic-profile-main">'
+    +(c?c.avatar(p.equipped_frame||'classica',picture?'<img src="'+ESC(picture)+'" alt="">':ESC((p.nickname||'?').charAt(0))):'')
+    +'<div><strong class="cosmetic-player-name '+rarity+'">'+ESC(p.nickname)+'</strong>'
+    +(t?'<p class="equipped-title title-'+ESC(t.rarity)+'">'+ESC(t.name)+'</p>':'')+'</div></div></div>'
+    +'<div class="v74-stats-grid"><div class="v74-stat"><strong>'+Number(p.online_wins||0)+'</strong><small>Vitórias públicas</small></div>'
+    +'<div class="v74-stat"><strong>'+Number(p.ranking_points||0)+'</strong><small>Pontos de ranking</small></div>'
+    +'<div class="v74-stat"><strong>'+xpProgress(p.xp).level+'</strong><small>Nível</small></div>'
+    +'<div class="v74-stat"><strong>'+Number(p.online_losses||0)+'</strong><small>Derrotas públicas</small></div></div>'
+    +'<p class="small muted">Exibe apenas dados públicos. Votos e partidas privadas não são divulgados.</p></section>'
+    +btn('backSocial','Voltar','secondary')+'<p id="onlineError" class="error"></p>';
+   $('backSocial').onclick=()=>this.roomId?this.enterRoom(this.roomId):this.home();
+  }catch(e){this.error(e);}
+ }
+ async historyPage(){
+  this.stopLoop();this.currentPage='history';this.header('Histórico de partidas');
+  this.app.innerHTML='<section class="card"><h2>Histórico</h2><p>Carregando resultados...</p></section>';
+  try{
+   const d=await this.cloud.rpc('es_v74_stats');if(this.currentPage!=='history')return;
+   const recent=(d.recent||[]).slice(0,10);
+   this.app.innerHTML='<section class="card"><h2>Suas últimas 10 partidas</h2>'
+    +'<p class="subtext">Resultados individuais vindos do servidor. Partidas privadas não pontuam no ranking.</p>'
+    +(recent.map(x=>'<div class="es-v75-history-item"><div><strong>'+(x.win?'Vitória':'Derrota')+' · '+(x.is_impostor?'Impostor':'Comum')+'</strong><small>'
+    +ESC(new Date(x.finished_at).toLocaleString('pt-BR'))+' · '+(x.is_public?'Pública':'Privada')+' · '+Number(x.votes_received||0)+' votos recebidos'
+    +' · '+Number(x.hits||0)+' acertos</small></div><span class="pill '+(x.win?'good':'')+'">'
+    +(x.is_public?'+'+Number(x.xp_earned||0)+' XP':'Sem XP')+'</span></div>').join('')||'<p class="notice">Você ainda não concluiu partidas.</p>')
+    +'</section>'+btn('backHistory','Voltar às estatísticas','secondary')+'<p id="onlineError" class="error"></p>';
+   $('backHistory').onclick=()=>this.statsPage();
+  }catch(e){this.error(e);}
+ }
+
  async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_leaderboard'),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
   const ranked=rankedPlayers(rank);
   const medals={1:['🥇','Ouro'],2:['🥈','Prata'],3:['🥉','Bronze']};
