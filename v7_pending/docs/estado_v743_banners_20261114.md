@@ -1,0 +1,28 @@
+# Entre Suspeitos — V7.4.3 (revisão, NÃO publicada)
+
+## Escopo solicitado
+Usuário aprovou as amostras de banners cinematográficos e pediu preparar a integração sem atualizar o site; as molduras da versão atual permanecem inalteradas, mas quatro amostras ilustradas independentes foram criadas para futura escolha.
+
+## Implementação já preparada na branch
+- `web/cosmetics.js`: `banner(code)` tenta renderizar a arte local `assets/banners/<código>.webp` e mantém o SVG original como fallback.
+- `web/style.css`: composição responsiva, recorte tipo cover, legibilidade dos cartões e camada de fallback.
+- `v7_pending/docs/v743_banner_manifest.json`: relação completa e estável dos 16 códigos já existentes no Supabase.
+- `v7_pending/tests/v743_banner_assets_smoke.cjs`: smoke para 16 códigos, formato e fallback.
+- GitHub Pages NÃO deve ser publicado a partir desta branch. O workflow de Pages continua restrito a main.
+
+## Artes geradas e situação de hospedagem
+16 arquivos `.webp` 1080×360, de aproximadamente 30 a 100 KiB cada, preparados **localmente** e entregues no pacote `Entre_Suspeitos_V743_Artes_Para_Revisao.zip` desta conversa.
+Oito ilustrações independentes seguem a direção gótica aprovada. Outros oito banners utilizam estudos alternativos, variantes e temas de fantasia que ainda merecem apreciação; não alegar aprovação definitiva de cada arte.
+Existem ainda quatro amostras de molduras PNG transparentes, mas **não foram integradas ao jogo**.
+
+IMPORTANTE: a API GitHub disponível neste fluxo grava texto; os binários WebP locais **ainda precisam ser enviados ao repositório** na pasta `web/assets/banners/` antes de mesclar esta branch. Sem eles, a UI continua exibindo os SVGs antigos como fallback. Não publicar a branch antes da transferência e validação real dos 16 arquivos.
+
+## Preservação
+Molduras e desbloqueios atuais intactos; nenhum SQL/Supabase alterado; nenhuma modificação em XP, títulos, ranking ou eventos. O jogo público permanece V7.4.2.
+
+## Antes de publicar
+1. Usuário revisa a prévia offline interativa `Entre_Suspeitos_V743_Previa_Interativa.html`.
+2. Se desejar, refinar as artes com excesso de fantasias heroicas, para que todos os 16 banners mantenham a mesma identidade visual gótica.
+3. Transferir 16 WebP para `web/assets/banners` na branch, confirmar nomes e integridade (não só caminhos).
+4. Testar preview real no Android e GitHub Actions, deployar apenas após novo pedido do usuário.
+5. Atualizar o TXT de continuidade, referenciar o commit e o status efetivo.
