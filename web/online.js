@@ -198,6 +198,7 @@ class OnlineUI{
   if(!this.cloud.userId){this.login();return;}
   const destination=this.pendingDestination;this.pendingDestination=null;
   if(destination==='profile')return this.profile();
+  if(destination==='cosmetics')return this.cosmeticsPage();
   if(destination==='ranking')return this.ranking();
   if(destination==='friends')return this.friends();
    if(destination==='missions')return this.progressHub();
@@ -372,7 +373,7 @@ class OnlineUI{
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
   $('makeRoom').onclick=async()=>{try{const p=this.getRules(),name=$('roomNameOn').value.replace(/\s+/g,' ').trim();if(name&&([...name].length<3||[...name].length>50))throw new Error('Use de 3 a 50 caracteres no nome da sala.');this.enterRoom(await this.cloud.rpc('es_create_named',{p_public:$('publicOn').value==='true',p_name:name,...p}));}catch(e){this.error(e);}};
  }
- enterRoom(id){this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
+ enterRoom(id){this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.activeEvent=null;this.cloud.rpc('es_v74_events_list').then(events=>{if(this.roomId===id){this.activeEvent=events.find(e=>e.active)||null;if(this.room)this.renderRoom(this.room);}}).catch(()=>{});this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
@@ -407,7 +408,16 @@ class OnlineUI{
   ${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('shareLinkOn','Compartilhar convite por link','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
-  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div>`).join('')}</section>`;
+  const cosmetics=window.ESCosmetics;
+  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>{
+   const t=this.titleCatalog?.find(t=>t.code===p.title);
+   const rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?' title-'+t.rarity:'';
+   const frame=cosmetics?.safeFrame(p.frame)||'classica',banner=cosmetics?.safeBanner(p.banner)||'padrao';
+   const pic=avatarSrc(this.cloud,p.avatar);
+   const avatar=cosmetics?cosmetics.avatar(frame,pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())):`<div class="avatar">${pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div>`;
+   return `<div class="cosmetic-player">${cosmetics?cosmetics.banner(banner):''}<div class="cosmetic-player-foreground">${avatar}<div class="cosmetic-player-identity"><strong class="cosmetic-player-name${rarity}">${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small class="cosmetic-player-status ${p.active&&p.online?'online':'offline'}">${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[frame]?.[0]||'Clássica')}</span>${equippedTitle(p.title)}</div></div>
+    <div class="cosmetic-player-controls">${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div></div>`;
+  }).join('')}</section>`;
   let phase='';
   if(r.status==='lobby'){
    const myReady=!!r.players.find(p=>p.id===me)?.ready;
@@ -440,7 +450,7 @@ class OnlineUI{
     <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
     ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
   }
-  this.currentPage='room';this.app.innerHTML=head+phase+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
+  this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${event.progress}/${event.target} · Moldura Névoa</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
   this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
@@ -495,9 +505,10 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
  async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[],frames=[];try{[p,titles,frames]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles'),this.cloud.rpc('es_v74_frames')]);}catch(e){return this.error(e);}
-  const progress=xpProgress(p.xp);
+  const progress=xpProgress(p.xp);const cosmetics=window.ESCosmetics;const title=titles.find(t=>t.equipped);const rarity=title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?' title-'+title.rarity:'';const avatarUrl=avatarSrc(this.cloud,p.avatar_url);
+  const avatar=cosmetics?cosmetics.avatar(p.equipped_frame||'classica',avatarUrl?`<img src="${ESC(avatarUrl)}" alt="Minha foto">`:ESC((p.nickname||'?').charAt(0).toUpperCase())):`<div class="avatar profile-avatar">${ESC((p.nickname||'?').charAt(0).toUpperCase())}</div>`;
   this.app.innerHTML=`<section class="card"><h2>Meu perfil</h2>
-   <div class="profile-heading"><div class="avatar profile-avatar v74-frame ${['bronze','ouro','nevoa'].includes(p.equipped_frame)?p.equipped_frame:'classica'}">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
+   <div class="cosmetic-profile-hero">${cosmetics?cosmetics.banner(p.equipped_banner||'padrao'):''}<div class="cosmetic-profile-main">${avatar}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[cosmetics.safeFrame(p.equipped_frame)]?.[0]||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC(cosmetics?.banners[cosmetics.safeBanner(p.equipped_banner)]?.[0]||'Sombras Originais')}</span></div>${btn('openCosmetics','Personalizar banners e molduras','secondary')}
    <section class="level-panel" aria-label="Seu nível e experiência"><div class="level-summary"><strong>Nível ${progress.level}</strong><span>${progress.xp.toLocaleString('pt-BR')} XP acumulado</span></div>
    <progress class="xp-progress" value="${progress.earned}" max="${progress.needed}" aria-label="Progresso até o nível ${progress.level+1}"></progress>
    <p>${progress.earned.toLocaleString('pt-BR')} / ${progress.needed.toLocaleString('pt-BR')} XP neste nível · ${progress.percent}%</p>
@@ -510,15 +521,14 @@ class OnlineUI{
    <p><b>${p.private_wins} / ${p.private_losses}</b><br>Vitórias / derrotas privadas</p>
    <p><b>${p.impostor_wins} / ${p.impostor_losses}</b><br>Impostor: vitórias / derrotas</p>
    <p><b>${p.common_wins} / ${p.common_losses}</b><br>Comum: vitórias / derrotas</p></div>
-   <div class="divider"></div><h3>Molduras do perfil</h3><p class="subtext">Desbloqueadas por vitórias públicas ou eventos; sem vantagens competitivas.</p>
-    ${frames.map((x,i)=>`<div class="v74-frame-choice"><span class="v74-frame ${ESC(x.code)}">${ESC(x.name)}</span><button type="button" class="back" data-frame="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipada':x.unlocked?'Equipar':'Bloqueada'}</button></div>`).join('')}
+   <div class="divider"></div><h3>Personalização</h3><p class="subtext">São 16 molduras e 16 banners. Abra a galeria para visualizar, conquistar e equipar os seus itens.</p>
     ${btn('viewStatsProfile','Ver estatísticas avançadas','secondary')}
     <div class="divider"></div><h3>Meus títulos</h3>
    <p class="subtext">Ganhe títulos em partidas públicas. Selecione um para destacar no seu perfil.</p>
    <div class="title-list">${titles.map((t,i)=>`<div class="member"><div class="member-info"><strong class="title-${ESC(t.rarity)}">${ESC(t.name)}</strong><small>${ESC(t.description)} · ${ESC(t.rarity)}</small></div><button type="button" class="back" data-equip="${i}" ${t.equipped?'disabled':''}>${t.equipped?'Equipado':'Usar'}</button></div>`).join('')||'<p class="notice">Ainda sem títulos. Continue jogando partidas públicas!</p>'}</div>
    <p class="notice">Títulos Místicos permanecem ocultos até a conquista e sujeitos às regras de exclusividade.</p><p id="onlineError" class="error"></p></section>`;
-   this.app.querySelectorAll('[data-frame]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_v74_equip_frame',{p_frame:frames[+b.dataset.frame].code});this.profile();}catch(e){this.error(e);}});
    $('viewStatsProfile').onclick=()=>this.statsPage();
+   $('openCosmetics').onclick=()=>this.cosmeticsPage();
    this.app.querySelectorAll('[data-equip]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_equip_title',{p_title:titles[+b.dataset.equip].code});this.profile();}catch(e){this.error(e);}});
   $('uploadPhoto').onclick=async()=>{try{
     const file=$('photoOn').files?.[0];if(!file)throw new Error('Escolha uma imagem primeiro.');
@@ -535,6 +545,36 @@ class OnlineUI{
   }catch(e){this.error(e);}};
   $('saveNick').onclick=async()=>{try{await this.cloud.rpc('es_set_nickname',{p_nick:$('nicknameOn').value});this.profile();}catch(e){this.error(e);}};
  }
+
+ async cosmeticsPage(){
+  this.stopLoop();this.currentPage='cosmetics';this.header('Personalização');
+  this.app.innerHTML='<section class="card"><h2>Personalização</h2><p>Carregando catálogo...</p><p id="onlineError" class="error"></p></section>';
+  try{
+   const [p,titles,items]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles'),this.cloud.rpc('es_cosmetic_inventory')]);
+   if(this.currentPage!=='cosmetics')return;
+   const cosmetics=window.ESCosmetics;if(!cosmetics)throw new Error('Catálogo visual indisponível. Atualize a página.');
+   const title=titles.find(t=>t.equipped);const rarity=title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?' title-'+title.rarity:'';
+   const avatarUrl=avatarSrc(this.cloud,p.avatar_url);
+   const photo=avatarUrl?`<img src="${ESC(avatarUrl)}" alt="Foto do perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase());
+   const equippedFrame=items.find(x=>x.kind==='frame'&&x.equipped)||items.find(x=>x.code==='classica');
+   const equippedBanner=items.find(x=>x.kind==='banner'&&x.equipped)||items.find(x=>x.code==='padrao');
+   const currentFrame=equippedFrame?.code||'classica',currentBanner=equippedBanner?.code||'padrao';
+   const tab=this.cosmeticTab==='frame'?'frame':'banner';
+   const selected=items.filter(x=>x.kind===tab);
+   const tiles=selected.map((x,i)=>{
+    const visual=x.kind==='frame'?cosmetics.avatar(x.code,'✦'):`<div class="cosmetic-tile-banner">${cosmetics.banner(x.code)}</div>`;
+    const requirement=x.event_code?'Evento especial':x.wins_required+' vitórias públicas · '+x.xp_required+' XP';
+    return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
+   }).join('');
+   this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC(equippedFrame?.name||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC(equippedBanner?.name||'Sombras Originais')}</span></section>
+    <div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
+    <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery">${tiles}</div><p id="onlineError" class="error"></p></section>${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
+   $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticsPage();};
+   $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticsPage();};
+   $('cosmeticsBack').onclick=()=>this.profile();
+   this.app.querySelectorAll('[data-cosmetic]').forEach(b=>b.onclick=async()=>{const x=selected[Number(b.dataset.cosmetic)];b.disabled=true;try{await this.cloud.rpc('es_cosmetic_equip',{p_kind:x.kind,p_code:x.code});this.cosmeticsPage();}catch(e){this.error(e);b.disabled=false;}});
+  }catch(e){this.error(e);}
+ }
  async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_leaderboard'),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
   const ranked=rankedPlayers(rank);
   const medals={1:['🥇','Ouro'],2:['🥈','Prata'],3:['🥉','Bronze']};
@@ -544,7 +584,7 @@ class OnlineUI{
    <p class="small muted">Ordem por pontos de ranking; desempate por vitórias públicas. Empate nos dois critérios mantém a mesma posição.</p>
    ${podium.length?`<div class="ranking-podium" aria-label="Pódio atual">${podium.map(p=>`<article class="podium-card podium-${p.position}"><span class="podium-medal" aria-hidden="true">${medals[p.position][0]}</span><small>${p.position}º LUGAR · ${medals[p.position][1]}</small><strong>${ESC(p.nickname)}</strong><b>${p.ranking_points} pontos</b></article>`).join('')}</div><p class="small muted">Medalhas de destaque enquanto o jogador ocupar o pódio. Não concedem XP nem títulos permanentes.</p>`:''}
    <h3>Classificação · até 50 jogadores</h3>
-   ${ranked.map(p=>{const title=catalog?.find(t=>t.code===p.equipped_title);return `<div class="member rank-member"><span class="rank-position">${p.position}º</span><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:ESC((p.nickname||'?').charAt(0))}</div><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>Nível ${xpProgress(p.xp).level} · ${p.online_wins} vitórias</small><small>${p.xp} XP acumulado</small>${title?`<small class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</small>`:''}</div><b class="rank-score">${p.ranking_points}<small>pontos</small></b></div>`;}).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
+   ${ranked.map(p=>{const title=catalog?.find(t=>t.code===p.equipped_title);return `<div class="member rank-member"><span class="rank-position">${p.position}º</span><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:ESC((p.nickname||'?').charAt(0))}</div><div class="member-info"><strong class="${title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?'title-'+title.rarity:''}">${ESC(p.nickname)}</strong><small>Nível ${xpProgress(p.xp).level} · ${p.online_wins} vitórias</small><small>${p.xp} XP acumulado</small>${title?`<small class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</small>`:''}</div><b class="rank-score">${p.ranking_points}<small>pontos</small></b></div>`;}).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
 
  async friends(){this.currentPage='friends';this.header('Amigos');let all=[],presence=[];try{[all,presence]=await Promise.all([this.cloud.rpc('es_friend_list'),this.cloud.rpc('es_v74_friend_presence')]);}catch(e){return this.error(e);}
   this.app.innerHTML=`<section class="card"><h2>Adicionar amigos</h2>${input('searchNick','Pesquisar apelido','text','','placeholder="Apelido do jogador"')}${btn('searchFriends','Pesquisar','secondary')}<div id="searchFriendsResult"></div><h3>Minha lista</h3>

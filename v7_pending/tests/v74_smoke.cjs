@@ -26,11 +26,10 @@ ui.cloud={userId:'user',rpc:async(name,params)=>{calls.push([name,params]);if(na
  assert.doesNotMatch(app.html,/NaN|Infinity/);
  assert.match(app.html,/Sem partidas concluídas/);
  assert.equal(ui.currentPage,'stats');
- await ui.profile();assert.match(app.html,/Molduras do perfil/);
- assert.match(app.html,/Vigilante Bronze/);
- assert.match(app.html,/Olhar de Ouro/);
- assert.match(app.html,/v74-frame bronze/);
- assert.match(app.html,/Bloqueada/);
+ await ui.profile();assert.match(app.html,/Personalização/);
+ assert.match(app.html,/16 molduras e 16 banners/);
+ assert.match(app.html,/id="openCosmetics"/);
+ assert.match(app.html,/Banner: Sombras Originais/);
  ui.cloud.userId='host';ui.sound=()=>{};
  const room={id:'room123',code:'ABC123',owner:'host',status:'results',max:5,impostors:1,categories:['Animais'],difficulty:'Fácil',clue:'none',know:false,public:true,name:'Teste',players:[{id:'host',nick:'Host',active:true,ready:true},{id:'guest',nick:'Guest',active:true,ready:true}],me:{impostors:['guest'],word:'Gato',category:'Animais'},results:[{user:'host',impostor:false,win:true,votes:0,xp:75},{user:'guest',impostor:true,win:false,votes:1,xp:20}]};
  ui.renderRoom(room);assert.match(app.html,/VOCÊ VENCEU/);assert.match(app.html,/SEGREDOS REVELADOS/);assert.match(app.html,/Compartilhar convite por link/);assert.match(app.html,/\+75 XP de partida/);
