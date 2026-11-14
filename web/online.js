@@ -521,14 +521,12 @@ class OnlineUI{
    <p><b>${p.private_wins} / ${p.private_losses}</b><br>Vitórias / derrotas privadas</p>
    <p><b>${p.impostor_wins} / ${p.impostor_losses}</b><br>Impostor: vitórias / derrotas</p>
    <p><b>${p.common_wins} / ${p.common_losses}</b><br>Comum: vitórias / derrotas</p></div>
-   <div class="divider"></div><h3>Molduras do perfil</h3><p class="subtext">Desbloqueadas por vitórias públicas ou eventos; sem vantagens competitivas.</p>
-    ${frames.map((x,i)=>`<div class="v74-frame-choice"><span class="v74-frame ${ESC(x.code)}">${ESC(x.name)}</span><button type="button" class="back" data-frame="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipada':x.unlocked?'Equipar':'Bloqueada'}</button></div>`).join('')}
+   <div class="divider"></div><h3>Personalização</h3><p class="subtext">São 16 molduras e 16 banners. Abra a galeria para visualizar, conquistar e equipar os seus itens.</p>
     ${btn('viewStatsProfile','Ver estatísticas avançadas','secondary')}
     <div class="divider"></div><h3>Meus títulos</h3>
    <p class="subtext">Ganhe títulos em partidas públicas. Selecione um para destacar no seu perfil.</p>
    <div class="title-list">${titles.map((t,i)=>`<div class="member"><div class="member-info"><strong class="title-${ESC(t.rarity)}">${ESC(t.name)}</strong><small>${ESC(t.description)} · ${ESC(t.rarity)}</small></div><button type="button" class="back" data-equip="${i}" ${t.equipped?'disabled':''}>${t.equipped?'Equipado':'Usar'}</button></div>`).join('')||'<p class="notice">Ainda sem títulos. Continue jogando partidas públicas!</p>'}</div>
    <p class="notice">Títulos Místicos permanecem ocultos até a conquista e sujeitos às regras de exclusividade.</p><p id="onlineError" class="error"></p></section>`;
-   this.app.querySelectorAll('[data-frame]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_v74_equip_frame',{p_frame:frames[+b.dataset.frame].code});this.profile();}catch(e){this.error(e);}});
    $('viewStatsProfile').onclick=()=>this.statsPage();
    $('openCosmetics').onclick=()=>this.cosmeticsPage();
    this.app.querySelectorAll('[data-equip]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_equip_title',{p_title:titles[+b.dataset.equip].code});this.profile();}catch(e){this.error(e);}});
