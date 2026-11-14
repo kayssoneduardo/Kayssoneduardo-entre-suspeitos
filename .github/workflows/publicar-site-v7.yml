@@ -59,7 +59,7 @@ jobs:
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
           assert 'joined.length>=3' in Path('web/online.js').read_text()
-          assert Path('web/words.js').read_text().count('"w":')==1322
+          assert Path('web/words.js').read_text().count('"w":')==1333
           assert 'ES_SERVER_CONFIG' in Path('web/server-config.js').read_text()
           assert 'verifyEmailLink' in Path('web/online.js').read_text()
           print('Verificações de site, multiplayer e dicionário aprovadas.')
@@ -105,5 +105,5 @@ jobs:
           node --check /tmp/online.js
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
-          test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1322
+          test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1333
           echo "SITE PUBLICADO E VERIFICADO: $URL/"
