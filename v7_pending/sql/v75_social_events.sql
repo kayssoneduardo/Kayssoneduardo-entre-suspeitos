@@ -26,7 +26,7 @@ grant execute on function public.es_v75_public_profile(uuid) to authenticated;
 -- Rankings are still ordered by the same points/wins as the existing function.
 create or replace function public.es_v75_leaderboard()
 returns jsonb language plpgsql stable security definer set search_path=''
-as $
+as $v75lb$
 declare result jsonb;
 begin
  if auth.uid() is null then raise exception 'Entre na conta'; end if;
@@ -39,7 +39,7 @@ begin
  ) t;
  return result;
 end;
-$;
+$v75lb$;
 revoke all on function public.es_v75_leaderboard() from public,anon;
 grant execute on function public.es_v75_leaderboard() to authenticated;
 
