@@ -22,6 +22,27 @@ $$;
 revoke all on function public.es_v75_public_profile(uuid) from public,anon;
 grant execute on function public.es_v75_public_profile(uuid) to authenticated;
 
+-- Read-only enriched leaderboard: ids allow opening another player's public profile.
+-- Rankings are still ordered by the same points/wins as the existing function.
+create or replace function public.es_v75_leaderboard()
+returns jsonb language plpgsql stable security definer set search_path=''
+as $
+declare result jsonb;
+begin
+ if auth.uid() is null then raise exception 'Entre na conta'; end if;
+ select coalesce(jsonb_agg(to_jsonb(t) order by t.ranking_points desc,t.online_wins desc,t.nickname),'[]'::jsonb)
+ into result from (
+  select p.id,p.nickname,p.avatar_url,p.equipped_title,p.ranking_points,
+   p.online_wins,p.online_losses,p.xp
+  from public.es_profiles p
+  order by p.ranking_points desc,p.online_wins desc,p.nickname limit 50
+ ) t;
+ return result;
+end;
+$;
+revoke all on function public.es_v75_leaderboard() from public,anon;
+grant execute on function public.es_v75_leaderboard() to authenticated;
+
 -- One event reward per player and event; no ranking point changes.
 create table if not exists public.es_v75_event_claims (
  user_id uuid not null references auth.users(id) on delete cascade,
