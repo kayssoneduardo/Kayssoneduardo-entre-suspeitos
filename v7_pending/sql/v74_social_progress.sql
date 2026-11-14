@@ -61,7 +61,7 @@ with bounds as (
  select rd.finished_at,res.win,res.is_impostor,res.voted
  from public.es_results res join public.es_rounds rd on rd.id=res.round_id
  join public.es_rooms rm on rm.id=rd.room_id 
- where res.user_id=auth.uid() and rm.is_public and rd.finished_at is not null
+ where res.user_id=auth.uid() and rm.is_public and rd.finished_at is not null and res.voted
 ), missions as (
  select 'daily_play' code,'Diária' period,'Jogue 3 partidas públicas' title,3 target,count(*) filter(where g.finished_at>=b.d0) progress, b.d0 renews_from,b.d0+interval '1 day' renews_at from bounds b left join games g on true group by b.d0
  union all
@@ -79,7 +79,7 @@ returns jsonb language sql stable security definer set search_path=''
 as $$
 select coalesce(jsonb_agg(jsonb_build_object(
  'code',e.code,'name',e.name,'description',e.description,'starts_at',e.starts_at,'ends_at',e.ends_at,'target',e.target,
- 'progress',(select count(*) from public.es_results res join public.es_rounds rd on rd.id=res.round_id join public.es_rooms rm on rm.id=rd.room_id where res.user_id=auth.uid() and rd.finished_at between e.starts_at and e.ends_at and rm.is_public),
+ 'progress',(select count(*) from public.es_results res join public.es_rounds rd on rd.id=res.round_id join public.es_rooms rm on rm.id=rd.room_id where res.user_id=auth.uid() and rd.finished_at between e.starts_at and e.ends_at and rm.is_public and res.voted),
  'active',now()>=e.starts_at and now()<e.ends_at,
  'reward_frame',e.reward_frame
 ) order by e.starts_at desc),'[]'::jsonb)
@@ -101,7 +101,7 @@ with wins as (
  union all
  select 'nevoa','Névoa',0,exists(
   select 1 from public.es_results res join public.es_rounds rd on rd.id=res.round_id join public.es_rooms rm on rm.id=rd.room_id join public.es_v74_events ev on ev.code='nevoa_2026'
-  where res.user_id=auth.uid() and rm.is_public and rd.finished_at between ev.starts_at and ev.ends_at
+  where res.user_id=auth.uid() and rm.is_public and rd.finished_at between ev.starts_at and ev.ends_at and res.voted
   group by ev.target having count(*)>=ev.target)
 )
 select coalesce(jsonb_agg(jsonb_build_object('code',i.code,'name',i.name,'required',i.required,'unlocked',i.unlocked,'equipped',i.code=coalesce(p.equipped_frame,'classica')) order by i.required,i.code),'[]'::jsonb)
