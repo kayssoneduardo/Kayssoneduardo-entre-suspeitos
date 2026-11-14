@@ -210,3 +210,47 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 .cosmetic-tabs button{min-height:50px}
 #roomCosmeticsOn,#cosmeticsOn{border-color:#db86f6;box-shadow:0 0 14px #b64eed29}
 @media(max-width:400px){.cosmetic-player .cosmetic-avatar-wrap{width:100px;height:100px;flex-basis:100px}.cosmetic-player-name{font-size:18px}.cosmetic-player .equipped-title{font-size:16px}.cosmetic-profile-hero .cosmetic-avatar-wrap{width:110px;height:110px;flex-basis:110px}.cosmetic-room-banner-content h3{font-size:19px}}
+
+/* V7.4.3 — ilustrações individuais substituem o desenho repetitivo dos banners. */
+.cosmetic-banner-fallback,.cosmetic-banner-illustration{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cosmetic-banner-illustration{object-fit:cover;object-position:center;z-index:1}
+.cosmetic-banner-fallback{z-index:0;pointer-events:none}
+.cosmetic-profile-hero .cosmetic-banner-illustration,.cosmetic-player .cosmetic-banner-illustration{filter:saturate(.94) brightness(.86)}
+.cosmetic-profile-hero .cosmetic-banner-art,.cosmetic-player .cosmetic-banner-art{opacity:.9}
+.cosmetic-player .cosmetic-banner-art{opacity:.75}
+.cosmetic-player::after,.cosmetic-profile-hero::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(90deg,#10082038,transparent 67%);z-index:0}
+.cosmetic-tile .cosmetic-banner-art{opacity:1;filter:none}
+
+/* V7.4.3 — rarity is legible but never hides the approved scene.
+   The five tiers here refer to cosmetics only, not player ranking or titles. */
+.cosmetic-banner-art::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:2}
+.banner-rarity-comum .cosmetic-banner-illustration,.banner-rarity-comum .cosmetic-banner-fallback{filter:saturate(.68) brightness(.78)}
+.banner-rarity-incomum .cosmetic-banner-illustration,.banner-rarity-incomum .cosmetic-banner-fallback{filter:saturate(.84) brightness(.87)}
+.banner-rarity-raro .cosmetic-banner-illustration,.banner-rarity-raro .cosmetic-banner-fallback{filter:saturate(.99) brightness(.94)}
+.banner-rarity-epico .cosmetic-banner-illustration,.banner-rarity-epico .cosmetic-banner-fallback{filter:saturate(1.07) brightness(.99)}
+.banner-rarity-lenda .cosmetic-banner-illustration,.banner-rarity-lenda .cosmetic-banner-fallback{filter:saturate(1.13) brightness(1.04)}
+.banner-rarity-comum::after{background:linear-gradient(90deg,#05050935,transparent 85%);box-shadow:inset 0 0 0 1px #77727b38}
+.banner-rarity-incomum::after{background:linear-gradient(90deg,#05110d24,transparent 78%);box-shadow:inset 0 0 0 1px #73b7986b}
+.banner-rarity-raro::after{background:linear-gradient(90deg,#10152826,transparent 78%);box-shadow:inset 0 0 0 2px #7aacf397}
+.banner-rarity-epico::after{background:radial-gradient(ellipse 64% 110% at 92% 47%,#ac4ff61f,transparent 94%);box-shadow:inset 0 0 0 2px #bc83f2d0,inset 0 0 16px #9c55e64d}
+.banner-rarity-lenda::after{background:radial-gradient(ellipse 60% 130% at 92% 48%,#ffc9672d,transparent 91%);box-shadow:inset 0 0 0 3px #e5be73ed,inset 0 0 24px #e5ab4c78}
+@media (prefers-reduced-motion:reduce){.cosmetic-banner-illustration,.cosmetic-banner-art::after{transition:none!important;animation:none!important}}
+
+/* V7.4.3: four transparent illustrated avatar frames with rarity-based intensity.
+   The artwork is purely cosmetic and never changes title or ranking colors. */
+.cosmetic-frame-illustration{position:absolute;inset:-5%;width:110%;height:110%;object-fit:contain;z-index:2;pointer-events:none}
+.frame-rarity-comum .cosmetic-frame-svg{filter:none;opacity:.83}
+.frame-rarity-incomum .cosmetic-frame-svg{filter:drop-shadow(0 0 2px #83ac8c38);opacity:.92}
+.frame-rarity-raro .cosmetic-frame-svg{filter:drop-shadow(0 0 3px #83b9e66b)}
+.frame-rarity-epico .cosmetic-frame-svg{filter:drop-shadow(0 0 6px #be7fff75)}
+.frame-rarity-lenda .cosmetic-frame-svg{filter:drop-shadow(0 0 8px #f4c77ca9)}
+.frame-rarity-raro .cosmetic-frame-illustration{filter:saturate(.86) brightness(.92) drop-shadow(0 0 2px #a8cff966)}
+.frame-rarity-epico .cosmetic-frame-illustration{filter:saturate(1.03) brightness(1.0) drop-shadow(0 0 6px #aa7bffa6)}
+.frame-rarity-lenda .cosmetic-frame-illustration{filter:saturate(1.09) brightness(1.05) drop-shadow(0 0 10px #e3ba72bd)}
+/* Restrained common banners remain readable and never outshine rare cosmetics. */
+.cosmetic-player .banner-rarity-comum{opacity:.62}
+.cosmetic-player .banner-rarity-incomum{opacity:.70}
+.cosmetic-player .banner-rarity-raro{opacity:.79}
+.cosmetic-player .banner-rarity-epico{opacity:.88}
+.cosmetic-player .banner-rarity-lenda{opacity:.95}
+@media(prefers-reduced-motion:reduce){.cosmetic-frame-illustration{animation:none!important;transition:none!important}}

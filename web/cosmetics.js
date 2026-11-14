@@ -95,7 +95,40 @@ function bannerSvg(code){
  +'<circle cx="'+(220+(i*47)%310)+'" cy="30" r="2" fill="#fff" opacity=".7"/><circle cx="'+(160+(i*67)%410)+'" cy="75" r="2" fill="#fff" opacity=".4"/>'
  +'</svg>';
 }
-function avatar(code,imageHtml){return '<span class="cosmetic-avatar-wrap"><span class="cosmetic-avatar-content">'+imageHtml+'</span>'+svgFrame(code)+'</span>';}
-function banner(code){return '<span class="cosmetic-banner-art">'+bannerSvg(code)+'</span>';}
-window.ESCosmetics=Object.freeze({frames,banners,safeFrame,safeBanner,svgFrame,bannerSvg,avatar,banner});
+// The four approved illustrated frames replace only their own SVG designs;
+// the other twelve frames retain the existing vector art.
+const frameArtwork=Object.freeze(['ouro','nevoa','coroa_arcana','chamas_eternas']);
+const frameRarities=Object.freeze({
+ classica:'comum',bronze:'comum',
+ ordem_velada:'incomum',sentinela_lunar:'incomum',aurora_fantasma:'incomum',
+ ouro:'raro',lamina_eclipse:'raro',cacador_ebano:'raro',espectro_violeta:'raro',
+ nevoa:'epico',rubi_sombrio:'epico',espiral_abissal:'epico',guardiao_do_eco:'epico',
+ coroa_arcana:'lenda',chamas_eternas:'lenda',trono_da_noite:'lenda'
+});
+function frameRarity(code){return frameRarities[safeFrame(code)]||'comum';}
+function avatar(code,imageHtml){
+ const safe=safeFrame(code),rarity=frameRarity(safe);
+ const art=frameArtwork.includes(safe)
+  ?'<img class="cosmetic-frame-illustration" src="assets/frames/'+safe+'.webp" alt="" loading="lazy" decoding="async" width="448" height="448">'
+  :svgFrame(safe);
+ return '<span class="cosmetic-avatar-wrap frame-rarity-'+rarity+'"><span class="cosmetic-avatar-content">'+imageHtml+'</span>'+art+'</span>';
+}
+// Rarity values match es_cosmetic_catalog. Visual intensity only: rewards and item
+// unlocks remain under Supabase authority. The 16 approved illustrations are unchanged.
+const bannerRarities=Object.freeze({
+ padrao:'comum',escuta_noturna:'comum',conspiracao:'comum',
+ cacada_sombria:'incomum',corredor_espectral:'incomum',juramento_oculto:'incomum',
+ lua_partida:'raro',cidade_sem_rosto:'raro',ruinas_do_segredo:'raro',vidro_estilhacado:'raro',
+ ecos_da_nevoa:'epico',floresta_rubra:'epico',segredo_carmesim:'epico',
+ trono_arcano:'lenda',eclipse_violeta:'lenda',reino_dos_suspeitos:'lenda'
+});
+function bannerRarity(code){return bannerRarities[safeBanner(code)]||'comum';}
+function banner(code){
+ const safe=safeBanner(code),rarity=bannerRarity(safe);
+ // Ilustrações locais em WebP; o SVG anterior permanece como fallback visual
+ // durante desenvolvimento ou se algum arquivo estiver indisponível.
+ return '<span class="cosmetic-banner-art banner-rarity-'+rarity+'"><span class="cosmetic-banner-fallback">'+bannerSvg(safe)+'</span>'
+  +'<img class="cosmetic-banner-illustration" src="assets/banners/'+safe+'.webp" alt="" loading="lazy" decoding="async" width="1080" height="360"></span>';
+}
+window.ESCosmetics=Object.freeze({frames,banners,safeFrame,safeBanner,bannerRarities,bannerRarity,frameArtwork,frameRarities,frameRarity,svgFrame,bannerSvg,avatar,banner});
 })();

@@ -57,6 +57,7 @@ jobs:
           for f in web/*.js; do node --check "$f"; done
           node v7_pending/tests/web_auth_smoke.cjs
           node v7_pending/tests/word_bank_smoke.cjs
+          node v7_pending/tests/v743_banner_assets_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
@@ -108,4 +109,15 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          echo "SITE PUBLICADO E VERIFICADO: $URL/"
+          grep -q 'VERSÃO WEB 7.4.3 RC' /tmp/index
+          for code in padrao ecos_da_nevoa trono_arcano cacada_sombria lua_partida conspiracao cidade_sem_rosto corredor_espectral floresta_rubra eclipse_violeta juramento_oculto ruinas_do_segredo reino_dos_suspeitos escuta_noturna segredo_carmesim vidro_estilhacado; do
+            curl --silent --show-error --fail --location --retry 4 --retry-delay 3 --max-time 25 "$URL/assets/banners/$code.webp" -o "/tmp/banner-$code.webp"
+            test "$(head -c 4 "/tmp/banner-$code.webp")" = "RIFF"
+            test "$(dd if="/tmp/banner-$code.webp" bs=1 skip=8 count=4 status=none)" = "WEBP"
+          done
+          for code in ouro nevoa coroa_arcana chamas_eternas; do
+            curl --silent --show-error --fail --location --retry 4 --retry-delay 3 --max-time 25 "$URL/assets/frames/$code.webp" -o "/tmp/frame-$code.webp"
+            test "$(head -c 4 "/tmp/frame-$code.webp")" = "RIFF"
+            test "$(dd if="/tmp/frame-$code.webp" bs=1 skip=8 count=4 status=none)" = "WEBP"
+          done
+          echo "SITE PUBLICADO E VERIFICADO: $URL/ (16 banners e 4 molduras)"
