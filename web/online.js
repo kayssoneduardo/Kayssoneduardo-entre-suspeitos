@@ -203,18 +203,19 @@ class OnlineUI{
   if(destination==='friends')return this.friends();
    if(destination==='missions')return this.progressHub();
    if(destination==='stats')return this.statsPage();
+   if(destination==='history')return this.historyPage();
    if(this.pendingJoinCode){const code=this.pendingJoinCode;this.pendingJoinCode=null;const u=new URL(window.location.href);u.searchParams.delete('room');window.history.replaceState(null,'',u.pathname+u.search+u.hash);return this.joinCode(code);}
   this.currentPage='home';this.header('Jogar online');
   this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
   <div class="hub-primary">${btn('public','▣ &nbsp; Buscar salas públicas')}${btn('create','＋ &nbsp; Criar sala')}</div><div class="hub-divider">ENTRAR COM OPÇÕES</div><div class="hub-secondary">${btn('join','‹ › &nbsp; Entrar com código','secondary')}${btn('invitesOn','♧ &nbsp; Convites de amigos','secondary')}</div>
-  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="cosmeticsOn">✦ Personalização · Molduras e banners</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="missionsOn">✦ Missões e eventos</button><button class="tile" id="statsOn">▤ Estatísticas</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
+  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="cosmeticsOn">✦ Personalização · Molduras e banners</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="missionsOn">✦ Missões e eventos</button><button class="tile" id="statsOn">▤ Estatísticas</button><button class="tile" id="historyOn">◷ Histórico de partidas</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
   ${btn('adminOn','Painel administrativo','secondary')}${btn('serverOn','Configurar servidor','secondary')}${btn('logout','Sair da conta','ghost')}
   <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
   if($('resumeOn'))$('resumeOn').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_rejoin',{p_room:load('lastRoom')}));}catch(e){this.error(e);}};
   $('invitesOn').onclick=()=>this.invites();
   $('public').onclick=()=>this.publicRooms();$('create').onclick=()=>this.createRoom();$('join').onclick=()=>this.joinCode();
-  $('profileOn').onclick=()=>this.profile();$('cosmeticsOn').onclick=()=>this.cosmeticsPage();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();
+  $('profileOn').onclick=()=>this.profile();$('cosmeticsOn').onclick=()=>this.cosmeticsPage();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();$('historyOn').onclick=()=>this.historyPage();
   $('feedbackOn').onclick=()=>this.feedback();$('adminOn').onclick=()=>this.admin();
   $('serverOn').onclick=()=>{this.cloud.session=null;save('session',null);this.setup();};
   $('logout').onclick=async()=>{try{await this.cloud.signOut();this.login();}catch(e){this.error(e);}};
@@ -400,7 +401,7 @@ class OnlineUI{
  }
  renderRoom(r){this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
   const allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors>=1&&r.impostors<=Math.floor((joined.length-1)/2);
-  if(r.status!==this.lastPhase){this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;}
+  if(r.status!==this.lastPhase){window.ESMotion?.enterPhase(r.status);this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;}
   const head=`<section class="card"><div class="statusbar"><div><span class="eyebrow">${r.public?'SALA PÚBLICA':'SALA PRIVADA'}</span><div class="room-code">${ESC(r.code)}</div></div><span class="pill">${joined.length}/${r.max} jogadores</span></div>
   <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
@@ -416,7 +417,7 @@ class OnlineUI{
    const pic=avatarSrc(this.cloud,p.avatar);
    const avatar=cosmetics?cosmetics.avatar(frame,pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())):`<div class="avatar">${pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div>`;
    return `<div class="cosmetic-player">${cosmetics?cosmetics.banner(banner):''}<div class="cosmetic-player-foreground">${avatar}<div class="cosmetic-player-identity"><strong class="cosmetic-player-name${rarity}">${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small class="cosmetic-player-status ${p.active&&p.online?'online':'offline'}">${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[frame]?.[0]||'Clássica')}</span>${equippedTitle(p.title)}</div></div>
-    <div class="cosmetic-player-controls">${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div></div>`;
+    <div class="cosmetic-player-controls">${p.id!==me?`<button class="back" data-social="${ESC(p.id)}">Perfil</button><button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div></div>`;
   }).join('')}</section>`;
   let phase='';
   if(r.status==='lobby'){
@@ -444,14 +445,15 @@ class OnlineUI{
    const mine=(r.results||[]).find(x=>x.user===me);const totalWins=(r.results||[]).filter(x=>x.win).length;
    phase=`<section class="card center v74-reveal"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p>
     <p class="notice">${impostors.length} impostor(es) revelado(s) · ${totalWins} vencedor(es).</p>
-    ${mine?`<div class="card ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
+    ${mine?`<div class="card ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${window.ESMotion?.outcome(mine.win)||''} ${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
     <h3>Os impostores eram</h3>${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
     <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member ${x.win?'v74-result-good':'v74-result-bad'}"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
     <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
     ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
   }
   this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${Math.min(Math.max(0,event.progress),event.target)}/${event.target} · ${event.progress>=event.target?'Concluído · Moldura Névoa':'Moldura Névoa'}</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
-  this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
+  this.bindPublicProfiles();
+   this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
   $('roomCosmeticsOn').onclick=()=>this.cosmeticsPage();
@@ -463,8 +465,8 @@ class OnlineUI{
    if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(allReady&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
   }else if(r.status==='discussion'&&this.showingReveal){
    const card=$('onlineSecret'),content=$('onlineSecretContent');const val=$('onlineSecretValue');
-   const hide=()=>{card.classList.remove('revealed');content.innerHTML='<span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p>';};
-   const show=e=>{e.preventDefault();if(e.pointerId!==undefined)try{card.setPointerCapture(e.pointerId);}catch{}card.classList.add('revealed');content.innerHTML=`<div class="secret-label">${r.me.impostor?'SUA IDENTIDADE':'SUA PALAVRA'}</div><div class="secret-name ${r.me.impostor?'impostor':''}">${ESC(val.dataset.secret)}</div><p class="secret-detail">${ESC(val.dataset.info)}</p>`;};
+   const hide=()=>{window.ESMotion?.endReveal(card);card.classList.remove('revealed');content.innerHTML='<span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p>';};
+   const show=e=>{e.preventDefault();window.ESMotion?.revealCard(card);if(e.pointerId!==undefined)try{card.setPointerCapture(e.pointerId);}catch{}card.classList.add('revealed');content.innerHTML=`<div class="secret-label">${r.me.impostor?'SUA IDENTIDADE':'SUA PALAVRA'}</div><div class="secret-name ${r.me.impostor?'impostor':''}">${ESC(val.dataset.secret)}</div><p class="secret-detail">${ESC(val.dataset.info)}</p>`;};
    card.addEventListener('pointerdown',show);['pointerup','pointercancel','pointerleave','lostpointercapture'].forEach(ev=>card.addEventListener(ev,hide));
    card.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key))show(e);});card.addEventListener('keyup',hide);
    document.addEventListener('visibilitychange',()=>{if(document.hidden)hide();},{once:true});
@@ -523,12 +525,12 @@ class OnlineUI{
    <p><b>${p.impostor_wins} / ${p.impostor_losses}</b><br>Impostor: vitórias / derrotas</p>
    <p><b>${p.common_wins} / ${p.common_losses}</b><br>Comum: vitórias / derrotas</p></div>
    <div class="divider"></div><h3>Personalização</h3><p class="subtext">São 16 molduras e 16 banners. Abra a galeria para visualizar, conquistar e equipar os seus itens.</p>
-    ${btn('viewStatsProfile','Ver estatísticas avançadas','secondary')}
+    ${btn('viewStatsProfile','Ver estatísticas avançadas','secondary')}${btn('viewHistoryProfile','Histórico de partidas','secondary')}
     <div class="divider"></div><h3>Meus títulos</h3>
    <p class="subtext">Ganhe títulos em partidas públicas. Selecione um para destacar no seu perfil.</p>
    <div class="title-list">${titles.map((t,i)=>`<div class="member"><div class="member-info"><strong class="title-${ESC(t.rarity)}">${ESC(t.name)}</strong><small>${ESC(t.description)} · ${ESC(t.rarity)}</small></div><button type="button" class="back" data-equip="${i}" ${t.equipped?'disabled':''}>${t.equipped?'Equipado':'Usar'}</button></div>`).join('')||'<p class="notice">Ainda sem títulos. Continue jogando partidas públicas!</p>'}</div>
    <p class="notice">Títulos Místicos permanecem ocultos até a conquista e sujeitos às regras de exclusividade.</p><p id="onlineError" class="error"></p></section>`;
-   $('viewStatsProfile').onclick=()=>this.statsPage();
+   $('viewStatsProfile').onclick=()=>this.statsPage();$('viewHistoryProfile').onclick=()=>this.historyPage();
    $('openCosmetics').onclick=()=>this.cosmeticsPage();
    this.app.querySelectorAll('[data-equip]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_equip_title',{p_title:titles[+b.dataset.equip].code});this.profile();}catch(e){this.error(e);}});
   $('uploadPhoto').onclick=async()=>{try{
@@ -568,9 +570,10 @@ class OnlineUI{
     return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-preview="${i}">Visualizar</button><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
    }).join('');
    this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC((selectedPreview?.kind==='frame'?selectedPreview.name:equippedFrame?.name)||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC((selectedPreview?.kind==='banner'?selectedPreview.name:equippedBanner?.name)||'Sombras Originais')}</span></section>
-    ${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
+    ${this.motionSettings()}${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
     <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery ${tab==='banner'?'banner-gallery':'frame-gallery'}">${tiles}</div><p id="onlineError" class="error"></p></section>${this.roomId?btn('cosmeticsBackRoom','← Voltar à sala','secondary'):''}${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
-   $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticPreview=null;this.cosmeticsPage();};
+   this.bindMotionSettings();
+    $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticPreview=null;this.cosmeticsPage();};
    $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticPreview=null;this.cosmeticsPage();};
    if($('cosmeticsBackRoom'))$('cosmeticsBackRoom').onclick=()=>this.enterRoom(this.roomId);
    $('cosmeticsBack').onclick=()=>this.profile();
@@ -587,13 +590,14 @@ class OnlineUI{
    <p class="small muted">Ordem por pontos de ranking; desempate por vitórias públicas. Empate nos dois critérios mantém a mesma posição.</p>
    ${podium.length?`<div class="ranking-podium" aria-label="Pódio atual">${podium.map(p=>`<article class="podium-card podium-${p.position}"><span class="podium-medal" aria-hidden="true">${medals[p.position][0]}</span><small>${p.position}º LUGAR · ${medals[p.position][1]}</small><strong>${ESC(p.nickname)}</strong><b>${p.ranking_points} pontos</b></article>`).join('')}</div><p class="small muted">Medalhas de destaque enquanto o jogador ocupar o pódio. Não concedem XP nem títulos permanentes.</p>`:''}
    <h3>Classificação · até 50 jogadores</h3>
-   ${ranked.map(p=>{const title=catalog?.find(t=>t.code===p.equipped_title);return `<div class="member rank-member"><span class="rank-position">${p.position}º</span><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:ESC((p.nickname||'?').charAt(0))}</div><div class="member-info"><strong class="${title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?'title-'+title.rarity:''}">${ESC(p.nickname)}</strong><small>Nível ${xpProgress(p.xp).level} · ${p.online_wins} vitórias</small><small>${p.xp} XP acumulado</small>${title?`<small class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</small>`:''}</div><b class="rank-score">${p.ranking_points}<small>pontos</small></b></div>`;}).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
+   ${ranked.map(p=>{const title=catalog?.find(t=>t.code===p.equipped_title);return `<div class="member rank-member"><span class="rank-position">${p.position}º</span><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:ESC((p.nickname||'?').charAt(0))}</div><div class="member-info"><strong class="${title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?'title-'+title.rarity:''}">${ESC(p.nickname)}</strong><small>Nível ${xpProgress(p.xp).level} · ${p.online_wins} vitórias</small><small>${p.xp} XP acumulado</small>${title?`<small class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</small>`:''}</div><button class="back" data-social="${ESC(p.id)}">Ver perfil</button><b class="rank-score">${p.ranking_points}<small>pontos</small></b></div>`;}).join('')||'<p>Sem resultados ainda.</p>'}</section>`;this.bindPublicProfiles();}
 
  async friends(){this.currentPage='friends';this.header('Amigos');let all=[],presence=[];try{[all,presence]=await Promise.all([this.cloud.rpc('es_friend_list'),this.cloud.rpc('es_v74_friend_presence')]);}catch(e){return this.error(e);}
   this.app.innerHTML=`<section class="card"><h2>Adicionar amigos</h2>${input('searchNick','Pesquisar apelido','text','','placeholder="Apelido do jogador"')}${btn('searchFriends','Pesquisar','secondary')}<div id="searchFriendsResult"></div><h3>Minha lista</h3>
-   ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?(presence.some(x=>x.id===p.id&&x.online)?'Amigo · Online agora':'Amigo · Offline'):'Pedido pendente'}</small></div>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}
+   ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?(presence.some(x=>x.id===p.id&&x.online)?'Amigo · Online agora':'Amigo · Offline'):'Pedido pendente'}</small></div><button class="back" data-social="${ESC(p.id)}">Perfil</button>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}
    <p class="subtext">Convites diretos já estão disponíveis pelo botão Convidar amigos na sala. Para entrar por código, use Entrar com código.</p><p id="onlineError" class="error"></p></section>`;
-  this.app.querySelectorAll('[data-accept]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_friend_accept',{p_from:all[+b.dataset.accept].id});this.friends();}catch(e){this.error(e);}});
+  this.bindPublicProfiles();
+   this.app.querySelectorAll('[data-accept]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_friend_accept',{p_from:all[+b.dataset.accept].id});this.friends();}catch(e){this.error(e);}});
   $('searchFriends').onclick=async()=>{try{const r=await this.cloud.rpc('es_find_players',{p_query:$('searchNick').value});
    $('searchFriendsResult').innerHTML=r.map((p,i)=>`<div class="member"><div class="member-info">${ESC(p.nickname)}</div><button class="back" data-add="${i}">Adicionar</button></div>`).join('')||'<p>Ninguém encontrado.</p>';
    this.app.querySelectorAll('[data-add]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_friend_send',{p_to:r[+b.dataset.add].id});this.friends();}catch(e){this.error(e);}});
