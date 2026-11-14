@@ -309,3 +309,27 @@ body[data-motion=on] .es-v75-result-spark.is-loss{color:#9b91b2;animation:esV75D
 @keyframes esV75Defeat{0%{opacity:.1;transform:translateY(-15px)}100%{opacity:1;transform:translateY(0)}}
 body.es-v75-paused .cosmetic-frame-illustration,body.es-v75-paused .cosmetic-banner-illustration,body.es-v75-paused .cosmetic-banner-art::after{animation-play-state:paused!important}
 @media(prefers-reduced-motion:reduce){body[data-motion=on] .cosmetic-frame-illustration,body[data-motion=on] .cosmetic-banner-illustration,body[data-motion=on] .cosmetic-banner-art::after,body[data-motion=on] .es-v75-secret-flip,body[data-motion=on] .es-v75-result-spark{animation:none!important;transition:none!important}}
+
+/* Scene-specific, low-intensity ambience: the original WebP stays unchanged.
+   Pause decorative movement during voting to maintain focus. */
+body[data-motion=on] .cosmetic-banner-art.banner-code-ecos_da_nevoa::before,
+body[data-motion=on] .cosmetic-banner-art.banner-code-eclipse_violeta::before,
+body[data-motion=on] .cosmetic-banner-art.banner-code-floresta_rubra::before,
+body[data-motion=on] .cosmetic-banner-art.banner-code-trono_arcano::before,
+body[data-motion=on] .cosmetic-banner-art.banner-code-escuta_noturna::before{
+ content:'';position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.12;
+}
+body[data-motion=on] .banner-code-ecos_da_nevoa::before{background:radial-gradient(ellipse 62% 20% at 63% 81%,#e0e3ff 0,transparent 100%);animation:esV75Fog 13s ease-in-out infinite alternate}
+body[data-motion=on] .banner-code-eclipse_violeta::before{background:radial-gradient(circle at 72% 29%,#d685ff 0,transparent 25%);animation:esV75Mystic 6s ease-in-out infinite}
+body[data-motion=on] .banner-code-floresta_rubra::before{background:radial-gradient(circle at 77% 62%,#f83a3b 0,transparent 36%);animation:esV75Mystic 9s ease-in-out infinite}
+body[data-motion=on] .banner-code-trono_arcano::before{background:radial-gradient(circle at 63% 53%,#d4b3ff 0,transparent 27%);animation:esV75Mystic 7s ease-in-out infinite}
+body[data-motion=on] .banner-code-escuta_noturna::before{background:linear-gradient(90deg,transparent 60%,#4fb9ff25 76%,transparent 87%);animation:esV75Mystic 12s ease-in-out infinite}
+@keyframes esV75Fog{to{transform:translateX(-3%) scale(1.08);opacity:.22}}
+body[data-phase=voting] .cosmetic-frame-illustration,
+body[data-phase=voting] .cosmetic-banner-illustration,
+body[data-phase=voting] .cosmetic-banner-art::before,
+body[data-phase=voting] .cosmetic-banner-art::after,
+body.es-v75-paused .cosmetic-banner-art::before{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){
+ body[data-motion=on] .cosmetic-banner-art::before{animation:none!important}
+}
