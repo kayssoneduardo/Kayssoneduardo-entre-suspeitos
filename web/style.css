@@ -275,3 +275,37 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 .cosmetic-profile-hero .banner-code-cacada_sombria .cosmetic-banner-illustration{object-position:51% center}
 .cosmetic-profile-hero .banner-code-trono_arcano .cosmetic-banner-illustration{object-position:50% center}
 @media(min-width:760px){.cosmetic-gallery.banner-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* V7.5: progressive rarity effects, only while enabled, no canvas/WebGL/audio. */
+.es-v75-motion-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;padding:10px;border:1px solid var(--line);border-radius:12px}
+.es-v75-motion-controls select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);padding:8px;border-radius:9px;min-height:40px}
+.es-v75-motion-controls label{font-size:12px;font-weight:700;flex:1}
+body[data-motion=on] .frame-rarity-raro .cosmetic-frame-illustration{animation:esV75Rare 7s ease-in-out infinite}
+body[data-motion=on] .frame-rarity-epico .cosmetic-frame-illustration{animation:esV75Epic 5.5s ease-in-out infinite}
+body[data-motion=on] .frame-rarity-lenda .cosmetic-frame-illustration{animation:esV75Legend 4.5s ease-in-out infinite}
+body[data-motion=on] .banner-rarity-incomum .cosmetic-banner-illustration{animation:esV75BannerSoft 15s ease-in-out infinite alternate}
+body[data-motion=on] .banner-rarity-raro .cosmetic-banner-illustration{animation:esV75Banner 13s ease-in-out infinite alternate}
+body[data-motion=on] .banner-rarity-epico .cosmetic-banner-illustration{animation:esV75Banner 11s ease-in-out infinite alternate}
+body[data-motion=on] .banner-rarity-lenda .cosmetic-banner-illustration{animation:esV75Banner 9s ease-in-out infinite alternate}
+body[data-motion=on] .banner-rarity-epico::after{animation:esV75Mystic 6s ease-in-out infinite}
+body[data-motion=on] .banner-rarity-lenda::after{animation:esV75Mystic 4s ease-in-out infinite}
+body[data-motion=on] .es-v75-secret-flip{animation:esV75Reveal .48s ease-out both;transform-style:preserve-3d;backface-visibility:hidden}
+.es-v75-result-spark{display:inline-block;font-size:30px;margin:6px;vertical-align:middle}
+body[data-motion=on] .es-v75-result-spark.is-win{color:#f3d28b;animation:esV75Victory 1s ease-out both}
+body[data-motion=on] .es-v75-result-spark.is-loss{color:#9b91b2;animation:esV75Defeat .9s ease-out both}
+.es-v75-history-item{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;padding:12px 2px;border-bottom:1px solid var(--line)}
+.es-v75-history-item strong{font-size:13px}.es-v75-history-item small{display:block;color:var(--muted);font-size:11px;line-height:1.5}
+.es-v75-event-card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:16px;padding:16px;margin:10px 0;background:linear-gradient(135deg,#6f33ab22,transparent),var(--panel)}
+.es-v75-event-card progress{display:block;width:100%;accent-color:#a97dfa;margin:9px 0}
+.es-v75-event-tag{font-size:11px;color:var(--primary2);font-weight:800;letter-spacing:1px}
+@keyframes esV75Rare{50%{filter:brightness(1.07) drop-shadow(0 0 5px #9ac8ff90)}}
+@keyframes esV75Epic{50%{filter:brightness(1.13) drop-shadow(0 0 10px #ac74f5b8)}}
+@keyframes esV75Legend{50%{filter:brightness(1.18) drop-shadow(0 0 14px #ecc078d8)}}
+@keyframes esV75BannerSoft{to{transform:scale(1.014) translateX(-.2%)}}
+@keyframes esV75Banner{to{transform:scale(1.045) translateX(-.8%)}}
+@keyframes esV75Mystic{50%{opacity:.6}}
+@keyframes esV75Reveal{0%{opacity:.1;transform:perspective(850px) rotateY(-70deg) scale(.92)}100%{opacity:1;transform:perspective(850px) rotateY(0) scale(1)}}
+@keyframes esV75Victory{0%{opacity:.1;transform:scale(.3) rotate(-40deg)}70%{transform:scale(1.25) rotate(12deg)}100%{opacity:1;transform:scale(1)}}
+@keyframes esV75Defeat{0%{opacity:.1;transform:translateY(-15px)}100%{opacity:1;transform:translateY(0)}}
+body.es-v75-paused .cosmetic-frame-illustration,body.es-v75-paused .cosmetic-banner-illustration,body.es-v75-paused .cosmetic-banner-art::after{animation-play-state:paused!important}
+@media(prefers-reduced-motion:reduce){body[data-motion=on] .cosmetic-frame-illustration,body[data-motion=on] .cosmetic-banner-illustration,body[data-motion=on] .cosmetic-banner-art::after,body[data-motion=on] .es-v75-secret-flip,body[data-motion=on] .es-v75-result-spark{animation:none!important;transition:none!important}}
