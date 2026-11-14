@@ -47,7 +47,7 @@ function renderSplash(){
  document.getElementById('skip').onclick=()=>{clearTimeout(splashTimer);ESAudio.activate();ambient();sound('tap');renderMenu();};
  splashTimer=setTimeout(()=>renderMenu(),2300);
 }
-function openOnline(){ESAudio.activate();sound('tap');if(window.ESOnline)window.ESOnline.open({app,topbar,back:renderMenu,sound,bank:BANK});else renderFuture('Jogar online','O componente online não foi carregado.');}
+function openOnline(destination){ESAudio.activate();sound('tap');if(window.ESOnline)window.ESOnline.open({app,topbar,back:renderMenu,sound,bank:BANK,destination:typeof destination==='string'?destination:null});else renderFuture('Jogar online','O componente online não foi carregado.');}
 function renderMenu(){
  page='menu';setTop();theme();
  app.innerHTML=`${title(true)}<section class="narrow">
@@ -65,7 +65,7 @@ function renderMenu(){
  document.getElementById('offline').onclick=()=>{ESAudio.activate();ambient();sound('tap');renderSetup();};
  document.getElementById('online').onclick=openOnline;
  document.getElementById('howto').onclick=()=>{sound('tap');renderHowTo();};
- document.getElementById('profile').onclick=openOnline;
+ document.getElementById('profile').onclick=()=>openOnline('profile');
  document.getElementById('ranking').onclick=openOnline;
  document.getElementById('friends').onclick=openOnline;
  document.getElementById('settings').onclick=()=>{sound('tap');renderSettings();};

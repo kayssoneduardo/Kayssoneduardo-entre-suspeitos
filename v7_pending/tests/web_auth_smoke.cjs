@@ -137,6 +137,12 @@ const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
   room.status='voting';room.phaseEnds=null;room.me={voted:false};
   ui.renderRoom(room);assert.doesNotMatch(app.html,/id="timerOnline"/);
   assert.match(app.html,/Sem limite de tempo/);
+  room.players[0].voted=true;room.players[1].voted=false;ui.renderRoom(room);
+  assert.match(app.html,/JÁ VOTOU/);assert.match(app.html,/FALTA VOTAR/);
+  assert.match(app.html,/1 de 2 jogadores já votaram/);
+  ui.stopLoop=()=>{};ui.pendingDestination='profile';
+  let profileOpened=false;ui.profile=()=>{profileOpened=true;};
+  ui.home();assert.equal(profileOpened,true);assert.equal(ui.pendingDestination,null);
   console.log('PASSOU: carta por 30 segundos e votação sem cronômetro.');
   console.log('PASSOU: início de sala com 3 prontos; bloqueio sem quórum, sem pronto e com impostores excessivos.');
 

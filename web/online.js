@@ -157,7 +157,7 @@ class Voice{
 class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
   this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
- open({app,topbar,back,sound,bank}){this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
+ open({app,topbar,back,sound,bank,destination}){this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
   const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
  }
@@ -183,6 +183,7 @@ class OnlineUI{
  home(){this.stopLoop();this.roomId=null;this.room=null;this.voice?.close();this.voice=null;
   if(!this.cloud){this.setup();return;}
   if(!this.cloud.userId){this.login();return;}
+  if(this.pendingDestination==='profile'){this.pendingDestination=null;return this.profile();}
   this.currentPage='home';this.header('Jogar online');
   this.app.innerHTML=`<section class="card center"><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
@@ -385,7 +386,7 @@ class OnlineUI{
   ${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
-  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${p.ready?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):i+1}</span></div>`).join('')}</section>`;
+  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div>`).join('')}</section>`;
   let phase='';
   if(r.status==='lobby'){
    const myReady=!!r.players.find(p=>p.id===me)?.ready;
@@ -403,7 +404,7 @@ class OnlineUI{
    <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Você tem 30 segundos para memorizar sua carta. Solte para ocultar.</p>`:'<p class="notice">Tempo de visualização encerrado. A votação vai começar.</p>'}</section>`;
   }else if(r.status==='voting'){
    const myVote=r.me.voted;
-   phase=`<section class="card"><h2>Votação secreta</h2><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
+   phase=`<section class="card"><h2>Votação secreta</h2><p class="small muted">${joined.filter(p=>p.voted).length} de ${joined.length} jogadores já votaram.</p><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
     <p class="subtext">Escolha ${r.impostors} suspeito(s), sem repetir nomes. Os votos dos outros permanecem secretos.</p>
     ${myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check"><input type="checkbox" data-vote="${ESC(p.id)}">${ESC(p.nick)}</label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
     <p id="onlineError" class="error"></p></section>`;
