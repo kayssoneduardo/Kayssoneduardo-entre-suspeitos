@@ -183,11 +183,14 @@ class OnlineUI{
  home(){this.stopLoop();this.roomId=null;this.room=null;this.voice?.close();this.voice=null;
   if(!this.cloud){this.setup();return;}
   if(!this.cloud.userId){this.login();return;}
-  if(this.pendingDestination==='profile'){this.pendingDestination=null;return this.profile();}
+  const destination=this.pendingDestination;this.pendingDestination=null;
+  if(destination==='profile')return this.profile();
+  if(destination==='ranking')return this.ranking();
+  if(destination==='friends')return this.friends();
   this.currentPage='home';this.header('Jogar online');
-  this.app.innerHTML=`<section class="card center"><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
+  this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
-  ${btn('public','Buscar salas públicas')}${btn('create','Criar sala')}${btn('join','Entrar com código','secondary')}${btn('invitesOn','Convites de amigos','secondary')}
+  <div class="hub-primary">${btn('public','▣ &nbsp; Buscar salas públicas')}${btn('create','＋ &nbsp; Criar sala')}</div><div class="hub-divider">ENTRAR COM OPÇÕES</div><div class="hub-secondary">${btn('join','‹ › &nbsp; Entrar com código','secondary')}${btn('invitesOn','♧ &nbsp; Convites de amigos','secondary')}</div>
   <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
   ${btn('adminOn','Painel administrativo','secondary')}${btn('serverOn','Configurar servidor','secondary')}${btn('logout','Sair da conta','ghost')}
   <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
@@ -391,7 +394,7 @@ class OnlineUI{
   if(r.status==='lobby'){
    const myReady=!!r.players.find(p=>p.id===me)?.ready;
    phase=`<section class="card"><h2>Aguardando jogadores</h2><p class="subtext">O anfitrião pode alterar as regras. Qualquer alteração zera o estado “Pronto” de todos.</p>
-   ${btn('readyOn',myReady?'Cancelar “Pronto”':'ESTOU PRONTO',myReady?'secondary':'')}
+   ${btn('readyOn',myReady?'Cancelar “Pronto”':'ESTOU PRONTO',myReady?'secondary':'ready-action')}
    ${owner?`${btn('editRules','Alterar regras','secondary')}${btn('inviteFriends','Convidar amigos','secondary')}${btn('startOn','INICIAR PARTIDA')}`:''}
    <p class="small muted">${allReady&&validImps?'Todos prontos: partida liberada.':!validImps?'Reduza o número de impostores para esta quantidade de jogadores.':'Mínimo de 3 participantes, todos prontos.'}</p></section>`;
   }else if(r.status==='discussion'){
@@ -475,7 +478,7 @@ class OnlineUI{
   $('saveNick').onclick=async()=>{try{await this.cloud.rpc('es_set_nickname',{p_nick:$('nicknameOn').value});this.profile();}catch(e){this.error(e);}};
  }
  async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_leaderboard'),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
-  this.app.innerHTML=`<section class="card"><h2>Melhores jogadores</h2><p class="subtext">Somente partidas públicas valem pontos e XP.</p>${rank.map((p,i)=>`<div class="member"><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:i+1}</div><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.online_wins} vitórias · ${p.xp} XP</small>${p.equipped_title&&catalog?.find(t=>t.code===p.equipped_title)?`<small class="title-${ESC(catalog.find(t=>t.code===p.equipped_title).rarity)}">${ESC(catalog.find(t=>t.code===p.equipped_title).name)}</small>`:''}</div><b>${p.ranking_points} pts</b></div>`).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
+  this.app.innerHTML=`<section class="card"><h2>Melhores jogadores</h2><p class="subtext">Somente partidas públicas valem pontos e XP.</p>${rank.map((p,i)=>`<div class="member"><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:i+1}</div><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.online_wins} vitórias · ${p.xp} XP</small>${p.equipped_title&&catalog?.find(t=>t.code===p.equipped_title)?`<small class="equipped-title title-${ESC(catalog.find(t=>t.code===p.equipped_title).rarity)}">${ESC(catalog.find(t=>t.code===p.equipped_title).name)}</small>`:''}</div><b>${p.ranking_points} pts</b></div>`).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
  async friends(){this.currentPage='friends';this.header('Amigos');let all=[];try{all=await this.cloud.rpc('es_friend_list');}catch(e){return this.error(e);}
   this.app.innerHTML=`<section class="card"><h2>Adicionar amigos</h2>${input('searchNick','Pesquisar apelido','text','','placeholder="Apelido do jogador"')}${btn('searchFriends','Pesquisar','secondary')}<div id="searchFriendsResult"></div><h3>Minha lista</h3>
    ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?'Amigo':'Pedido pendente'}</small></div>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}

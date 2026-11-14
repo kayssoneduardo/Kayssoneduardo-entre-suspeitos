@@ -51,8 +51,8 @@ function openOnline(destination){ESAudio.activate();sound('tap');if(window.ESOnl
 function renderMenu(){
  page='menu';setTop();theme();
  app.innerHTML=`${title(true)}<section class="narrow">
- ${button('offline','◈ &nbsp; JOGAR OFFLINE<span class="subtitle">Um celular, vários suspeitos</span>')}
- ${button('online','◎ &nbsp; JOGAR ONLINE<span class="subtitle">Salas · Amigos · Voz (em testes)</span>','secondary')}
+ ${button('offline','◈ &nbsp; JOGAR OFFLINE<span class="subtitle">Um celular, vários suspeitos</span>','secondary')}
+ ${button('online','◎ &nbsp; JOGAR ONLINE<span class="subtitle">Salas · Amigos · Voz (em testes)</span>')}
  ${button('howto','? &nbsp; COMO JOGAR','ghost')}
  <div class="tiles">
   <button class="tile" id="profile"><span class="tile-icon">♟</span>Meu perfil</button>
@@ -66,8 +66,8 @@ function renderMenu(){
  document.getElementById('online').onclick=openOnline;
  document.getElementById('howto').onclick=()=>{sound('tap');renderHowTo();};
  document.getElementById('profile').onclick=()=>openOnline('profile');
- document.getElementById('ranking').onclick=openOnline;
- document.getElementById('friends').onclick=openOnline;
+ document.getElementById('ranking').onclick=()=>openOnline('ranking');
+ document.getElementById('friends').onclick=()=>openOnline('friends');
  document.getElementById('settings').onclick=()=>{sound('tap');renderSettings();};
 }
 function renderHowTo(){

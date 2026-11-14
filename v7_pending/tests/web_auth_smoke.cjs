@@ -143,6 +143,8 @@ const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
   ui.stopLoop=()=>{};ui.pendingDestination='profile';
   let profileOpened=false;ui.profile=()=>{profileOpened=true;};
   ui.home();assert.equal(profileOpened,true);assert.equal(ui.pendingDestination,null);
+  for(const destination of ['ranking','friends']){let opened=false;ui[destination]=()=>{opened=true;};ui.pendingDestination=destination;ui.home();assert.equal(opened,true);assert.equal(ui.pendingDestination,null);}
+  console.log('PASSOU: atalhos diretos para perfil, ranking e amigos.');
   console.log('PASSOU: carta por 30 segundos e votação sem cronômetro.');
   console.log('PASSOU: início de sala com 3 prontos; bloqueio sem quórum, sem pronto e com impostores excessivos.');
 
