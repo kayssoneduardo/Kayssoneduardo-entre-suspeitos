@@ -210,3 +210,13 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 .cosmetic-tabs button{min-height:50px}
 #roomCosmeticsOn,#cosmeticsOn{border-color:#db86f6;box-shadow:0 0 14px #b64eed29}
 @media(max-width:400px){.cosmetic-player .cosmetic-avatar-wrap{width:100px;height:100px;flex-basis:100px}.cosmetic-player-name{font-size:18px}.cosmetic-player .equipped-title{font-size:16px}.cosmetic-profile-hero .cosmetic-avatar-wrap{width:110px;height:110px;flex-basis:110px}.cosmetic-room-banner-content h3{font-size:19px}}
+
+/* V7.4.3 — ilustrações individuais substituem o desenho repetitivo dos banners. */
+.cosmetic-banner-fallback,.cosmetic-banner-illustration{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cosmetic-banner-illustration{object-fit:cover;object-position:center;z-index:1}
+.cosmetic-banner-fallback{z-index:0;pointer-events:none}
+.cosmetic-profile-hero .cosmetic-banner-illustration,.cosmetic-player .cosmetic-banner-illustration{filter:saturate(.94) brightness(.86)}
+.cosmetic-profile-hero .cosmetic-banner-art,.cosmetic-player .cosmetic-banner-art{opacity:.9}
+.cosmetic-player .cosmetic-banner-art{opacity:.75}
+.cosmetic-player::after,.cosmetic-profile-hero::after{content:'';position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:linear-gradient(90deg,#10082038,transparent 67%);z-index:0}
+.cosmetic-tile .cosmetic-banner-art{opacity:1;filter:none}
