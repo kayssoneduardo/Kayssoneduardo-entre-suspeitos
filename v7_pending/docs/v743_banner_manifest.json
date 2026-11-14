@@ -1,0 +1,90 @@
+{
+  "version": "7.4.3-review",
+  "published": false,
+  "imageDir": "web/assets/banners",
+  "imageFormat": "webp",
+  "width": 1080,
+  "height": 360,
+  "banners": [
+    {
+      "code": "padrao",
+      "name": "Sombras Originais",
+      "path": "web/assets/banners/padrao.webp"
+    },
+    {
+      "code": "ecos_da_nevoa",
+      "name": "Ecos da Névoa",
+      "path": "web/assets/banners/ecos_da_nevoa.webp"
+    },
+    {
+      "code": "trono_arcano",
+      "name": "Trono Arcano",
+      "path": "web/assets/banners/trono_arcano.webp"
+    },
+    {
+      "code": "cacada_sombria",
+      "name": "Caçada Sombria",
+      "path": "web/assets/banners/cacada_sombria.webp"
+    },
+    {
+      "code": "lua_partida",
+      "name": "Lua Partida",
+      "path": "web/assets/banners/lua_partida.webp"
+    },
+    {
+      "code": "conspiracao",
+      "name": "Conspiração",
+      "path": "web/assets/banners/conspiracao.webp"
+    },
+    {
+      "code": "cidade_sem_rosto",
+      "name": "Cidade Sem Rosto",
+      "path": "web/assets/banners/cidade_sem_rosto.webp"
+    },
+    {
+      "code": "corredor_espectral",
+      "name": "Corredor Espectral",
+      "path": "web/assets/banners/corredor_espectral.webp"
+    },
+    {
+      "code": "floresta_rubra",
+      "name": "Floresta Rubra",
+      "path": "web/assets/banners/floresta_rubra.webp"
+    },
+    {
+      "code": "eclipse_violeta",
+      "name": "Eclipse Violeta",
+      "path": "web/assets/banners/eclipse_violeta.webp"
+    },
+    {
+      "code": "juramento_oculto",
+      "name": "Juramento Oculto",
+      "path": "web/assets/banners/juramento_oculto.webp"
+    },
+    {
+      "code": "ruinas_do_segredo",
+      "name": "Ruínas do Segredo",
+      "path": "web/assets/banners/ruinas_do_segredo.webp"
+    },
+    {
+      "code": "reino_dos_suspeitos",
+      "name": "Reino dos Suspeitos",
+      "path": "web/assets/banners/reino_dos_suspeitos.webp"
+    },
+    {
+      "code": "escuta_noturna",
+      "name": "Escuta Noturna",
+      "path": "web/assets/banners/escuta_noturna.webp"
+    },
+    {
+      "code": "segredo_carmesim",
+      "name": "Segredo Carmesim",
+      "path": "web/assets/banners/segredo_carmesim.webp"
+    },
+    {
+      "code": "vidro_estilhacado",
+      "name": "Vidro Estilhaçado",
+      "path": "web/assets/banners/vidro_estilhacado.webp"
+    }
+  ]
+}
