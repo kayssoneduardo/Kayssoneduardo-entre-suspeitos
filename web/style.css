@@ -68,3 +68,5 @@ body:before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 
 /* Keep player names readable alongside room actions on narrow screens. */
 .room-member{flex-wrap:wrap}.room-member .avatar{flex-shrink:0}.room-member .member-info{flex:1 1 160px}.room-member .back,.room-member .pill{flex-shrink:0}
+
+.room-member .equipped-title{display:block;font-size:.85em;font-weight:700;line-height:1.4;margin-top:4px;overflow-wrap:anywhere}

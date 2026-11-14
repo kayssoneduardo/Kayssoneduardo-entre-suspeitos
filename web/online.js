@@ -351,7 +351,7 @@ class OnlineUI{
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
   $('makeRoom').onclick=async()=>{try{const p=this.getRules();this.enterRoom(await this.cloud.rpc('es_create',{p_public:$('publicOn').value==='true',...p}));}catch(e){this.error(e);}};
  }
- enterRoom(id){this.stopLoop();save('lastRoom',id);this.roomId=id;this.room=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
+ enterRoom(id){this.stopLoop();save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
@@ -365,10 +365,11 @@ class OnlineUI{
   }},300);
  }
  async refresh(){if(!this.roomId||this.refreshing)return;this.refreshing=true;
-  try{const r=await this.cloud.rpc('es_room_view',{p_room:this.roomId});if(!this.roomId)return;
+  try{const [r,catalog]=await Promise.all([this.cloud.rpc('es_room_view',{p_room:this.roomId}),this.titleCatalog?Promise.resolve(this.titleCatalog):this.cloud.rpc('es_title_catalog').catch(()=>null)]);if(!this.roomId)return;
+   const titlesChanged=catalog!==this.titleCatalog;this.titleCatalog=catalog;
    this.room=r;if(r.status==='discussion'&&seconds(r.phaseEnds)===0){await this.cloud.rpc('es_begin_vote',{p_room:this.roomId}).catch(()=>{});}
    if(r.status==='voting'){await this.cloud.rpc('es_finalize',{p_room:this.roomId}).catch(()=>{});}
-   const sig=JSON.stringify(r);if(sig!==this.lastFingerprint){
+   const sig=JSON.stringify(r);if(sig!==this.lastFingerprint||titlesChanged){
     // Evita apagar uma carta revelada ou um formulário enquanto o usuário interage.
     if((this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))||this.app.querySelector('.online-editing'))return;
     this.lastFingerprint=sig;this.renderRoom(r);}
@@ -383,7 +384,8 @@ class OnlineUI{
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
   ${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
-  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}${p.title?' · Título equipado':''}</small></div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${p.ready?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):i+1}</span></div>`).join('')}</section>`;
+  const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
+  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${p.ready?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):i+1}</span></div>`).join('')}</section>`;
   let phase='';
   if(r.status==='lobby'){
    const myReady=!!r.players.find(p=>p.id===me)?.ready;
