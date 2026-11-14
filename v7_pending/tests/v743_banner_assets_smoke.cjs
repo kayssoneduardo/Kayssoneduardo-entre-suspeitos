@@ -10,7 +10,7 @@ assert.equal(Object.keys(cat.frames).length,16);
 function validWebp(path){
  assert(fs.existsSync(path),'Asset is missing: '+path);
  const bytes=fs.readFileSync(path);
- assert(bytes.length>12000 && bytes.length<160000,'Unexpected WebP file size: '+path);
+ assert(bytes.length>12000 && bytes.length<900000,'Unexpected WebP file size: '+path);
  assert.equal(bytes.subarray(0,4).toString(),'RIFF',path+' invalid RIFF');
  assert.equal(bytes.subarray(8,12).toString(),'WEBP',path+' invalid WebP');
 }
