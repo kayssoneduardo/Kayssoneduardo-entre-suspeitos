@@ -17,3 +17,23 @@ Fontes:
 - Leirival Arrais (Barba Azul)
 - Luiz Boi
 - Luiz Carlos do Tomaz
+
+## Expansão informada pelo proprietário
+
+Nomes fornecidos pelo usuário em 14/11/2026; ocupações mantidas como identificação informada, sem verificação externa. Categoria sem dicas em qualquer modo. Dificuldade editorial.
+
+- Carlos do Dimas
+- Zezão
+- Sargento Zé Domingos
+- Digena
+- Zé Dinoca - Narrador
+- Ialaí
+- Edkawan
+- Erisneto
+- Pablo Carneiro - Professor
+- Fernando - secretário de saúde
+- Leonildo
+- Natália da academia
+- Rodrigo da academia
+- Alex diretor
+- Rosivelth

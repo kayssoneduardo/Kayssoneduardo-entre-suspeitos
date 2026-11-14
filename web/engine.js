@@ -62,10 +62,10 @@
   function validateBank(bank){
     const report={};let total=0;
     for(const [category,words] of Object.entries(bank)){
-      if(words.length<100)throw Error('Categoria abaixo de 100: '+category);
+      if(words.length<(category==='Pessoas de Loreto'?1:100))throw Error('Categoria abaixo de 100: '+category);
       const keys=new Set();const levels=new Set();
       for(const x of words){
-        if(!x.w||!x.h||!LEVELS.includes(x.d))throw Error('Registro incompleto em '+category);
+        if(!x.w||(category==='Pessoas de Loreto'?x.h!=='':!x.h)||!LEVELS.includes(x.d))throw Error('Registro incompleto em '+category);
         const key=x.w.toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
         if(keys.has(key))throw Error('Palavra repetida em '+category+': '+x.w);
         keys.add(key);levels.add(x.d);

@@ -29,5 +29,5 @@ jobs:
           grep -q 'ENTRE SUSPEITOS' /tmp/b-index.html
           grep -q 'MIN=3' /tmp/b-online.js
           grep -q 'sb_publishable_' /tmp/b-server-config.js
-          test "$(grep -o '"w":' /tmp/b-words.js | wc -l)" -eq 1333
+          test "$(grep -o '"w":' /tmp/b-words.js | wc -l)" -eq 1348
           echo "HTML RENDERIZAVEL - TODOS OS ASSETS PRESENTES"

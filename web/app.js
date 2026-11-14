@@ -180,7 +180,7 @@ function renderReveal(){
   if(imp){
     content.innerHTML=`<div class="secret-label">SUA IDENTIDADE</div><div class="secret-name impostor">IMPOSTOR</div>`+
     (['both','category'].includes(game.settings.clue)?`<div class="secret-detail"><b>Categoria:</b> ${esc(game.word.c)}</div>`:'')+
-    (['both','hint'].includes(game.settings.clue)?`<div class="secret-detail"><b>Dica:</b> ${esc(game.word.h)}</div>`:'')+
+    (game.word.c!=='Pessoas de Loreto'&&game.word.h&&['both','hint'].includes(game.settings.clue)?`<div class="secret-detail"><b>Dica:</b> ${esc(game.word.h)}</div>`:'')+
     (game.settings.know&&partners.length?`<div class="secret-detail"><b>Parceiros:</b> ${esc(partners.join(', '))}</div>`:'')+
     '<div class="secret-info">Não revele seu papel!</div>';
     sound('impostor');

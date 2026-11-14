@@ -411,7 +411,7 @@ class OnlineUI{
   }else if(r.status==='discussion'){
    const revealing=!!r.revealEnds&&seconds(r.revealEnds)>0;this.showingReveal=revealing;
    const secret=r.me.impostor?'IMPOSTOR':ESC(r.me.word);
-   const info=r.me.impostor?[r.me.category?'Categoria: '+r.me.category:'',r.me.hint?'Dica: '+r.me.hint:'',r.me.partners?.length?'Parceiros: '+r.players.filter(x=>r.me.partners.includes(x.id)).map(x=>x.nick).join(', '):''].filter(Boolean).join(' · '):'Categoria: '+r.me.category;
+   const info=r.me.impostor?[r.me.category?'Categoria: '+r.me.category:'',r.me.category!=='Pessoas de Loreto'&&r.me.hint?'Dica: '+r.me.hint:'',r.me.partners?.length?'Parceiros: '+r.players.filter(x=>r.me.partners.includes(x.id)).map(x=>x.nick).join(', '):''].filter(Boolean).join(' · '):'Categoria: '+r.me.category;
    const first=r.players.find(p=>p.id===r.starter)?.nick||'Sorteado';
    phase=`<section class="card center"><h2>${revealing?'Veja sua carta':'Abrindo votação'}</h2><div id="timerOnline" class="countdown">${countdown(revealing?r.revealEnds:r.phaseEnds)}</div><p class="subtext">Quem começa: <b>${ESC(first)}</b>. Após os 30 segundos, a votação abre e vocês podem conversar enquanto votam.</p>
    ${revealing?`<div id="onlineSecret" class="card-reveal" tabindex="0"><div id="onlineSecretContent"><span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p></div></div>
