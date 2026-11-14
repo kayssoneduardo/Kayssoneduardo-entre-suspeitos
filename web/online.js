@@ -198,6 +198,7 @@ class OnlineUI{
   if(!this.cloud.userId){this.login();return;}
   const destination=this.pendingDestination;this.pendingDestination=null;
   if(destination==='profile')return this.profile();
+  if(destination==='cosmetics')return this.cosmeticsPage();
   if(destination==='ranking')return this.ranking();
   if(destination==='friends')return this.friends();
    if(destination==='missions')return this.progressHub();
@@ -372,7 +373,7 @@ class OnlineUI{
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
   $('makeRoom').onclick=async()=>{try{const p=this.getRules(),name=$('roomNameOn').value.replace(/\s+/g,' ').trim();if(name&&([...name].length<3||[...name].length>50))throw new Error('Use de 3 a 50 caracteres no nome da sala.');this.enterRoom(await this.cloud.rpc('es_create_named',{p_public:$('publicOn').value==='true',p_name:name,...p}));}catch(e){this.error(e);}};
  }
- enterRoom(id){this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
+ enterRoom(id){this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.activeEvent=null;this.cloud.rpc('es_v74_events_list').then(events=>{if(this.roomId===id){this.activeEvent=events.find(e=>e.active)||null;if(this.room)this.renderRoom(this.room);}}).catch(()=>{});this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
@@ -407,7 +408,16 @@ class OnlineUI{
   ${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('shareLinkOn','Compartilhar convite por link','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
-  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div>`).join('')}</section>`;
+  const cosmetics=window.ESCosmetics;
+  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>{
+   const t=this.titleCatalog?.find(t=>t.code===p.title);
+   const rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?' title-'+t.rarity:'';
+   const frame=cosmetics?.safeFrame(p.frame)||'classica',banner=cosmetics?.safeBanner(p.banner)||'padrao';
+   const pic=avatarSrc(this.cloud,p.avatar);
+   const avatar=cosmetics?cosmetics.avatar(frame,pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())):`<div class="avatar">${pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div>`;
+   return `<div class="cosmetic-player">${cosmetics?cosmetics.banner(banner):''}<div class="cosmetic-player-foreground">${avatar}<div class="cosmetic-player-identity"><strong class="cosmetic-player-name${rarity}">${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small class="cosmetic-player-status ${p.active&&p.online?'online':'offline'}">${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[frame]?.[0]||'Clássica')}</span>${equippedTitle(p.title)}</div></div>
+    <div class="cosmetic-player-controls">${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div></div>`;
+  }).join('')}</section>`;
   let phase='';
   if(r.status==='lobby'){
    const myReady=!!r.players.find(p=>p.id===me)?.ready;
@@ -440,7 +450,7 @@ class OnlineUI{
     <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
     ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
   }
-  this.currentPage='room';this.app.innerHTML=head+phase+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
+  this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${event.progress}/${event.target} · Moldura Névoa</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
   this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
