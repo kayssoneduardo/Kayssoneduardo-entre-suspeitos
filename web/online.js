@@ -505,9 +505,10 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
  async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[],frames=[];try{[p,titles,frames]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles'),this.cloud.rpc('es_v74_frames')]);}catch(e){return this.error(e);}
-  const progress=xpProgress(p.xp);
+  const progress=xpProgress(p.xp);const cosmetics=window.ESCosmetics;const title=titles.find(t=>t.equipped);const rarity=title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?' title-'+title.rarity:'';const avatarUrl=avatarSrc(this.cloud,p.avatar_url);
+  const avatar=cosmetics?cosmetics.avatar(p.equipped_frame||'classica',avatarUrl?`<img src="${ESC(avatarUrl)}" alt="Minha foto">`:ESC((p.nickname||'?').charAt(0).toUpperCase())):`<div class="avatar profile-avatar">${ESC((p.nickname||'?').charAt(0).toUpperCase())}</div>`;
   this.app.innerHTML=`<section class="card"><h2>Meu perfil</h2>
-   <div class="profile-heading"><div class="avatar profile-avatar v74-frame ${['bronze','ouro','nevoa'].includes(p.equipped_frame)?p.equipped_frame:'classica'}">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
+   <div class="cosmetic-profile-hero">${cosmetics?cosmetics.banner(p.equipped_banner||'padrao'):''}<div class="cosmetic-profile-main">${avatar}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[cosmetics.safeFrame(p.equipped_frame)]?.[0]||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC(cosmetics?.banners[cosmetics.safeBanner(p.equipped_banner)]?.[0]||'Sombras Originais')}</span></div>${btn('openCosmetics','Personalizar banners e molduras','secondary')}
    <section class="level-panel" aria-label="Seu nível e experiência"><div class="level-summary"><strong>Nível ${progress.level}</strong><span>${progress.xp.toLocaleString('pt-BR')} XP acumulado</span></div>
    <progress class="xp-progress" value="${progress.earned}" max="${progress.needed}" aria-label="Progresso até o nível ${progress.level+1}"></progress>
    <p>${progress.earned.toLocaleString('pt-BR')} / ${progress.needed.toLocaleString('pt-BR')} XP neste nível · ${progress.percent}%</p>
@@ -529,6 +530,7 @@ class OnlineUI{
    <p class="notice">Títulos Místicos permanecem ocultos até a conquista e sujeitos às regras de exclusividade.</p><p id="onlineError" class="error"></p></section>`;
    this.app.querySelectorAll('[data-frame]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_v74_equip_frame',{p_frame:frames[+b.dataset.frame].code});this.profile();}catch(e){this.error(e);}});
    $('viewStatsProfile').onclick=()=>this.statsPage();
+   $('openCosmetics').onclick=()=>this.cosmeticsPage();
    this.app.querySelectorAll('[data-equip]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_equip_title',{p_title:titles[+b.dataset.equip].code});this.profile();}catch(e){this.error(e);}});
   $('uploadPhoto').onclick=async()=>{try{
     const file=$('photoOn').files?.[0];if(!file)throw new Error('Escolha uma imagem primeiro.');
@@ -544,6 +546,36 @@ class OnlineUI{
     await this.cloud.uploadAvatar(blob);this.profile();
   }catch(e){this.error(e);}};
   $('saveNick').onclick=async()=>{try{await this.cloud.rpc('es_set_nickname',{p_nick:$('nicknameOn').value});this.profile();}catch(e){this.error(e);}};
+ }
+
+ async cosmeticsPage(){
+  this.stopLoop();this.currentPage='cosmetics';this.header('Personalização');
+  this.app.innerHTML='<section class="card"><h2>Personalização</h2><p>Carregando catálogo...</p><p id="onlineError" class="error"></p></section>';
+  try{
+   const [p,titles,items]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles'),this.cloud.rpc('es_cosmetic_inventory')]);
+   if(this.currentPage!=='cosmetics')return;
+   const cosmetics=window.ESCosmetics;if(!cosmetics)throw new Error('Catálogo visual indisponível. Atualize a página.');
+   const title=titles.find(t=>t.equipped);const rarity=title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?' title-'+title.rarity:'';
+   const avatarUrl=avatarSrc(this.cloud,p.avatar_url);
+   const photo=avatarUrl?`<img src="${ESC(avatarUrl)}" alt="Foto do perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase());
+   const equippedFrame=items.find(x=>x.kind==='frame'&&x.equipped)||items.find(x=>x.code==='classica');
+   const equippedBanner=items.find(x=>x.kind==='banner'&&x.equipped)||items.find(x=>x.code==='padrao');
+   const currentFrame=equippedFrame?.code||'classica',currentBanner=equippedBanner?.code||'padrao';
+   const tab=this.cosmeticTab==='frame'?'frame':'banner';
+   const selected=items.filter(x=>x.kind===tab);
+   const tiles=selected.map((x,i)=>{
+    const visual=x.kind==='frame'?cosmetics.avatar(x.code,'✦'):`<div class="cosmetic-tile-banner">${cosmetics.banner(x.code)}</div>`;
+    const requirement=x.event_code?'Evento especial':x.wins_required+' vitórias públicas · '+x.xp_required+' XP';
+    return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
+   }).join('');
+   this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC(equippedFrame?.name||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC(equippedBanner?.name||'Sombras Originais')}</span></section>
+    <div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
+    <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery">${tiles}</div><p id="onlineError" class="error"></p></section>${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
+   $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticsPage();};
+   $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticsPage();};
+   $('cosmeticsBack').onclick=()=>this.profile();
+   this.app.querySelectorAll('[data-cosmetic]').forEach(b=>b.onclick=async()=>{const x=selected[Number(b.dataset.cosmetic)];b.disabled=true;try{await this.cloud.rpc('es_cosmetic_equip',{p_kind:x.kind,p_code:x.code});this.cosmeticsPage();}catch(e){this.error(e);b.disabled=false;}});
+  }catch(e){this.error(e);}
  }
  async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_leaderboard'),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
   const ranked=rankedPlayers(rank);
