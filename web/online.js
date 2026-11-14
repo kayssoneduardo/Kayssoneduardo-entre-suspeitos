@@ -638,7 +638,7 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
 
- async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
+ async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').then(rows=>Array.isArray(rows)&&rows.length?rows:this.cloud.rpc('es_leaderboard')).catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
   const ranked=rankedPlayers(rank);
   const medals={1:['🥇','Ouro'],2:['🥈','Prata'],3:['🥉','Bronze']};
   const podium=ranked.filter(p=>p.position<=3);
