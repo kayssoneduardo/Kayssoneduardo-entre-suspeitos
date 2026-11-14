@@ -177,7 +177,7 @@ function renderReveal(){
  ${button('next',i===game.names.length-1?'Iniciar discussão →':'Próximo jogador →','secondary')}`;
  const card=document.getElementById('card'),content=document.getElementById('cardContent');
  let showing=false;
- function show(){if(showing)return;showing=true;card.classList.add('revealed');card.classList.add('pulse-reveal');setTimeout(()=>card.classList.remove('pulse-reveal'),620);
+ function show(){if(showing)return;showing=true;window.ESMotion?.revealCard(card);card.classList.add('revealed');card.classList.add('pulse-reveal');setTimeout(()=>card.classList.remove('pulse-reveal'),620);
   const partners=game.imps.filter(n=>n!==i).map(n=>game.names[n]);
   if(imp){
     content.innerHTML=`<div class="secret-label">SUA IDENTIDADE</div><div class="secret-name impostor">IMPOSTOR</div>`+
@@ -191,7 +191,7 @@ function renderReveal(){
     sound('reveal');
   }
  }
- function hide(){if(!showing)return;showing=false;card.classList.remove('revealed');card.classList.remove('pulse-reveal');content.innerHTML='<div class="icon">◈</div><div class="secret-label">CARTA SELADA</div><div class="hold-hint">MANTENHA PRESSIONADO PARA REVELAR</div>';}
+ function hide(){if(!showing)return;showing=false;window.ESMotion?.endReveal(card);card.classList.remove('revealed');card.classList.remove('pulse-reveal');content.innerHTML='<div class="icon">◈</div><div class="secret-label">CARTA SELADA</div><div class="hold-hint">MANTENHA PRESSIONADO PARA REVELAR</div>';}
  card.addEventListener('pointerdown',e=>{e.preventDefault();try{card.setPointerCapture(e.pointerId);}catch{}show();});
  for(const eventName of ['pointerup','pointercancel','lostpointercapture','pointerleave'])card.addEventListener(eventName,hide);
  card.addEventListener('contextmenu',e=>e.preventDefault());window.addEventListener('blur',hide,{once:true});document.addEventListener('visibilitychange',()=>{if(document.hidden)hide();},{once:true});
@@ -211,8 +211,8 @@ function renderDiscussion(){
  document.getElementById('again').onclick=()=>{if(confirm('Descartar esta rodada sem revelar e sortear outra palavra?')){game=null;renderSetup();}};
 }
 function renderResult(){
- page='result';game.finished=true;setTop('Resultado',renderMenu);
- app.innerHTML=`<section class="card center" style="margin-top:20px"><div class="eyebrow">O MISTÉRIO TERMINOU</div><h2>Segredos revelados</h2><div class="card-reveal revealed" style="min-height:175px;touch-action:auto;cursor:default"><div><div class="secret-label">A PALAVRA ERA</div><div class="result-word">${esc(game.word.w)}</div><p class="subtext">${esc(game.word.c)} · ${esc(game.word.d)}</p></div></div>
+ page='result';game.finished=true;window.ESMotion?.enterPhase('results');setTop('Resultado',renderMenu);
+ app.innerHTML=`<section class="card center" style="margin-top:20px"><div class="eyebrow">O MISTÉRIO TERMINOU</div><h2>${window.ESMotion?.outcome(true)||''} Segredos revelados</h2><div class="card-reveal revealed" style="min-height:175px;touch-action:auto;cursor:default"><div><div class="secret-label">A PALAVRA ERA</div><div class="result-word">${esc(game.word.w)}</div><p class="subtext">${esc(game.word.c)} · ${esc(game.word.d)}</p></div></div>
  <div class="eyebrow">${game.imps.length===1?'O IMPOSTOR ERA':'OS IMPOSTORES ERAM'}</div>
  ${game.imps.map(i=>`<div class="result-name">${esc(game.names[i])}</div>`).join('')}
  <div class="divider"></div>
