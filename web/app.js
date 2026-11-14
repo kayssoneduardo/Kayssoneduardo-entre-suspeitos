@@ -85,7 +85,7 @@ function renderFuture(name,desc){page='future';setTop(name,renderMenu);app.inner
 function renderSettings(){
  page='settings';setTop('Configurações',renderMenu);
  app.innerHTML=`<section class="card"><h2>Visual e som</h2><p class="subtext">Escolha o tema e ajuste o áudio deste aparelho.</p>
- <div class="field"><label for="theme">Tema do aplicativo</label><select id="theme"><option value="shadow">Sombra — preto e vermelho</option><option value="night">Noturno — azul e roxo</option></select></div>
+ <div class="field"><label for="theme">Tema do aplicativo</label><select id="theme"><option value="shadow">Vermelho e preto — Rubro Sombrio</option><option value="night">Roxo profundo — Noite Violeta</option></select></div>
  <div class="check"><input class="switch" type="checkbox" id="music"><label for="music">Música ambiente de suspense</label></div>
  <div class="check"><input class="switch" type="checkbox" id="effects"><label for="effects">Efeitos sonoros do jogo</label></div>
  <div class="notice">A trilha é original e gerada pelo aplicativo. O som é opcional e funciona sem internet. Por segurança, as informações secretas só aparecem enquanto você mantém o dedo na carta.</div></section>
