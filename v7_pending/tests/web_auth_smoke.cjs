@@ -148,6 +148,13 @@ console.log('PASSOU: limites de nível, progresso de XP, ordem e empates no rank
   ui.cloud.rpc=async name=>name==='es_me'?{nickname:'Teste',xp:400,ranking_points:-25}:name==='es_leaderboard'?[{nickname:'Teste',xp:400,ranking_points:-25,online_wins:2}]:[];
   await ui.profile();assert.match(app.html,/Nível 3/);assert.match(app.html,/500 XP/);assert.match(app.html,/<progress/);
   await ui.ranking();assert.match(app.html,/1º LUGAR/);assert.match(app.html,/−25 pontos/);assert.match(app.html,/Nível 3/);
+  ui.cloud.rpc=async()=>[{id:'named',name:'Sala <script>',creator_name:'Zero & Amigos',categories:['Animais'],difficulty:'Fácil',impostors:1,players:2,max_players:5}];
+  await ui.publicRooms();assert.match(elements.get('publicList').innerHTML,/Sala &lt;script&gt;/);assert.match(elements.get('publicList').innerHTML,/Criada por: Zero &amp; Amigos/);
+  ui.createRoom();assert.match(app.html,/roomNameOn/);
+  ui.getRules=()=>({p_max:5,p_impostors:1,p_categories:['Animais'],p_difficulty:'Fácil',p_clue:'both',p_know:false});
+  elements.get('roomNameOn').value='  Resenha   de Loreto  ';elements.get('publicOn').value='true';
+  let creation;ui.cloud.rpc=async(n,p)=>{creation={n,p};return 'new-room';};ui.enterRoom=()=>{};
+  await elements.get('makeRoom').onclick();assert.equal(creation.n,'es_create_named');assert.equal(creation.p.p_name,'Resenha de Loreto');
   ui.stopLoop=()=>{};ui.pendingDestination='profile';
   let profileOpened=false;ui.profile=()=>{profileOpened=true;};
   ui.home();assert.equal(profileOpened,true);assert.equal(ui.pendingDestination,null);

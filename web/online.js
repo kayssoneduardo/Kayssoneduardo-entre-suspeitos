@@ -341,7 +341,7 @@ class OnlineUI{
   this.app.innerHTML=`<section class="card"><h2>Partidas esperando jogadores</h2><p class="subtext">Você pode entrar numa sala com vagas ou criar a sua.</p>
   ${btn('quickOn','Entrada rápida')}${btn('reloadOn','Atualizar lista','secondary')}<div id="publicList"><p>Carregando...</p></div><p id="onlineError" class="error"></p></section>`;
   let rooms=[];try{rooms=await this.cloud.rpc('es_public_rooms');}catch(e){return this.error(e);}
-  $('publicList').innerHTML=rooms.length?rooms.map((r,i)=>`<div class="member"><div class="member-info"><strong>${ESC(r.categories?.slice(0,2).join(', ')||'Categorias variadas')}</strong><small>${ESC(r.difficulty)} · ${r.impostors} imp. · ${r.players}/${r.max_players} jogadores</small></div><button class="back" data-room="${i}">Entrar</button></div>`).join(''):'<p class="notice">Não há salas públicas abertas agora. Crie uma e convide seus amigos!</p>';
+  $('publicList').innerHTML=rooms.length?rooms.map((r,i)=>`<div class="member"><div class="member-info"><strong>${ESC(r.name||'Sala de '+(r.owner_name||'jogador'))}</strong><small>${r.creator_name?'Criada por: '+ESC(r.creator_name):'Anfitrião: '+ESC(r.owner_name||'jogador')}</small><small>${ESC(r.categories?.slice(0,2).join(', ')||'Categorias variadas')}</small><small>${ESC(r.difficulty)} · ${r.impostors} imp. · ${r.players}/${r.max_players} jogadores</small></div><button class="back" data-room="${i}">Entrar</button></div>`).join(''):'<p class="notice">Não há salas públicas abertas agora. Crie uma e convide seus amigos!</p>';
   this.app.querySelectorAll('[data-room]').forEach(b=>b.onclick=async()=>{try{const r=await this.cloud.rpc('es_join',{p_room:rooms[+b.dataset.room].id});this.enterRoom(r);}catch(e){this.error(e);}});
   $('quickOn').onclick=async()=>{const available=rooms.find(r=>r.players<r.max_players);if(!available)return this.note('Não existem salas com vagas. Crie uma sala.');try{this.enterRoom(await this.cloud.rpc('es_join',{p_room:available.id}));}catch(e){this.error(e);}};
   $('reloadOn').onclick=()=>this.publicRooms();
@@ -362,9 +362,10 @@ class OnlineUI{
   return {p_max:max,p_impostors:imp,p_categories:categories,p_difficulty:$('difficultyOn').value,p_clue:$('clueOn').value,p_know:$('knowOn').checked};}
  createRoom(){this.currentPage='create';this.header('Criar sala');
   this.app.innerHTML=`<section class="card"><h2>Preparar partida online</h2><p class="subtext">O jogo inicia com pelo menos 3 jogadores prontos. A sala fica aberta até o anfitrião começar.</p>
+  ${input('roomNameOn','Nome da sala (opcional)','text','','maxlength="50" placeholder="Ex.: Resenha de Loreto"')}<p class="small muted">De 3 a 50 caracteres. Se deixar vazio, usamos “Sala de seu apelido”.</p>
   <div class="field"><label>Visibilidade</label><select id="publicOn"><option value="true">Pública — aparece na lista</option><option value="false">Privada — somente com código</option></select></div>
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
-  $('makeRoom').onclick=async()=>{try{const p=this.getRules();this.enterRoom(await this.cloud.rpc('es_create',{p_public:$('publicOn').value==='true',...p}));}catch(e){this.error(e);}};
+  $('makeRoom').onclick=async()=>{try{const p=this.getRules(),name=$('roomNameOn').value.replace(/\s+/g,' ').trim();if(name&&([...name].length<3||[...name].length>50))throw new Error('Use de 3 a 50 caracteres no nome da sala.');this.enterRoom(await this.cloud.rpc('es_create_named',{p_public:$('publicOn').value==='true',p_name:name,...p}));}catch(e){this.error(e);}};
  }
  enterRoom(id){this.stopLoop();save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
@@ -395,6 +396,7 @@ class OnlineUI{
   const allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors>=1&&r.impostors<=Math.floor((joined.length-1)/2);
   if(r.status!==this.lastPhase){this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;}
   const head=`<section class="card"><div class="statusbar"><div><span class="eyebrow">${r.public?'SALA PÚBLICA':'SALA PRIVADA'}</span><div class="room-code">${ESC(r.code)}</div></div><span class="pill">${joined.length}/${r.max} jogadores</span></div>
+  <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
   ${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
