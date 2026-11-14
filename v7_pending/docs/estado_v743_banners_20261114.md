@@ -26,3 +26,10 @@ Molduras e desbloqueios atuais intactos; nenhum SQL/Supabase alterado; nenhuma m
 3. Transferir 16 WebP para `web/assets/banners` na branch, confirmar nomes e integridade (não só caminhos).
 4. Testar preview real no Android e GitHub Actions, deployar apenas após novo pedido do usuário.
 5. Atualizar o TXT de continuidade, referenciar o commit e o status efetivo.
+
+## Atualização: raridade visual aprovada
+Em 14/11/2026 o usuário solicitou que banners sigam a MESMA hierarquia de destaque das molduras: itens comuns discretos, incomuns moderados, raros refinados, épicos com brilho controlado, lendários com máximo destaque.
+- `web/cosmetics.js`: mapeamento fixo dos 16 códigos de banner para a raridade já definida em `es_cosmetic_catalog`, exposto via `ESCosmetics.bannerRarity(code)`, e classe `banner-rarity-<tier>` no elemento de arte. Valores não vêm de nível ou rank do jogador.
+- `web/style.css`: cinco níveis visuais progressivos de saturação, brilho, contorno e iluminação. **As próprias ilustrações aprovadas não foram alteradas.** Evitar efeitos chamativos em comuns/incomuns e excesso de animação em celulares modestos.
+- `v7_pending/tests/v743_banner_assets_smoke.cjs`: cobertura de 16 níveis de raridade.
+- A branch permanece DRAFT; **não mesclar/publicar** sem imagens WebP anexadas, validação em celular e autorização do usuário.
