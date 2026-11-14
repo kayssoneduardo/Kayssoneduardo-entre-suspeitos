@@ -18,6 +18,7 @@ jobs:
           node v7_pending/tests/word_bank_smoke.cjs
           node v7_pending/tests/v74_smoke.cjs
           node v7_pending/tests/v741_cosmetics_smoke.cjs
+          node v7_pending/tests/v742_polish_smoke.cjs
       - name: Verificar arquivos e permissões da V7.4
         run: |
           test -f v7_pending/sql/v74_social_progress.sql
