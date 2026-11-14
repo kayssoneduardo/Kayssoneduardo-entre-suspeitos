@@ -32,31 +32,49 @@ vidro_estilhacado:['Vidro Estilhaçado','#16213a','#4c91c9','#ccecff',15]
 function safeFrame(id){return Object.prototype.hasOwnProperty.call(frames,id)?id:'classica';}
 function safeBanner(id){return Object.prototype.hasOwnProperty.call(banners,id)?id:'padrao';}
 function svgFrame(code){
- const key=safeFrame(code),[name,a,b,index]=frames[key],id='f'+index;
- const premium=index>=3;
- const rays=Array.from({length:premium?10:6},(_,i)=>{
-  const angle=(360/(premium?10:6))*i;
-  const len= premium?18:9;
-  return '<path d="M100 '+(premium?6:13)+' L'+(96-len/5)+' '+(25-len)+' L100 '+(9-len/3)+' L'+(104+len/5)+' '+(25-len)+' Z" transform="rotate('+angle+' 100 100)" fill="url(#'+id+'gold)" stroke="'+b+'" stroke-width="0.75" opacity="'+(premium?'.96':'.72')+'"/>';
+ const key=safeFrame(code),[,a,b,index]=frames[key],id='f'+index;
+ const premium=index>=3,grand=index>=4;
+ const paths=Array.from({length:7},(_,i)=>{
+   const angle=(i-3)*18,offset=i*4;
+   return '<g transform="rotate('+angle+' 100 100)"><path d="M100 '+(grand?3:12)+' Q'+(90-offset/4)+' 32 100 '+(38+offset/3)+' Q'+(110+offset/4)+' 30 100 '+(grand?3:12)+'Z" fill="url(#'+id+'gold)" stroke="'+a+'" stroke-width=".8"/></g>';
  }).join('');
- const leaf=Array.from({length:premium?5:3},(_,i)=>{
-  const y=66+i*15, x=16+(i%2)*3;
-  return '<path d="M'+(x+14)+' '+y+' Q'+(x-10)+' '+(y-12)+' '+x+' '+(y-21)+' Q'+(x+32)+' '+(y-18)+' '+(x+14)+' '+y+'Z" fill="url(#'+id+'gold)" opacity=".9"/>';
+ const side=Array.from({length:6},(_,i)=>{
+  const y=126+i*9,curv=15+i*4;
+  return '<path d="M'+(26+i*4)+' '+y+' Q'+(10-i*2)+' '+(y-curv)+' '+(22+i*2)+' '+(y-curv-8)+' Q'+(42+i*3)+' '+(y-16)+' '+(26+i*4)+' '+y+'Z" fill="url(#'+id+'gold)" stroke="'+a+'" stroke-width=".7"/>';
  }).join('');
- const jewels=premium?'<path d="M100 3 112 17 100 31 88 17Z M100 169 111 183 100 197 89 183Z" fill="'+b+'" stroke="'+a+'" stroke-width="2"/><path d="M100 6 104 17 100 27 96 17Z" fill="#fff" opacity=".65"/>':'';
- return '<svg class="cosmetic-frame-svg" viewBox="0 0 200 200" aria-hidden="true"><defs><linearGradient id="'+id+'gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="'+a+'"/><stop offset=".48" stop-color="'+b+'"/><stop offset="1" stop-color="'+a+'"/></linearGradient><filter id="'+id+'glow"><feGaussianBlur stdDeviation="3"/></filter></defs>'
- +'<circle cx="100" cy="100" r="82" fill="none" stroke="'+a+'" stroke-width="10" opacity=".33" filter="url(#'+id+'glow)"/>'
- +rays+leaf+'<g transform="translate(200 0) scale(-1 1)">'+leaf+'</g>'
- +'<circle cx="100" cy="100" r="77" fill="none" stroke="url(#'+id+'gold)" stroke-width="'+(premium?9:6)+'"/>'
- +'<circle cx="100" cy="100" r="70" fill="none" stroke="'+b+'" stroke-width="1.5" opacity=".8"/>'
- +jewels+'<circle cx="100" cy="100" r="87" fill="none" stroke="'+b+'" stroke-width="1" opacity=".45"/></svg>';
+ const gems=Array.from({length:premium?8:4},(_,i)=>{
+   const angle=i*360/(premium?8:4);
+   return '<g transform="rotate('+angle+' 100 100)"><path d="M100 3 L108 17 L100 31 L92 17Z" fill="url(#'+id+'gem)" stroke="'+a+'" stroke-width="1.5"/><path d="M100 5 L103 17 L100 27 L97 17Z" fill="#fff" opacity=".72"/></g>';
+ }).join('');
+ const sparkles=Array.from({length:grand?12:5},(_,i)=>{
+  const angle=i*360/(grand?12:5)+17;
+  return '<g transform="rotate('+angle+' 100 100)"><path d="M100 -2V8 M95 3H105" stroke="'+b+'" stroke-width="1.6" opacity=".75"/></g>';
+ }).join('');
+ return '<svg class="cosmetic-frame-svg" viewBox="0 0 200 200" aria-hidden="true"><defs>'
+ +'<linearGradient id="'+id+'gold" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="'+b+'"/><stop offset=".24" stop-color="#fff3c3"/><stop offset=".53" stop-color="'+a+'"/><stop offset=".79" stop-color="'+b+'"/><stop offset="1" stop-color="#fff1b5"/></linearGradient>'
+ +'<linearGradient id="'+id+'gem" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8d9ff"/><stop offset=".48" stop-color="'+b+'"/><stop offset="1" stop-color="#44217e"/></linearGradient>'
+ +'<filter id="'+id+'glow"><feGaussianBlur stdDeviation="3.5"/></filter></defs>'
+ +'<circle cx="100" cy="100" r="79" fill="none" stroke="'+b+'" stroke-width="12" opacity=".46" filter="url(#'+id+'glow)"/>'
+ +'<circle cx="100" cy="100" r="78" fill="none" stroke="url(#'+id+'gold)" stroke-width="'+(grand?9:6)+'"/>'
+ +'<circle cx="100" cy="100" r="72" fill="none" stroke="'+b+'" stroke-width="2" opacity=".9"/>'
+ +'<circle cx="100" cy="100" r="85" fill="none" stroke="'+b+'" stroke-width="1.2" opacity=".5"/>'
+ +'<g>'+paths+'</g><g>'+side+'</g><g transform="translate(200 0) scale(-1 1)">'+side+'</g>'
+ +gems+sparkles
+ +'<path d="M75 27L100 8L125 27L117 39L100 32L83 39Z" fill="url(#'+id+'gold)" stroke="'+b+'" stroke-width="1.2" opacity="'+(grand?1:.8)+'"/>'
+ +'<path d="M100 9L112 23L100 35L88 23Z" fill="url(#'+id+'gem)" stroke="'+a+'" stroke-width="1.8"/>'
+ +'<path d="M85 160Q100 181 115 160L100 194Z" fill="url(#'+id+'gold)" opacity="'+(premium?1:.6)+'"/>'
+ +'</svg>';
 }
 function bannerSvg(code){
  const key=safeBanner(code),[name,a,b,c,i]=banners[key],id='b'+i;
- const buildings=Array.from({length:11},(_,j)=>{
-  const x=j*55+((i*7+j*13)%17),h=36+((j*29+i*19)%83);
-  const tower=j%4===0?'<path d="M'+(x+12)+' '+(194-h)+' l14 -25 14 25 Z" fill="'+a+'" opacity=".8"/>':'';
-  return '<rect x="'+x+'" y="'+(196-h)+'" width="'+(31+j%3*7)+'" height="'+h+'" fill="'+a+'" opacity=".65"/>'+tower;
+ const buildings=Array.from({length:12},(_,j)=>{
+  const x=j*61-25+((i*7+j*13)%21),h=45+((j*29+i*19)%90);
+  const w=30+j%3*7,y=195-h;
+  const roof='<path d="M'+(x-7)+' '+y+' L'+(x+w/2)+' '+(y-25-j%3*9)+' L'+(x+w+7)+' '+y+'Z" fill="'+a+'" opacity=".9"/>';
+  const wall='<path d="M'+x+' 205 V'+y+' H'+(x+w)+' V205Z" fill="'+a+'" opacity=".87"/>';
+  const spire=j%3===0?'<path d="M'+(x+w/2)+' '+(y-22)+' V'+(y-47)+' M'+(x+w/2-7)+' '+(y-22)+' L'+(x+w/2)+' '+(y-38)+' L'+(x+w/2+7)+' '+(y-22)+'" fill="none" stroke="'+a+'" stroke-width="2"/>':'';
+  const windows=Array.from({length:2},(_,k)=>'<path d="M'+(x+7+k*13)+' '+(y+21)+' v7" stroke="'+c+'" stroke-width="2" opacity=".35"/>').join('');
+  return roof+wall+spire+windows;
  }).join('');
  const trees=Array.from({length:6},(_,j)=>{
   const x=j*119-10,y=205+(j%2)*11;
@@ -64,7 +82,7 @@ function bannerSvg(code){
  }).join('');
  const scenery=(i===3||i===8||i===14)?trees:buildings;
  const throne=(i===2||i===12)?'<path d="M490 175V77L515 47L540 77V175Z" fill="'+a+'" stroke="'+c+'" stroke-width="5"/><rect x="470" y="176" width="88" height="14" fill="'+a+'" stroke="'+c+'"/><path d="M475 90 515 58 552 90" fill="none" stroke="'+c+'" stroke-width="3"/>':'';
- const hat=(i===1||i===5||i===13)?'<path d="M476 127 492 80 547 80 561 129Z M458 132Q521 153 577 131Z" fill="'+a+'" stroke="'+c+'" stroke-width="2" opacity=".75"/><path d="M484 150Q523 127 554 154L565 214H465Z" fill="'+a+'" opacity=".72"/>':'';
+ const hat=(i===1||i===5||i===13||i===0)?'<path d="M487 107 Q501 68 529 71 Q548 77 555 110 L566 120 Q520 138 465 122Z" fill="#0a0617" opacity=".96"/><path d="M454 130 Q513 146 583 125 Q550 141 518 141Z" fill="#060411"/><path d="M493 147 Q527 133 552 154 L587 220 H440Z" fill="#0b0719" opacity=".96"/><path d="M522 149 L531 188 L509 210 L494 157" fill="#1c102d"/><path d="M488 104 Q518 110 551 103" fill="none" stroke="'+c+'" opacity=".3" stroke-width="3"/>':'';
  return '<svg class="cosmetic-banner-svg" viewBox="0 0 640 220" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="'+id+'sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="'+a+'"/><stop offset=".56" stop-color="'+b+'"/><stop offset="1" stop-color="'+a+'"/></linearGradient><radialGradient id="'+id+'fog"><stop stop-color="'+c+'" stop-opacity=".36"/><stop offset="1" stop-color="'+a+'" stop-opacity="0"/></radialGradient></defs>'
  +'<rect width="640" height="220" fill="url(#'+id+'sky)"/>'
  +'<circle cx="'+(470-i*7%125)+'" cy="63" r="'+(26+(i%3)*7)+'" fill="'+c+'" opacity=".65"/>'
@@ -72,7 +90,8 @@ function bannerSvg(code){
  +'<path d="M0 175Q80 90 160 165T320 150T640 155V220H0Z" fill="'+b+'" opacity=".42"/>'
  +scenery+throne+hat
  +'<ellipse cx="200" cy="202" rx="400" ry="58" fill="url(#'+id+'fog)"/>'
- +'<path d="M0 200 Q90 160 160 196 T330 191 T640 185" fill="none" stroke="'+c+'" stroke-width="9" opacity=".22"/>'
+ +'<path d="M-30 194 Q70 154 150 188 T335 182 T650 176" fill="none" stroke="'+c+'" stroke-width="25" opacity=".16"/>'
+ +'<path d="M-20 217 Q100 178 220 212 T480 204 T650 207" fill="none" stroke="'+c+'" stroke-width="18" opacity=".21"/>'
  +'<circle cx="'+(220+(i*47)%310)+'" cy="30" r="2" fill="#fff" opacity=".7"/><circle cx="'+(160+(i*67)%410)+'" cy="75" r="2" fill="#fff" opacity=".4"/>'
  +'</svg>';
 }

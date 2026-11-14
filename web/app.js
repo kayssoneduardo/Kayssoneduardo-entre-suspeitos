@@ -56,6 +56,7 @@ function renderMenu(){
  ${button('howto','? &nbsp; COMO JOGAR','ghost')}
  <div class="tiles">
   <button class="tile" id="profile"><span class="tile-icon">♟</span>Meu perfil</button>
+  <button class="tile" id="cosmetics"><span class="tile-icon">✦</span>Personalização · Molduras e banners</button>
   <button class="tile" id="ranking"><span class="tile-icon">♛</span>Ranking</button>
   <button class="tile" id="friends"><span class="tile-icon">♧</span>Amigos</button>
   <button class="tile" id="settings"><span class="tile-icon">⚙</span>Configurações</button>
@@ -66,6 +67,7 @@ function renderMenu(){
  document.getElementById('online').onclick=openOnline;
  document.getElementById('howto').onclick=()=>{sound('tap');renderHowTo();};
  document.getElementById('profile').onclick=()=>openOnline('profile');
+ document.getElementById('cosmetics').onclick=()=>openOnline('cosmetics');
  document.getElementById('ranking').onclick=()=>openOnline('ranking');
  document.getElementById('friends').onclick=()=>openOnline('friends');
  document.getElementById('settings').onclick=()=>{sound('tap');renderSettings();};
