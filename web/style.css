@@ -235,3 +235,22 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 .banner-rarity-epico::after{background:radial-gradient(ellipse 64% 110% at 92% 47%,#ac4ff61f,transparent 94%);box-shadow:inset 0 0 0 2px #bc83f2d0,inset 0 0 16px #9c55e64d}
 .banner-rarity-lenda::after{background:radial-gradient(ellipse 60% 130% at 92% 48%,#ffc9672d,transparent 91%);box-shadow:inset 0 0 0 3px #e5be73ed,inset 0 0 24px #e5ab4c78}
 @media (prefers-reduced-motion:reduce){.cosmetic-banner-illustration,.cosmetic-banner-art::after{transition:none!important;animation:none!important}}
+
+/* V7.4.3: four transparent illustrated avatar frames with rarity-based intensity.
+   The artwork is purely cosmetic and never changes title or ranking colors. */
+.cosmetic-frame-illustration{position:absolute;inset:-5%;width:110%;height:110%;object-fit:contain;z-index:2;pointer-events:none}
+.frame-rarity-comum .cosmetic-frame-svg{filter:none;opacity:.83}
+.frame-rarity-incomum .cosmetic-frame-svg{filter:drop-shadow(0 0 2px #83ac8c38);opacity:.92}
+.frame-rarity-raro .cosmetic-frame-svg{filter:drop-shadow(0 0 3px #83b9e66b)}
+.frame-rarity-epico .cosmetic-frame-svg{filter:drop-shadow(0 0 6px #be7fff75)}
+.frame-rarity-lenda .cosmetic-frame-svg{filter:drop-shadow(0 0 8px #f4c77ca9)}
+.frame-rarity-raro .cosmetic-frame-illustration{filter:saturate(.86) brightness(.92) drop-shadow(0 0 2px #a8cff966)}
+.frame-rarity-epico .cosmetic-frame-illustration{filter:saturate(1.03) brightness(1.0) drop-shadow(0 0 6px #aa7bffa6)}
+.frame-rarity-lenda .cosmetic-frame-illustration{filter:saturate(1.09) brightness(1.05) drop-shadow(0 0 10px #e3ba72bd)}
+/* Restrained common banners remain readable and never outshine rare cosmetics. */
+.cosmetic-player .banner-rarity-comum{opacity:.62}
+.cosmetic-player .banner-rarity-incomum{opacity:.70}
+.cosmetic-player .banner-rarity-raro{opacity:.79}
+.cosmetic-player .banner-rarity-epico{opacity:.88}
+.cosmetic-player .banner-rarity-lenda{opacity:.95}
+@media(prefers-reduced-motion:reduce){.cosmetic-frame-illustration{animation:none!important;transition:none!important}}
