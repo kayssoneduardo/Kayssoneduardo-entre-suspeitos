@@ -98,6 +98,7 @@ function bannerSvg(code){
 // All 16 frames now have their own transparent WebP artwork.
 // The four approved artworks remain unchanged; the 12 others follow their
 // original cosmetics rarity and shared ornament style.
+const COSMETIC_ASSET_VERSION='v744-image-refresh-20261114-r2';
 const frameArtwork=Object.freeze(Object.keys(frames));
 const frameRarities=Object.freeze({
  classica:'comum',bronze:'comum',
@@ -109,7 +110,7 @@ const frameRarities=Object.freeze({
 function frameRarity(code){return frameRarities[safeFrame(code)]||'comum';}
 function avatar(code,imageHtml){
  const safe=safeFrame(code),rarity=frameRarity(safe);
- const art='<img class="cosmetic-frame-illustration" src="assets/frames/'+safe+'.webp" alt="" loading="lazy" decoding="async" width="448" height="448">';
+ const art='<img class="cosmetic-frame-illustration" src="assets/frames/'+safe+'.webp?v='+COSMETIC_ASSET_VERSION+'" alt="" loading="lazy" decoding="async" width="448" height="448">';
  return '<span class="cosmetic-avatar-wrap frame-rarity-'+rarity+'"><span class="cosmetic-avatar-content">'+imageHtml+'</span>'+art+'</span>';
 }
 // Rarity values match es_cosmetic_catalog. Visual intensity only: rewards and item
@@ -127,7 +128,7 @@ function banner(code){
  // Ilustrações locais em WebP; o SVG anterior permanece como fallback visual
  // durante desenvolvimento ou se algum arquivo estiver indisponível.
  return '<span class="cosmetic-banner-art banner-rarity-'+rarity+'"><span class="cosmetic-banner-fallback">'+bannerSvg(safe)+'</span>'
-  +'<img class="cosmetic-banner-illustration" src="assets/banners/'+safe+'.webp" alt="" loading="lazy" decoding="async" width="1080" height="360"></span>';
+  +'<img class="cosmetic-banner-illustration" src="assets/banners/'+safe+'.webp?v='+COSMETIC_ASSET_VERSION+'" alt="" loading="lazy" decoding="async" width="1080" height="360"></span>';
 }
 window.ESCosmetics=Object.freeze({frames,banners,safeFrame,safeBanner,bannerRarities,bannerRarity,frameArtwork,frameRarities,frameRarity,svgFrame,bannerSvg,avatar,banner});
 })();
