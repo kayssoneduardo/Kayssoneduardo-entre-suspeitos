@@ -1,3 +1,19 @@
+# STATUS FINAL — V7.4.3 PUBLICADA (14/11/2026)
+
+**Este status final substitui todas as referências anteriores a “não publicada”, “sem arquivos binários” ou “PR em rascunho” abaixo. Os registros antigos foram preservados apenas como histórico.**
+
+- Site público: https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos/
+- Commit do merge: `82b7fbfe02beac495577f3787f7cf6ca2af5a7b1` (PR #5).
+- GitHub Pages run #43636854932: **build, deploy e verificar-site-publico = success**. O verificador público baixou os 16 banners e quatro molduras e checou os cabeçalhos WebP.
+- A branch principal contém 16 arquivos `web/assets/banners/*.webp` e quatro arquivos `web/assets/frames/*.webp`.
+- As molduras ilustradas são: Olhar de Ouro (rara), Névoa (épica), Coroa Arcana e Chamas Eternas (lendárias). As outras 12 molduras mantêm os SVGs.
+- Os cinco níveis de intensidade visual estão ligados à raridade cosmética cadastrada, sem alteração de rank, títulos, XP ou desbloqueios.
+- `web/index.html`: **VERSÃO WEB 7.4.3 RC**; todos os JS/CSS recebem nova chave de cache.
+- Não houve mudança no Supabase; as regras, títulos, dados e estatísticas existentes permanecem como estavam.
+- Verificações automatizadas não são equivalentes a uma rodada real com três Androids. Teste físico e APK continuam separados.
+
+---
+
 # Entre Suspeitos — V7.4.3 (revisão, NÃO publicada)
 
 ## Escopo solicitado
