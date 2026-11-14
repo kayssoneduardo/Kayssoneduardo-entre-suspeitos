@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),crypto=require('node:crypto');
 const source=fs.readFileSync('web/cosmetics.js','utf8');
 const metadata=JSON.parse(fs.readFileSync('v7_pending/docs/v743_banner_manifest.json','utf8'));
 const win={};vm.runInNewContext(source,{window:win},{filename:'cosmetics.js'});
@@ -45,6 +45,12 @@ for(const [rarity,codes] of Object.entries(expected)){
 }
 assert.equal(cat.safeBanner('"><script>'),'padrao');
 assert.equal(cat.frameRarity('nonexistent'),'comum');
+// Distinct items must have distinct actual imagery, not just palette swaps.
+for(const kind of ['banners','frames']){
+ const codes=kind==='banners'?metadata.banners.map(x=>x.code):frameAssets;
+ const unique=new Set(codes.map(code=>crypto.createHash('sha256').update(fs.readFileSync('web/assets/'+kind+'/'+code+'.webp')).digest('hex')));
+ assert.equal(unique.size,16,'All 16 '+kind+' must have distinct image assets');
+}
 const css=fs.readFileSync('web/style.css','utf8');
 assert.match(css,/\.cosmetic-banner-illustration/);
 assert.match(css,/\.cosmetic-frame-illustration/);
