@@ -127,7 +127,7 @@ function banner(code){
  const safe=safeBanner(code),rarity=bannerRarity(safe);
  // Ilustrações locais em WebP; o SVG anterior permanece como fallback visual
  // durante desenvolvimento ou se algum arquivo estiver indisponível.
- return '<span class="cosmetic-banner-art banner-rarity-'+rarity+'"><span class="cosmetic-banner-fallback">'+bannerSvg(safe)+'</span>'
+ return '<span class="cosmetic-banner-art banner-rarity-'+rarity+' banner-code-'+safe+'"><span class="cosmetic-banner-fallback">'+bannerSvg(safe)+'</span>'
   +'<img class="cosmetic-banner-illustration" src="assets/banners/'+safe+'.webp?v='+COSMETIC_ASSET_VERSION+'" alt="" loading="lazy" decoding="async" width="1080" height="360"></span>';
 }
 window.ESCosmetics=Object.freeze({frames,banners,safeFrame,safeBanner,bannerRarities,bannerRarity,frameArtwork,frameRarities,frameRarity,svgFrame,bannerSvg,avatar,banner});
