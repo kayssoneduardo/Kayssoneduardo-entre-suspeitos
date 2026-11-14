@@ -95,9 +95,10 @@ function bannerSvg(code){
  +'<circle cx="'+(220+(i*47)%310)+'" cy="30" r="2" fill="#fff" opacity=".7"/><circle cx="'+(160+(i*67)%410)+'" cy="75" r="2" fill="#fff" opacity=".4"/>'
  +'</svg>';
 }
-// The four approved illustrated frames replace only their own SVG designs;
-// the other twelve frames retain the existing vector art.
-const frameArtwork=Object.freeze(['ouro','nevoa','coroa_arcana','chamas_eternas']);
+// All 16 frames now have their own transparent WebP artwork.
+// The four approved artworks remain unchanged; the 12 others follow their
+// original cosmetics rarity and shared ornament style.
+const frameArtwork=Object.freeze(Object.keys(frames));
 const frameRarities=Object.freeze({
  classica:'comum',bronze:'comum',
  ordem_velada:'incomum',sentinela_lunar:'incomum',aurora_fantasma:'incomum',
@@ -108,9 +109,7 @@ const frameRarities=Object.freeze({
 function frameRarity(code){return frameRarities[safeFrame(code)]||'comum';}
 function avatar(code,imageHtml){
  const safe=safeFrame(code),rarity=frameRarity(safe);
- const art=frameArtwork.includes(safe)
-  ?'<img class="cosmetic-frame-illustration" src="assets/frames/'+safe+'.webp" alt="" loading="lazy" decoding="async" width="448" height="448">'
-  :svgFrame(safe);
+ const art='<img class="cosmetic-frame-illustration" src="assets/frames/'+safe+'.webp" alt="" loading="lazy" decoding="async" width="448" height="448">';
  return '<span class="cosmetic-avatar-wrap frame-rarity-'+rarity+'"><span class="cosmetic-avatar-content">'+imageHtml+'</span>'+art+'</span>';
 }
 // Rarity values match es_cosmetic_catalog. Visual intensity only: rewards and item

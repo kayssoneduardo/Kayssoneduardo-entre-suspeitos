@@ -254,3 +254,11 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 .cosmetic-player .banner-rarity-epico{opacity:.88}
 .cosmetic-player .banner-rarity-lenda{opacity:.95}
 @media(prefers-reduced-motion:reduce){.cosmetic-frame-illustration{animation:none!important;transition:none!important}}
+
+/* V7.4.4: restrained commons, subtle uncommons, progressively richer rare effects.
+   All 16 full-colour frames share the same transparent circular ornament format. */
+.frame-rarity-comum .cosmetic-frame-illustration{filter:saturate(.64) brightness(.77)}
+.frame-rarity-incomum .cosmetic-frame-illustration{filter:saturate(.82) brightness(.88)}
+.frame-rarity-comum .cosmetic-avatar-content{border-color:#a5a2ab66}
+.frame-rarity-incomum .cosmetic-avatar-content{border-color:#8bad9a80}
+.frame-rarity-lenda .cosmetic-frame-illustration{filter:saturate(1.1) brightness(1.05) drop-shadow(0 0 12px #edc07ac4)}

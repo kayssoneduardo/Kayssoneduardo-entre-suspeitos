@@ -1,5 +1,5 @@
 'use strict';
-const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm'),crypto=require('node:crypto');
 const source=fs.readFileSync('web/cosmetics.js','utf8');
 const metadata=JSON.parse(fs.readFileSync('v7_pending/docs/v743_banner_manifest.json','utf8'));
 const win={};vm.runInNewContext(source,{window:win},{filename:'cosmetics.js'});
@@ -20,14 +20,14 @@ for(const x of metadata.banners){
  assert.match(cat.banner(x.code),/cosmetic-banner-fallback/);
  validWebp(x.path);
 }
-const frameAssets=['ouro','nevoa','coroa_arcana','chamas_eternas'];
+const frameAssets=Object.keys(cat.frames);
 const expectedFrameRarities={ouro:'raro',nevoa:'epico',coroa_arcana:'lenda',chamas_eternas:'lenda'};
 for(const code of frameAssets){
  validWebp('web/assets/frames/'+code+'.webp');
- assert.equal(cat.frameRarity(code),expectedFrameRarities[code]);
+ if(expectedFrameRarities[code])assert.equal(cat.frameRarity(code),expectedFrameRarities[code]);
  assert.match(cat.avatar(code,'✦'),new RegExp('assets/frames/'+code+'\\.webp'));
 }
-assert.match(cat.avatar('bronze','✦'),/cosmetic-frame-svg/,'Other frames must preserve SVG assets');
+assert.equal(frameAssets.length,16,'All 16 frames must have unique image assets');
 const expected={
  comum:['padrao','escuta_noturna','conspiracao'],
  incomum:['cacada_sombria','corredor_espectral','juramento_oculto'],
@@ -45,6 +45,12 @@ for(const [rarity,codes] of Object.entries(expected)){
 }
 assert.equal(cat.safeBanner('"><script>'),'padrao');
 assert.equal(cat.frameRarity('nonexistent'),'comum');
+// Distinct items must have distinct actual imagery, not just palette swaps.
+for(const kind of ['banners','frames']){
+ const codes=kind==='banners'?metadata.banners.map(x=>x.code):frameAssets;
+ const unique=new Set(codes.map(code=>crypto.createHash('sha256').update(fs.readFileSync('web/assets/'+kind+'/'+code+'.webp')).digest('hex')));
+ assert.equal(unique.size,16,'All 16 '+kind+' must have distinct image assets');
+}
 const css=fs.readFileSync('web/style.css','utf8');
 assert.match(css,/\.cosmetic-banner-illustration/);
 assert.match(css,/\.cosmetic-frame-illustration/);
@@ -52,4 +58,4 @@ for(const rarity of Object.keys(expected)){
  assert(css.includes('.banner-rarity-'+rarity+'::after'),'Missing banner rarity '+rarity);
  assert(css.includes('.frame-rarity-'+rarity+' .cosmetic-frame-svg'),'Missing frame rarity '+rarity);
 }
-console.log('PASSOU: 16 WebPs panorâmicos e 4 molduras reais, catálogo e hierarquia de raridade.');
+console.log('PASSOU: 16 WebPs panorâmicos e 16 molduras reais, catálogo e hierarquia de raridade.');
