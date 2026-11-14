@@ -1,0 +1,110 @@
+{
+  "version": "7.4.5-prepare",
+  "status": "binary-upload-pending",
+  "published": false,
+  "aspect_ratio": "3:1",
+  "dimensions": [
+    1440,
+    480
+  ],
+  "codec": "webp",
+  "preserve_banners": [
+    "ruinas_do_segredo",
+    "segredo_carmesim",
+    "vidro_estilhacado"
+  ],
+  "preserve_frames": true,
+  "assets": [
+    {
+      "code": "cacada_sombria",
+      "name": "Caçada Sombria",
+      "sha256": "7db9d022c438f8bffe1fc582ba4ebc534d1bc49a06ef4f976e0e78ac59baf644",
+      "size_bytes": 181114,
+      "path": "web/assets/banners/cacada_sombria.webp"
+    },
+    {
+      "code": "cidade_sem_rosto",
+      "name": "Cidade Sem Rosto",
+      "sha256": "f59993391f55f7f5dee615164605704b9822e4f9d1675899964dded8845e254a",
+      "size_bytes": 193378,
+      "path": "web/assets/banners/cidade_sem_rosto.webp"
+    },
+    {
+      "code": "conspiracao",
+      "name": "Conspiração",
+      "sha256": "5f0ed255a37a4ddad0e9e021919e369d0bec1df7c2ae02085756848a284a0cf5",
+      "size_bytes": 230140,
+      "path": "web/assets/banners/conspiracao.webp"
+    },
+    {
+      "code": "corredor_espectral",
+      "name": "Corredor Espectral",
+      "sha256": "0aee8a4747da510ec4c8b6289fb4e63fd4fc747e0ccfc5c2f7c12dd5aed91216",
+      "size_bytes": 159006,
+      "path": "web/assets/banners/corredor_espectral.webp"
+    },
+    {
+      "code": "eclipse_violeta",
+      "name": "Eclipse Violeta",
+      "sha256": "e065abf24aba1bbbfcda32de8927fdae99b9cc8926b1fa78b5008dc338adafef",
+      "size_bytes": 123888,
+      "path": "web/assets/banners/eclipse_violeta.webp"
+    },
+    {
+      "code": "ecos_da_nevoa",
+      "name": "Ecos da Névoa",
+      "sha256": "ac5963a8fb055486b7dfb09d62d67f625f869c20cdd39eb161503ea6079a3266",
+      "size_bytes": 125982,
+      "path": "web/assets/banners/ecos_da_nevoa.webp"
+    },
+    {
+      "code": "escuta_noturna",
+      "name": "Escuta Noturna",
+      "sha256": "882e4e6249e207e802ef2a71db70d452c54a1e15985bdccce66ddbe36a1806fc",
+      "size_bytes": 96816,
+      "path": "web/assets/banners/escuta_noturna.webp"
+    },
+    {
+      "code": "floresta_rubra",
+      "name": "Floresta Rubra",
+      "sha256": "de4123af7ab9d80a7e736fd04794875ca9bad2a3a5dfce92bdd1d00eaab90a9b",
+      "size_bytes": 120696,
+      "path": "web/assets/banners/floresta_rubra.webp"
+    },
+    {
+      "code": "juramento_oculto",
+      "name": "Juramento Oculto",
+      "sha256": "1cd6d08fd77205ff963402506d94d4dd9f2b09908ef104dd126c3bbeb9cac7a1",
+      "size_bytes": 140036,
+      "path": "web/assets/banners/juramento_oculto.webp"
+    },
+    {
+      "code": "lua_partida",
+      "name": "Lua Partida",
+      "sha256": "f53c4a4bfea6b937ad49ae4879a47db64891eef3f827a91462a5fbf222a640f3",
+      "size_bytes": 119346,
+      "path": "web/assets/banners/lua_partida.webp"
+    },
+    {
+      "code": "reino_dos_suspeitos",
+      "name": "Reino dos Suspeitos",
+      "sha256": "dd1d47505cff564b561cb5e455d37064b8e07b34fcf68240c4bca7110982a23b",
+      "size_bytes": 129976,
+      "path": "web/assets/banners/reino_dos_suspeitos.webp"
+    },
+    {
+      "code": "padrao",
+      "name": "Sombras Originais",
+      "sha256": "3c58d51f30883177b4cbab7be2af9c60ed51d0629d60b6235ad9e76e0dd763a1",
+      "size_bytes": 83124,
+      "path": "web/assets/banners/padrao.webp"
+    },
+    {
+      "code": "trono_arcano",
+      "name": "Trono Arcano",
+      "sha256": "55896fb936eba7e356f6d151687aacf600a4f9a358b29694edd544befb72bd01",
+      "size_bytes": 148470,
+      "path": "web/assets/banners/trono_arcano.webp"
+    }
+  ]
+}
