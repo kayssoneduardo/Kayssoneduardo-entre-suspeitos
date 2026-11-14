@@ -7,6 +7,17 @@ const CATEGORIES=Object.keys(window.ES_WORD_BANK||{});
 const COMPILED_CLOUD=window.ES_SERVER_CONFIG||{url:'',key:''};
 const ESC=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const $=id=>document.getElementById(id);
+function xpProgress(value){
+ const xp=Math.max(0,Math.floor(Number(value)||0));
+ const level=1+Math.floor(Math.sqrt(xp/100));
+ const floor=100*(level-1)**2,next=100*level**2;
+ return {xp,level,next,remaining:next-xp,earned:xp-floor,needed:next-floor,percent:Math.floor((xp-floor)/(next-floor)*100)};
+}
+function rankedPlayers(players){
+ const sorted=[...players].sort((a,b)=>b.ranking_points-a.ranking_points||b.online_wins-a.online_wins);
+ let position=0;
+ return sorted.map((p,i)=>{if(i===0||p.ranking_points!==sorted[i-1].ranking_points||p.online_wins!==sorted[i-1].online_wins)position=i+1;return {...p,position};});
+}
 function avatarSrc(cloud,path){if(!cloud||!path||!/^[-0-9a-f]{36}\/avatar\.jpg$/i.test(path))return null;return cloud.url+'/storage/v1/object/public/es-avatars/'+path+'?v='+Date.now().toString().slice(0,-4);}
 
 const btn=(id,txt,cls='')=>`<button type="button" class="btn ${cls}" id="${id}">${txt}</button>`;
@@ -448,8 +459,14 @@ class OnlineUI{
   }this.lastFingerprint='';this.renderRoom(this.room);
  }catch(e){this.voice?.close();this.voice=null;this.error(e);}}
  async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[];try{[p,titles]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles')]);}catch(e){return this.error(e);}
+  const progress=xpProgress(p.xp);
   this.app.innerHTML=`<section class="card"><h2>Meu perfil</h2>
    <div class="profile-heading"><div class="avatar profile-avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="Minha foto de perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase())}</div><div><b>${ESC(p.nickname)}</b><p class="subtext">Sua identidade no Entre Suspeitos.</p></div></div>
+   <section class="level-panel" aria-label="Seu nível e experiência"><div class="level-summary"><strong>Nível ${progress.level}</strong><span>${progress.xp.toLocaleString('pt-BR')} XP acumulado</span></div>
+   <progress class="xp-progress" value="${progress.earned}" max="${progress.needed}" aria-label="Progresso até o nível ${progress.level+1}"></progress>
+   <p>${progress.earned.toLocaleString('pt-BR')} / ${progress.needed.toLocaleString('pt-BR')} XP neste nível · ${progress.percent}%</p>
+   <p>Faltam <b>${progress.remaining.toLocaleString('pt-BR')} XP</b> para o nível ${progress.level+1}.</p>
+   <small>XP não é gasto: acumula em partidas públicas, aumenta seu nível e libera títulos. Não define sua posição no ranking.</small></section>
    <div class="field"><label for="photoOn">Foto de perfil (opcional, até 1 MB)</label><input type="file" id="photoOn" accept="image/*"></div>${btn('uploadPhoto','Salvar foto de perfil','secondary')}
    ${input('nicknameOn','Apelido','text',p.nickname,'maxlength="28"')}${btn('saveNick','Salvar apelido')}
    <div class="divider"></div><div class="option-grid"><p><b>${p.xp}</b><br>XP público</p><p><b>${p.ranking_points}</b><br>Pontos de ranking</p>
@@ -478,7 +495,16 @@ class OnlineUI{
   $('saveNick').onclick=async()=>{try{await this.cloud.rpc('es_set_nickname',{p_nick:$('nicknameOn').value});this.profile();}catch(e){this.error(e);}};
  }
  async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_leaderboard'),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
-  this.app.innerHTML=`<section class="card"><h2>Melhores jogadores</h2><p class="subtext">Somente partidas públicas valem pontos e XP.</p>${rank.map((p,i)=>`<div class="member"><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:i+1}</div><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.online_wins} vitórias · ${p.xp} XP</small>${p.equipped_title&&catalog?.find(t=>t.code===p.equipped_title)?`<small class="equipped-title title-${ESC(catalog.find(t=>t.code===p.equipped_title).rarity)}">${ESC(catalog.find(t=>t.code===p.equipped_title).name)}</small>`:''}</div><b>${p.ranking_points} pts</b></div>`).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
+  const ranked=rankedPlayers(rank);
+  const medals={1:['🥇','Ouro'],2:['🥈','Prata'],3:['🥉','Bronze']};
+  const podium=ranked.filter(p=>p.position<=3);
+  this.app.innerHTML=`<section class="card"><h2>Ranking público</h2>
+   <p class="subtext">Vitória: <b>+25 pontos</b> · Derrota: <b>−25 pontos</b>. Partidas privadas não alteram o ranking. O saldo pode ficar negativo.</p>
+   <p class="small muted">Ordem por pontos de ranking; desempate por vitórias públicas. Empate nos dois critérios mantém a mesma posição.</p>
+   ${podium.length?`<div class="ranking-podium" aria-label="Pódio atual">${podium.map(p=>`<article class="podium-card podium-${p.position}"><span class="podium-medal" aria-hidden="true">${medals[p.position][0]}</span><small>${p.position}º LUGAR · ${medals[p.position][1]}</small><strong>${ESC(p.nickname)}</strong><b>${p.ranking_points} pontos</b></article>`).join('')}</div><p class="small muted">Medalhas de destaque enquanto o jogador ocupar o pódio. Não concedem XP nem títulos permanentes.</p>`:''}
+   <h3>Classificação · até 50 jogadores</h3>
+   ${ranked.map(p=>{const title=catalog?.find(t=>t.code===p.equipped_title);return `<div class="member rank-member"><span class="rank-position">${p.position}º</span><div class="avatar">${avatarSrc(this.cloud,p.avatar_url)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar_url))}" alt="">`:ESC((p.nickname||'?').charAt(0))}</div><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>Nível ${xpProgress(p.xp).level} · ${p.online_wins} vitórias</small><small>${p.xp} XP acumulado</small>${title?`<small class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</small>`:''}</div><b class="rank-score">${p.ranking_points}<small>pontos</small></b></div>`;}).join('')||'<p>Sem resultados ainda.</p>'}</section>`;}
+
  async friends(){this.currentPage='friends';this.header('Amigos');let all=[];try{all=await this.cloud.rpc('es_friend_list');}catch(e){return this.error(e);}
   this.app.innerHTML=`<section class="card"><h2>Adicionar amigos</h2>${input('searchNick','Pesquisar apelido','text','','placeholder="Apelido do jogador"')}${btn('searchFriends','Pesquisar','secondary')}<div id="searchFriendsResult"></div><h3>Minha lista</h3>
    ${all.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${p.accepted?'Amigo':'Pedido pendente'}</small></div>${!p.accepted&&p.incoming?`<button class="back" data-accept="${i}">Aceitar</button>`:''}</div>`).join('')||'<p>Você ainda não adicionou amigos.</p>'}

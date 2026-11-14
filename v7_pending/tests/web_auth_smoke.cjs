@@ -3,7 +3,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const source=fs.readFileSync('web/online.js','utf8')
   .replace('const online=new OnlineUI();window.ESOnline={open:args=>online.open(args)};',
-  'window.__ES_TEST__={Cloud,OnlineUI,prettyError};');
+  'window.__ES_TEST__={Cloud,OnlineUI,prettyError,xpProgress,rankedPlayers};');
 const saved=new Map();
 const localStorage={
  getItem:k=>saved.has(k)?saved.get(k):null,
@@ -23,7 +23,12 @@ const window={
 };
 const context={window,localStorage,URL,URLSearchParams,Date,Math,Number,String,Map,Set,Error,JSON,console};
 vm.runInNewContext(source,context,{filename:'online.js'});
-const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
+const {Cloud,OnlineUI,prettyError,xpProgress,rankedPlayers}=window.__ES_TEST__;
+for(const [xp,level,remaining] of [[0,1,100],[99,1,1],[100,2,300],[399,2,1],[400,3,500],[900,4,700],[1600,5,900]]){const p=xpProgress(xp);assert.equal(p.level,level);assert.equal(p.remaining,remaining);assert(p.percent>=0&&p.percent<100);}
+assert.equal(xpProgress(-1).level,1);
+const tied=rankedPlayers([{ranking_points:25,online_wins:2},{ranking_points:50,online_wins:3},{ranking_points:50,online_wins:3},{ranking_points:-25,online_wins:1}]);
+assert.equal(tied.map(p=>p.position).join(','),'1,1,3,4');
+console.log('PASSOU: limites de nível, progresso de XP, ordem e empates no ranking.');
 (async()=>{
   const rate=Error('email rate limit exceeded');
   rate.code='over_email_send_rate_limit';rate.status=429;
@@ -140,6 +145,9 @@ const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
   room.players[0].voted=true;room.players[1].voted=false;ui.renderRoom(room);
   assert.match(app.html,/JÁ VOTOU/);assert.match(app.html,/FALTA VOTAR/);
   assert.match(app.html,/1 de 2 jogadores já votaram/);
+  ui.cloud.rpc=async name=>name==='es_me'?{nickname:'Teste',xp:400,ranking_points:-25}:name==='es_leaderboard'?[{nickname:'Teste',xp:400,ranking_points:-25,online_wins:2}]:[];
+  await ui.profile();assert.match(app.html,/Nível 3/);assert.match(app.html,/500 XP/);assert.match(app.html,/<progress/);
+  await ui.ranking();assert.match(app.html,/1º LUGAR/);assert.match(app.html,/−25 pontos/);assert.match(app.html,/Nível 3/);
   ui.stopLoop=()=>{};ui.pendingDestination='profile';
   let profileOpened=false;ui.profile=()=>{profileOpened=true;};
   ui.home();assert.equal(profileOpened,true);assert.equal(ui.pendingDestination,null);
