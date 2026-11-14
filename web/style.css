@@ -262,3 +262,8 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 .frame-rarity-comum .cosmetic-avatar-content{border-color:#a5a2ab66}
 .frame-rarity-incomum .cosmetic-avatar-content{border-color:#8bad9a80}
 .frame-rarity-lenda .cosmetic-frame-illustration{filter:saturate(1.1) brightness(1.05) drop-shadow(0 0 12px #edc07ac4)}
+
+/* V7.4.5 visual QA: preserve the entire throne on variable aspect-ratio mobile cards. */
+.cosmetic-banner-art.banner-code-trono_arcano .cosmetic-banner-illustration{object-fit:contain;object-position:center center}
+/* A legible but restrained frame for the uncommon Caçada Sombria banner. */
+.cosmetic-banner-art.banner-code-cacada_sombria::after{box-shadow:inset 0 0 0 2px #a35a7599,inset 0 0 0 4px #210f2180}
