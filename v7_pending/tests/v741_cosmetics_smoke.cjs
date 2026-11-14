@@ -16,7 +16,7 @@ vm.runInNewContext(cosmetics,context,{filename:'cosmetics.js'});
 assert.equal(Object.keys(window.ESCosmetics.frames).length,16);
 assert.equal(Object.keys(window.ESCosmetics.banners).length,16);
 assert.match(window.ESCosmetics.avatar('coroa_arcana','<img src="/test.png">'),/assets\/frames\/coroa_arcana\.webp/);
-assert.match(window.ESCosmetics.avatar('bronze','✦'),/assets\\/frames\\/bronze\\.webp/);
+assert.ok(window.ESCosmetics.avatar('bronze','✦').includes('assets/frames/bronze.webp'));
 assert.match(window.ESCosmetics.banner('ecos_da_nevoa'),/cosmetic-banner-svg/);
 assert.equal(window.ESCosmetics.safeFrame('<script>'),'classica');
 vm.runInNewContext(online,context,{filename:'online.js'});
