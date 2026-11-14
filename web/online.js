@@ -208,13 +208,13 @@ class OnlineUI{
   this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
   <div class="hub-primary">${btn('public','▣ &nbsp; Buscar salas públicas')}${btn('create','＋ &nbsp; Criar sala')}</div><div class="hub-divider">ENTRAR COM OPÇÕES</div><div class="hub-secondary">${btn('join','‹ › &nbsp; Entrar com código','secondary')}${btn('invitesOn','♧ &nbsp; Convites de amigos','secondary')}</div>
-  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="missionsOn">✦ Missões e eventos</button><button class="tile" id="statsOn">▤ Estatísticas</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
+  <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="cosmeticsOn">✦ Personalização · Molduras e banners</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="missionsOn">✦ Missões e eventos</button><button class="tile" id="statsOn">▤ Estatísticas</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
   ${btn('adminOn','Painel administrativo','secondary')}${btn('serverOn','Configurar servidor','secondary')}${btn('logout','Sair da conta','ghost')}
   <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
   if($('resumeOn'))$('resumeOn').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_rejoin',{p_room:load('lastRoom')}));}catch(e){this.error(e);}};
   $('invitesOn').onclick=()=>this.invites();
   $('public').onclick=()=>this.publicRooms();$('create').onclick=()=>this.createRoom();$('join').onclick=()=>this.joinCode();
-  $('profileOn').onclick=()=>this.profile();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();
+  $('profileOn').onclick=()=>this.profile();$('cosmeticsOn').onclick=()=>this.cosmeticsPage();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();
   $('feedbackOn').onclick=()=>this.feedback();$('adminOn').onclick=()=>this.admin();
   $('serverOn').onclick=()=>{this.cloud.session=null;save('session',null);this.setup();};
   $('logout').onclick=async()=>{try{await this.cloud.signOut();this.login();}catch(e){this.error(e);}};
@@ -405,7 +405,7 @@ class OnlineUI{
   <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
-  ${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('shareLinkOn','Compartilhar convite por link','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
+  ${btn('roomCosmeticsOn','✦ Personalizar meu perfil','secondary')}${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('shareLinkOn','Compartilhar convite por link','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
   const cosmetics=window.ESCosmetics;
@@ -450,11 +450,12 @@ class OnlineUI{
     <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
     ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
   }
-  this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${event.progress}/${event.target} · Moldura Névoa</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
+  this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${Math.min(Math.max(0,event.progress),event.target)}/${event.target} · ${event.progress>=event.target?'Concluído · Moldura Névoa':'Moldura Névoa'}</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
   this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
-  $('copyCodeOn').onclick=async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('Cópia automática indisponível.');await navigator.clipboard.writeText(r.code);this.note('Código da sala copiado: '+r.code);}catch(e){this.note('Copie este código e compartilhe com seu amigo: '+r.code);}};
+  $('roomCosmeticsOn').onclick=()=>this.cosmeticsPage();
+   $('copyCodeOn').onclick=async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('Cópia automática indisponível.');await navigator.clipboard.writeText(r.code);this.note('Código da sala copiado: '+r.code);}catch(e){this.note('Copie este código e compartilhe com seu amigo: '+r.code);}};
    $('shareLinkOn').onclick=async()=>{const u=new URL(window.location.origin+window.location.pathname);u.searchParams.set('room',r.code);const link=u.toString();try{if(navigator.share)await navigator.share({title:'Entre Suspeitos',text:'Entre na minha sala',url:link});else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(link);this.note('Link de convite copiado!');}else this.note('Convide pelo link: '+link);}catch(e){if(e?.name!=='AbortError')this.note('Convide pelo link: '+link);}};
    $('voiceOn').onclick=()=>this.toggleVoice();
   if(r.status==='lobby'){
@@ -558,20 +559,21 @@ class OnlineUI{
    const photo=avatarUrl?`<img src="${ESC(avatarUrl)}" alt="Foto do perfil">`:ESC((p.nickname||'?').charAt(0).toUpperCase());
    const equippedFrame=items.find(x=>x.kind==='frame'&&x.equipped)||items.find(x=>x.code==='classica');
    const equippedBanner=items.find(x=>x.kind==='banner'&&x.equipped)||items.find(x=>x.code==='padrao');
-   const currentFrame=equippedFrame?.code||'classica',currentBanner=equippedBanner?.code||'padrao';
+   const selectedPreview=this.cosmeticPreview&&items.find(x=>x.code===this.cosmeticPreview.code&&x.kind===this.cosmeticPreview.kind);const currentFrame=(selectedPreview?.kind==='frame'?selectedPreview.code:equippedFrame?.code)||'classica',currentBanner=(selectedPreview?.kind==='banner'?selectedPreview.code:equippedBanner?.code)||'padrao';
    const tab=this.cosmeticTab==='frame'?'frame':'banner';
    const selected=items.filter(x=>x.kind===tab);
    const tiles=selected.map((x,i)=>{
     const visual=x.kind==='frame'?cosmetics.avatar(x.code,'✦'):`<div class="cosmetic-tile-banner">${cosmetics.banner(x.code)}</div>`;
     const requirement=x.event_code?'Evento especial':x.wins_required+' vitórias públicas · '+x.xp_required+' XP';
-    return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
+    return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-preview="${i}">Visualizar</button><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
    }).join('');
-   this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC(equippedFrame?.name||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC(equippedBanner?.name||'Sombras Originais')}</span></section>
-    <div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
+   this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC((selectedPreview?.kind==='frame'?selectedPreview.name:equippedFrame?.name)||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC((selectedPreview?.kind==='banner'?selectedPreview.name:equippedBanner?.name)||'Sombras Originais')}</span></section>
+    ${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
     <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery">${tiles}</div><p id="onlineError" class="error"></p></section>${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
-   $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticsPage();};
-   $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticsPage();};
+   $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticPreview=null;this.cosmeticsPage();};
+   $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticPreview=null;this.cosmeticsPage();};
    $('cosmeticsBack').onclick=()=>this.profile();
+   this.app.querySelectorAll('[data-preview]').forEach(b=>b.onclick=()=>{const x=selected[Number(b.dataset.preview)];this.cosmeticPreview={kind:x.kind,code:x.code};this.cosmeticsPage();});
    this.app.querySelectorAll('[data-cosmetic]').forEach(b=>b.onclick=async()=>{const x=selected[Number(b.dataset.cosmetic)];b.disabled=true;try{await this.cloud.rpc('es_cosmetic_equip',{p_kind:x.kind,p_code:x.code});this.cosmeticsPage();}catch(e){this.error(e);b.disabled=false;}});
   }catch(e){this.error(e);}
  }
