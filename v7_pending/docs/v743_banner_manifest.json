@@ -1,6 +1,6 @@
 {
   "version": "7.4.3-review",
-  "published": false,
+  "published": true,
   "imageDir": "web/assets/banners",
   "imageFormat": "webp",
   "width": 1080,
@@ -106,5 +106,8 @@
       "path": "web/assets/frames/chamas_eternas.webp"
     }
   ],
-  "releaseTarget": "web 7.4.3 RC"
+  "releaseTarget": "web 7.4.3 RC",
+  "releaseCommit": "82b7fbfe02beac495577f3787f7cf6ca2af5a7b1",
+  "pagesVerificationRun": 43636854932,
+  "publicUrl": "https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos/"
 }
