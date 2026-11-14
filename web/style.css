@@ -65,3 +65,6 @@ body:before{content:'';position:fixed;inset:0;pointer-events:none;z-index:-1;bac
 .auth-actions .small{margin:0 0 3px}
 .auth-actions .btn{margin-top:8px}
 .auth-success{border:1px solid #3cb48a70;background:#3cb48a18;color:#adf2d7;padding:12px;border-radius:12px;font-size:13px;line-height:1.5}
+
+/* Keep player names readable alongside room actions on narrow screens. */
+.room-member{flex-wrap:wrap}.room-member .avatar{flex-shrink:0}.room-member .member-info{flex:1 1 160px}.room-member .back,.room-member .pill{flex-shrink:0}

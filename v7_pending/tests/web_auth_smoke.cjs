@@ -102,6 +102,26 @@ const {Cloud,OnlineUI,prettyError}=window.__ES_TEST__;
   assert.doesNotMatch(app.html,/id="signupSubmitOn"/);
   elements.get('recoverBackOn').onclick();
   assert.equal(ui.currentPage,'login');
+  // Regression: render the host lobby and exercise its actual start handler.
+  app.querySelectorAll=()=>[];
+  ui.cloud.userId='host';
+  const room={id:'test-room',code:'ABC123',owner:'host',status:'lobby',max:5,
+   impostors:1,categories:['Animais'],difficulty:'Fácil',clue:'both',know:false,
+   players:['host','guest1','guest2'].map(id=>({id,nick:id,active:true,online:true,ready:true}))};
+  let started;
+  ui.action=(name,args)=>{started={name,args};};
+  ui.renderRoom(room);
+  assert.equal(elements.get('startOn').disabled,false);
+  elements.get('startOn').onclick();
+  assert.equal(started.name,'es_start');assert.equal(started.args.p_room,room.id);
+  room.players[1].ready=false;ui.renderRoom(room);
+  assert.equal(elements.get('startOn').disabled,true);
+  room.players[1].ready=true;room.impostors=2;ui.renderRoom(room);
+  assert.equal(elements.get('startOn').disabled,true);
+  room.impostors=1;room.players.pop();ui.renderRoom(room);
+  assert.equal(elements.get('startOn').disabled,true);
+  console.log('PASSOU: início de sala com 3 prontos; bloqueio sem quórum, sem pronto e com impostores excessivos.');
+
   console.log('PASSOU: telas independentes, cadastro concluído redireciona ao login e recuperação retorna ao login.');
 
   console.log('PASSOU: limitações de e-mail, cadastro, recuperação, callback e bloqueio de cliques duplicados.');

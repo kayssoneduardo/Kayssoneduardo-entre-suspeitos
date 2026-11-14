@@ -375,20 +375,21 @@ class OnlineUI{
   }catch(e){this.error(e);}finally{this.refreshing=false;}
  }
  renderRoom(r){this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
+  const allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors>=1&&r.impostors<=Math.floor((joined.length-1)/2);
   if(r.status!==this.lastPhase){this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;}
   const head=`<section class="card"><div class="statusbar"><div><span class="eyebrow">${r.public?'SALA PÚBLICA':'SALA PRIVADA'}</span><div class="room-code">${ESC(r.code)}</div></div><span class="pill">${joined.length}/${r.max} jogadores</span></div>
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
   ${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
-  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}${p.title?' · Título equipado':''}</small></div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${p.ready?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):i+1}</span></div>`).join('')}</section>`;
+  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}${p.title?' · Título equipado':''}</small></div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${p.ready?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):i+1}</span></div>`).join('')}</section>`;
   let phase='';
   if(r.status==='lobby'){
-   const myReady=!!r.players.find(p=>p.id===me)?.ready,allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors<=Math.floor((joined.length-1)/2);
+   const myReady=!!r.players.find(p=>p.id===me)?.ready;
    phase=`<section class="card"><h2>Aguardando jogadores</h2><p class="subtext">O anfitrião pode alterar as regras. Qualquer alteração zera o estado “Pronto” de todos.</p>
    ${btn('readyOn',myReady?'Cancelar “Pronto”':'ESTOU PRONTO',myReady?'secondary':'')}
    ${owner?`${btn('editRules','Alterar regras','secondary')}${btn('inviteFriends','Convidar amigos','secondary')}${btn('startOn','INICIAR PARTIDA')}`:''}
-   <p class="small muted">${allReady&&validImps?'Todos prontos: partida liberada.':!validImps?'Reduza o número de impostores para esta quantidade de jogadores.':'Mínimo de 4 participantes, todos prontos.'}</p></section>`;
+   <p class="small muted">${allReady&&validImps?'Todos prontos: partida liberada.':!validImps?'Reduza o número de impostores para esta quantidade de jogadores.':'Mínimo de 3 participantes, todos prontos.'}</p></section>`;
   }else if(r.status==='discussion'){
    const secret=r.me.impostor?'IMPOSTOR':ESC(r.me.word);
    const info=r.me.impostor?[r.me.category?'Categoria: '+r.me.category:'',r.me.hint?'Dica: '+r.me.hint:'',r.me.partners?.length?'Parceiros: '+r.players.filter(x=>r.me.partners.includes(x.id)).map(x=>x.nick).join(', '):''].filter(Boolean).join(' · '):'Categoria: '+r.me.category;
@@ -416,7 +417,7 @@ class OnlineUI{
   $('voiceOn').onclick=()=>this.toggleVoice();
   if(r.status==='lobby'){
    $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
-   if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(joined.length>=3&&joined.every(p=>p.ready)&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
+   if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(allReady&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
   }else if(r.status==='discussion'){
    const card=$('onlineSecret'),content=$('onlineSecretContent');const val=$('onlineSecretValue');
    const hide=()=>{card.classList.remove('revealed');content.innerHTML='<span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p>';};
