@@ -168,7 +168,7 @@ class Voice{
 class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
   this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
- open({app,topbar,back,sound,bank,destination}){this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
+ open({app,topbar,back,sound,bank,destination}){const invite=new URLSearchParams(window.location.search).get('room');if(invite&&/^[a-z0-9]{6}$/i.test(invite))this.pendingJoinCode=invite.toUpperCase();this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
   const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
  }
@@ -202,6 +202,7 @@ class OnlineUI{
   if(destination==='friends')return this.friends();
    if(destination==='missions')return this.progressHub();
    if(destination==='stats')return this.statsPage();
+   if(this.pendingJoinCode){const code=this.pendingJoinCode;this.pendingJoinCode=null;const u=new URL(window.location.href);u.searchParams.delete('room');window.history.replaceState(null,'',u.pathname+u.search+u.hash);return this.joinCode(code);}
   this.currentPage='home';this.header('Jogar online');
   this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
@@ -350,7 +351,7 @@ class OnlineUI{
   $('quickOn').onclick=async()=>{const available=rooms.find(r=>r.players<r.max_players);if(!available)return this.note('Não existem salas com vagas. Crie uma sala.');try{this.enterRoom(await this.cloud.rpc('es_join',{p_room:available.id}));}catch(e){this.error(e);}};
   $('reloadOn').onclick=()=>this.publicRooms();
  }
- joinCode(){this.currentPage='join';this.header('Entrar em sala');this.app.innerHTML=`<section class="card"><h2>Código da sala</h2>${input('roomCode','Código de 6 caracteres','text','','maxlength="6" autocapitalize="characters"')}${btn('enterCode','Entrar')}<p id="onlineError" class="error"></p></section>`;
+ joinCode(prefill=''){this.currentPage='join';this.header('Entrar em sala');this.app.innerHTML=`<section class="card"><h2>Código da sala</h2>${input('roomCode','Código de 6 caracteres','text',prefill,'maxlength="6" autocapitalize="characters"')}${btn('enterCode','Entrar')}<p id="onlineError" class="error"></p></section>`;
   $('enterCode').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_join_code',{p_code:$('roomCode').value.trim()}));}catch(e){this.error(e);}};
  }
  formRules(c={}){
@@ -403,7 +404,7 @@ class OnlineUI{
   <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
-  ${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
+  ${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('shareLinkOn','Compartilhar convite por link','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
   <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
   const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>`<div class="member room-member"><div class="avatar">${avatarSrc(this.cloud,p.avatar)?`<img src="${ESC(avatarSrc(this.cloud,p.avatar))}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div><div class="member-info"><strong>${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small>${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small>${equippedTitle(p.title)}</div>${p.id!==me?`<button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div>`).join('')}</section>`;
@@ -440,6 +441,7 @@ class OnlineUI{
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
   $('copyCodeOn').onclick=async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('Cópia automática indisponível.');await navigator.clipboard.writeText(r.code);this.note('Código da sala copiado: '+r.code);}catch(e){this.note('Copie este código e compartilhe com seu amigo: '+r.code);}};
+   $('shareLinkOn').onclick=async()=>{const u=new URL(window.location.origin+window.location.pathname);u.searchParams.set('room',r.code);const link=u.toString();try{if(navigator.share)await navigator.share({title:'Entre Suspeitos',text:'Entre na minha sala',url:link});else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(link);this.note('Link de convite copiado!');}else this.note('Convide pelo link: '+link);}catch(e){if(e?.name!=='AbortError')this.note('Convide pelo link: '+link);}};
    $('voiceOn').onclick=()=>this.toggleVoice();
   if(r.status==='lobby'){
    $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
@@ -470,11 +472,12 @@ class OnlineUI{
   this.stopLoop();this.currentPage='missions';this.header('Missões e eventos');
   this.app.innerHTML='<section class="card"><h2>Missões e eventos</h2><p>Carregando...</p><p id="onlineError" class="error"></p></section>';
   try{
-   const [missions,events]=await Promise.all([this.cloud.rpc('es_v74_missions'),this.cloud.rpc('es_v74_events_list')]);
+   const [missions,events,claims]=await Promise.all([this.cloud.rpc('es_v74_missions'),this.cloud.rpc('es_v74_events_list'),this.cloud.rpc('es_v74_claims')]);
    if(this.currentPage!=='missions')return;
-   const mission=m=>`<div class="member"><div class="member-info"><strong>${ESC(m.title)}</strong><small>${ESC(m.period)} · ${m.progress}/${m.target} · ${m.complete?'Concluída':'Em andamento'}</small><progress class="mission-progress" value="${m.progress}" max="${m.target}"></progress></div></div>`;
+   const mission=(m,i)=>{const claimed=claims.some(c=>c.code===m.code&&Date.parse(c.period_end)===Date.parse(m.renews_at));return `<div class="member"><div class="member-info"><strong>${ESC(m.title)}</strong><small>${ESC(m.period)} · ${m.progress}/${m.target} · ${claimed?'Recompensa resgatada':m.complete?'Concluída':'Em andamento'}</small><progress class="mission-progress" value="${m.progress}" max="${m.target}"></progress></div>${m.complete&&!claimed?`<button class="back" data-claim="${i}">Resgatar ${m.code.startsWith('daily')?15:40} XP</button>`:''}</div>`;};
    const event=e=>`<section class="card"><h3>${ESC(e.name)}</h3><p class="subtext">${ESC(e.description)}</p><p>${e.active?'Ativo':'Encerrado ou futuro'} · ${Math.min(e.progress,e.target)}/${e.target}</p><progress class="mission-progress" value="${Math.min(e.progress,e.target)}" max="${e.target}"></progress><p class="small muted">Até ${new Date(e.ends_at).toLocaleDateString('pt-BR')} · Moldura: ${ESC(e.reward_frame||'nenhuma')}</p></section>`;
-   this.app.innerHTML=`<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">Recompensas de XP de missão ainda não ativadas; molduras de eventos são desbloqueadas automaticamente.</p>`;
+   this.app.innerHTML=`<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">XP de missões soma ao nível, sem alterar o ranking. Molduras de eventos são desbloqueadas por participação.</p><p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p>`;
+   this.app.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{const m=missions[Number(b.dataset.claim)];b.disabled=true;try{const result=await this.cloud.rpc('es_v74_mission_claim',{p_code:m.code});this.note('Recompensa recebida: '+result.xp_awarded+' XP.');await this.progressHub();}catch(e){this.error(e);b.disabled=false;}});
   }catch(e){this.error(e);}
  }
  async statsPage(){
