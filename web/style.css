@@ -187,3 +187,26 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 @media(min-width:530px){.cosmetic-gallery{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:380px){.cosmetic-player .cosmetic-avatar-wrap{height:82px;width:82px;flex-basis:82px}.cosmetic-player-name{font-size:16px}.cosmetic-profile-hero .cosmetic-avatar-wrap{height:102px;width:102px;flex-basis:102px}.cosmetic-profile-hero .cosmetic-player-name{font-size:18px}.cosmetic-nameplate{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.cosmetic-frame-svg{filter:none}}
+
+/* V7.4.2 – visibility and polish to better match approved lobby concept */
+.cosmetic-player{border:1px solid #c26ffc;box-shadow:0 0 17px #ad50d42f,inset 0 0 35px #9c35e325;background:#1d0c36}
+.cosmetic-player .cosmetic-banner-art{opacity:.43;filter:saturate(.9)}
+.cosmetic-player .cosmetic-avatar-wrap{width:122px;height:122px;flex-basis:122px;filter:drop-shadow(0 0 10px #ad4de975)}
+.cosmetic-player .cosmetic-player-identity{flex:1 1 155px;align-self:center}
+.cosmetic-player-name{font-size:21px;font-weight:900;letter-spacing:.03em}
+.cosmetic-player .equipped-title{font-family:Georgia,serif;font-style:italic;font-size:18px;letter-spacing:.04em;margin:9px 0 0}
+.cosmetic-nameplate{border-color:#f8c164c7;color:#ffdb9b;background:#24132cdd;box-shadow:0 0 10px #f4b04a35;font-weight:800}
+.cosmetic-profile-hero{min-height:211px;box-shadow:0 0 25px #963ee44a;border-color:#dc83f2}
+.cosmetic-profile-hero .cosmetic-banner-art{opacity:.63}
+.cosmetic-profile-hero .cosmetic-avatar-wrap{width:145px;height:145px;flex-basis:145px;filter:drop-shadow(0 0 13px #b65af78a)}
+.cosmetic-profile-hero .equipped-title{font-family:Georgia,serif;font-style:italic}
+.cosmetic-room-banner{height:165px;border-color:#c774f6;box-shadow:0 0 17px #9a50eb42}
+.cosmetic-room-banner .cosmetic-banner-art{opacity:.68}
+.cosmetic-room-banner-content{max-width:80%}
+.cosmetic-room-banner-content h3{font-family:Georgia,serif;font-style:italic;font-size:22px;text-shadow:0 0 12px #9f65f9}
+.cosmetic-room-banner-content p{font-weight:650}
+.cosmetic-tile .cosmetic-avatar-wrap{width:126px;height:126px}
+.cosmetic-tile .back{min-height:34px}
+.cosmetic-tabs button{min-height:50px}
+#roomCosmeticsOn,#cosmeticsOn{border-color:#db86f6;box-shadow:0 0 14px #b64eed29}
+@media(max-width:400px){.cosmetic-player .cosmetic-avatar-wrap{width:100px;height:100px;flex-basis:100px}.cosmetic-player-name{font-size:18px}.cosmetic-player .equipped-title{font-size:16px}.cosmetic-profile-hero .cosmetic-avatar-wrap{width:110px;height:110px;flex-basis:110px}.cosmetic-room-banner-content h3{font-size:19px}}
