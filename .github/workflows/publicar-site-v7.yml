@@ -85,6 +85,7 @@ jobs:
     needs: deploy
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Verificar site real no iPhone e computador
         run: |
           set -euo pipefail
@@ -101,7 +102,7 @@ jobs:
           done
           grep -qi '^content-type: *text/html' /tmp/header
           grep -q 'ENTRE SUSPEITOS' /tmp/index
-          for file in online.js app.js server-config.js words.js style.css; do
+          for file in online.js app.js server-config.js words.js cosmetics.js style.css; do
             curl --silent --show-error --fail --location --retry 3 \
               --max-time 25 "$URL/$file" -o "/tmp/$file"
           done
@@ -110,14 +111,19 @@ jobs:
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
           grep -q 'VERSÃO WEB 7.4.4 RC' /tmp/index
+          grep -q 'ARTES ATUALIZADAS' /tmp/index
+          grep -q 'v744-cachefix-20261114-r2' /tmp/index
+          grep -q 'v744-image-refresh-20261114-r2' /tmp/cosmetics.js
           for code in padrao ecos_da_nevoa trono_arcano cacada_sombria lua_partida conspiracao cidade_sem_rosto corredor_espectral floresta_rubra eclipse_violeta juramento_oculto ruinas_do_segredo reino_dos_suspeitos escuta_noturna segredo_carmesim vidro_estilhacado; do
-            curl --silent --show-error --fail --location --retry 4 --retry-delay 3 --max-time 25 "$URL/assets/banners/$code.webp" -o "/tmp/banner-$code.webp"
+            curl --silent --show-error --fail --location --retry 4 --retry-delay 3 --max-time 25 "$URL/assets/banners/$code.webp?v=v744-image-refresh-20261114-r2" -o "/tmp/banner-$code.webp"
             test "$(head -c 4 "/tmp/banner-$code.webp")" = "RIFF"
             test "$(dd if="/tmp/banner-$code.webp" bs=1 skip=8 count=4 status=none)" = "WEBP"
+            cmp "web/assets/banners/$code.webp" "/tmp/banner-$code.webp"
           done
           for code in classica bronze ouro nevoa coroa_arcana lamina_eclipse cacador_ebano ordem_velada rubi_sombrio sentinela_lunar espiral_abissal espectro_violeta chamas_eternas aurora_fantasma guardiao_do_eco trono_da_noite; do
-            curl --silent --show-error --fail --location --retry 4 --retry-delay 3 --max-time 25 "$URL/assets/frames/$code.webp" -o "/tmp/frame-$code.webp"
+            curl --silent --show-error --fail --location --retry 4 --retry-delay 3 --max-time 25 "$URL/assets/frames/$code.webp?v=v744-image-refresh-20261114-r2" -o "/tmp/frame-$code.webp"
             test "$(head -c 4 "/tmp/frame-$code.webp")" = "RIFF"
             test "$(dd if="/tmp/frame-$code.webp" bs=1 skip=8 count=4 status=none)" = "WEBP"
+            cmp "web/assets/frames/$code.webp" "/tmp/frame-$code.webp"
           done
           echo "SITE PUBLICADO E VERIFICADO: $URL/ (16 banners e 16 molduras)"
