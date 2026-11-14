@@ -96,6 +96,12 @@ function bannerSvg(code){
  +'</svg>';
 }
 function avatar(code,imageHtml){return '<span class="cosmetic-avatar-wrap"><span class="cosmetic-avatar-content">'+imageHtml+'</span>'+svgFrame(code)+'</span>';}
-function banner(code){return '<span class="cosmetic-banner-art">'+bannerSvg(code)+'</span>';}
+function banner(code){
+ const safe=safeBanner(code);
+ // Ilustrações locais em WebP; o SVG anterior permanece como fallback visual
+ // durante desenvolvimento ou se algum arquivo estiver indisponível.
+ return '<span class="cosmetic-banner-art"><span class="cosmetic-banner-fallback">'+bannerSvg(safe)+'</span>'
+  +'<img class="cosmetic-banner-illustration" src="assets/banners/'+safe+'.webp" alt="" loading="lazy" decoding="async" width="1080" height="360"></span>';
+}
 window.ESCosmetics=Object.freeze({frames,banners,safeFrame,safeBanner,svgFrame,bannerSvg,avatar,banner});
 })();
