@@ -23,7 +23,7 @@ create or replace function public.es_v74_stats()
 returns jsonb language sql stable security definer set search_path=''
 as $$
 with mine as (
- select res.*, rd.finished_at, rd.impostor_ids, rm.is_public,rd.id as round_id, 
+ select res.*, rd.finished_at, rd.impostor_ids, rm.is_public,
   (select count(*) from unnest(coalesce(v.targets,'{}'::uuid[])) t where t=any(rd.impostor_ids)) as hits
  from public.es_results res
  join public.es_rounds rd on rd.id=res.round_id and rd.finished_at is not null
