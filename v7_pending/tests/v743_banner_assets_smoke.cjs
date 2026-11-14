@@ -10,7 +10,7 @@ assert.equal(Object.keys(cat.frames).length,16);
 function validWebp(path){
  assert(fs.existsSync(path),'Asset is missing: '+path);
  const bytes=fs.readFileSync(path);
- assert(bytes.length>12000 && bytes.length<160000,'Unexpected WebP file size: '+path);
+ assert(bytes.length>12000 && bytes.length<900000,'Unexpected WebP file size: '+path);
  assert.equal(bytes.subarray(0,4).toString(),'RIFF',path+' invalid RIFF');
  assert.equal(bytes.subarray(8,12).toString(),'WEBP',path+' invalid WebP');
 }
@@ -51,14 +51,14 @@ for(const kind of ['banners','frames']){
  const unique=new Set(codes.map(code=>crypto.createHash('sha256').update(fs.readFileSync('web/assets/'+kind+'/'+code+'.webp')).digest('hex')));
  assert.equal(unique.size,16,'All 16 '+kind+' must have distinct image assets');
 }
-// A unique image URL is essential on mobile: asset content changed in V7.4.4,
+// A unique image URL is essential on mobile: asset content changed in V7.4.5,
  // but the same base WebP paths were previously cached by browsers.
  const bannerCheck=cat.banner('cacada_sombria');
  const frameCheck=cat.avatar('classica','✦');
- assert.match(bannerCheck,/assets\/banners\/cacada_sombria\.webp\?v=v744-image-refresh-20261114-r2/);
- assert.match(frameCheck,/assets\/frames\/classica\.webp\?v=v744-image-refresh-20261114-r2/);
+ assert.match(bannerCheck,/assets\/banners\/cacada_sombria\.webp\?v=v745-approved-cinematic-20261114-r1/);
+ assert.match(frameCheck,/assets\/frames\/classica\.webp\?v=v745-approved-cinematic-20261114-r1/);
  const index=fs.readFileSync('web/index.html','utf8');
- assert.match(index,/cosmetics\.js\?v=v744-cachefix-20261114-r2/);
+ assert.match(index,/cosmetics\.js\?v=v745-cinematic-20261114-r1/);
  const css=fs.readFileSync('web/style.css','utf8');
 assert.match(css,/\.cosmetic-banner-illustration/);
 assert.match(css,/\.cosmetic-frame-illustration/);

@@ -1,7 +1,7 @@
 name: Verificar desenvolvimento Entre Suspeitos V7.4
 on:
   push:
-    branches: ['feature/v7-4-preparacao-20261114', 'feature/v7-4-1-cosmeticos-banners-20261114', 'feature/v7-4-3-banners-ilustrados-revisao', 'feature/v744-cosmeticos-cenarios-raridades-20261114']
+    branches: ['feature/v7-4-preparacao-20261114', 'feature/v7-4-1-cosmeticos-banners-20261114', 'feature/v7-4-3-banners-ilustrados-revisao', 'feature/v744-cosmeticos-cenarios-raridades-20261114', 'feature/v745-banners-cinematicos-aprovados-20261114']
   pull_request:
     branches: [main]
 permissions:
@@ -20,6 +20,7 @@ jobs:
           node v7_pending/tests/v741_cosmetics_smoke.cjs
           node v7_pending/tests/v742_polish_smoke.cjs
           node v7_pending/tests/v743_banner_assets_smoke.cjs
+          V745_REQUIRE_ASSETS=1 node v7_pending/tests/v745_banners_integrity_smoke.cjs
       - name: Verificar arquivos e permissões da V7.4
         run: |
           test -f v7_pending/sql/v74_social_progress.sql

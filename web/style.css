@@ -262,3 +262,16 @@ body[data-theme=night] .btn:not(.secondary):not(.ghost):not(.ready-action){backg
 .frame-rarity-comum .cosmetic-avatar-content{border-color:#a5a2ab66}
 .frame-rarity-incomum .cosmetic-avatar-content{border-color:#8bad9a80}
 .frame-rarity-lenda .cosmetic-frame-illustration{filter:saturate(1.1) brightness(1.05) drop-shadow(0 0 12px #edc07ac4)}
+
+/* V7.4.5 — mantém toda a cena 3:1 visível na galeria de banners.
+   O retrato do perfil continua em cover (é um card mais alto que a arte). */
+.cosmetic-gallery.banner-gallery{grid-template-columns:minmax(0,1fr)}
+.banner-gallery .cosmetic-tile{padding-bottom:15px}
+.banner-gallery .cosmetic-tile-banner{height:auto;aspect-ratio:3/1;min-height:0;margin-bottom:11px}
+.banner-gallery .cosmetic-banner-art{inset:0}
+.banner-gallery .cosmetic-banner-illustration{object-fit:cover;object-position:center center}
+.cosmetic-banner-illustration{image-rendering:auto}
+.cosmetic-profile-hero .banner-code-cidade_sem_rosto .cosmetic-banner-illustration{object-position:42% center}
+.cosmetic-profile-hero .banner-code-cacada_sombria .cosmetic-banner-illustration{object-position:51% center}
+.cosmetic-profile-hero .banner-code-trono_arcano .cosmetic-banner-illustration{object-position:50% center}
+@media(min-width:760px){.cosmetic-gallery.banner-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}}

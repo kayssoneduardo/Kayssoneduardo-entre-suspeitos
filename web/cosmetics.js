@@ -98,7 +98,7 @@ function bannerSvg(code){
 // All 16 frames now have their own transparent WebP artwork.
 // The four approved artworks remain unchanged; the 12 others follow their
 // original cosmetics rarity and shared ornament style.
-const COSMETIC_ASSET_VERSION='v744-image-refresh-20261114-r2';
+const COSMETIC_ASSET_VERSION='v745-approved-cinematic-20261114-r1';
 const frameArtwork=Object.freeze(Object.keys(frames));
 const frameRarities=Object.freeze({
  classica:'comum',bronze:'comum',
@@ -127,7 +127,7 @@ function banner(code){
  const safe=safeBanner(code),rarity=bannerRarity(safe);
  // Ilustrações locais em WebP; o SVG anterior permanece como fallback visual
  // durante desenvolvimento ou se algum arquivo estiver indisponível.
- return '<span class="cosmetic-banner-art banner-rarity-'+rarity+'"><span class="cosmetic-banner-fallback">'+bannerSvg(safe)+'</span>'
+ return '<span class="cosmetic-banner-art banner-rarity-'+rarity+' banner-code-'+safe+'"><span class="cosmetic-banner-fallback">'+bannerSvg(safe)+'</span>'
   +'<img class="cosmetic-banner-illustration" src="assets/banners/'+safe+'.webp?v='+COSMETIC_ASSET_VERSION+'" alt="" loading="lazy" decoding="async" width="1080" height="360"></span>';
 }
 window.ESCosmetics=Object.freeze({frames,banners,safeFrame,safeBanner,bannerRarities,bannerRarity,frameArtwork,frameRarities,frameRarity,svgFrame,bannerSvg,avatar,banner});
