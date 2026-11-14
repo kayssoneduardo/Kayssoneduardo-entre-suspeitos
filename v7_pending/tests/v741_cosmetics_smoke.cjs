@@ -16,7 +16,7 @@ vm.runInNewContext(cosmetics,context,{filename:'cosmetics.js'});
 assert.equal(Object.keys(window.ESCosmetics.frames).length,16);
 assert.equal(Object.keys(window.ESCosmetics.banners).length,16);
 assert.match(window.ESCosmetics.avatar('coroa_arcana','<img src="/test.png">'),/assets\/frames\/coroa_arcana\.webp/);
-assert.match(window.ESCosmetics.avatar('bronze','✦'),/cosmetic-frame-svg/);
+assert.match(window.ESCosmetics.avatar('bronze','✦'),/assets\\/frames\\/bronze\\.webp/);
 assert.match(window.ESCosmetics.banner('ecos_da_nevoa'),/cosmetic-banner-svg/);
 assert.equal(window.ESCosmetics.safeFrame('<script>'),'classica');
 vm.runInNewContext(online,context,{filename:'online.js'});
@@ -26,7 +26,7 @@ ui.activeEvent={active:true,name:'Operação Névoa',description:'Jogue 5 partid
 ui.sound=()=>{};
 let room={id:'sala',code:'ABC123',owner:'host',status:'lobby',public:true,max:6,impostors:1,clue:'both',know:false,round:1,categories:['Animais'],difficulty:'Fácil',players:[{id:'host',nick:'zero',ready:true,active:true,online:true,frame:'coroa_arcana',banner:'ecos_da_nevoa',title:'mistico-titulo'},{id:'g1',nick:'Jogador 1',ready:true,active:true,online:true},{id:'g2',nick:'Jogador 2',ready:true,active:true,online:true}]};
 ui.renderRoom(room);
-assert.match(app.html,/cosmetic-frame-svg/);
+assert.match(app.html,/cosmetic-frame-illustration/);
 assert.match(app.html,/cosmetic-banner-svg/);
 assert.match(app.html,/Moldura: Coroa Arcana/);
 assert.match(app.html,/cosmetic-player-name title-mistico/);
