@@ -18,6 +18,7 @@ function seasonPanel(data){
  const rows=data.players.slice(0,50);
  const entry=p=>'<div class="es77-season-player"><b class="es77-position">'+Number(p.position||0)+'º</b>'+
  '<span><strong>'+esc(p.nickname)+'</strong><small>'+Number(p.wins||0)+' vitórias em '+Number(p.games||0)+' partidas</small></span>'+
+ (String(p.id||'').match(/^[a-f0-9-]{36}$/i)?'<button class="back" data-social="'+esc(p.id)+'">Perfil</button>':'')+
  '<b class="es77-points">'+Number(p.points||0)+' pts</b></div>';
  return '<section class="card es77-season-card"><span class="eyebrow">TEMPORADA ATUAL · UTC</span><h2>Classificação sazonal</h2>'+
  '<p class="small muted">'+date(start)+' a '+date(end)+' (fim exclusivo) · apenas partidas públicas concluídas com voto.</p>'+
