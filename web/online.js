@@ -580,9 +580,9 @@ class OnlineUI{
     return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-preview="${i}">Visualizar</button><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
    }).join('');
    this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC((selectedPreview?.kind==='frame'?selectedPreview.name:equippedFrame?.name)||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC((selectedPreview?.kind==='banner'?selectedPreview.name:equippedBanner?.name)||'Sombras Originais')}</span></section>
-    ${this.motionSettings()}${this.motionDemo()}${this.entranceDemo()}${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
+    ${this.motionSettings()}${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
     <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery ${tab==='banner'?'banner-gallery':'frame-gallery'}">${tiles}</div><p id="onlineError" class="error"></p></section>${this.roomId?btn('cosmeticsBackRoom','← Voltar à sala','secondary'):''}${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
-   this.bindMotionSettings();this.bindMotionDemo();this.bindEntranceDemo();
+   this.bindMotionSettings();
     $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticPreview=null;this.cosmeticsPage();};
    $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticPreview=null;this.cosmeticsPage();};
    if($('cosmeticsBackRoom'))$('cosmeticsBackRoom').onclick=()=>this.enterRoom(this.roomId);
@@ -592,40 +592,6 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
 
- entranceDemo(){
-  return '<section class="es-v75-demo"><h3>Novas entradas cinematográficas · prévia V7.6</h3>'
-   +'<p class="small muted">Cada entrada usa efeitos diferentes, sem revelar palavra ou papel. Teste os três níveis.</p>'
-   +'<div class="es-v75-demo-actions"><button class="back" id="esEntryCommon">Comum</button>'
-   +'<button class="back" id="esEntryEpic">Épica</button><button class="back" id="esEntryLegend">Lendária</button></div></section>';
- }
- bindEntranceDemo(){
-  for(const [id,rarity] of [['esEntryCommon','comum'],['esEntryEpic','epico'],['esEntryLegend','lenda']]){
-   const button=$(id);if(!button)continue;
-   button.onclick=()=>{if(!window.ESEntrance?.play({rarity,nickname:'Zero'}))this.note('Ative as animações para assistir à entrada.');};
-  }
- }
- motionDemo(){
-  return '<section class="es-v75-demo"><h3>Prévia cinematográfica</h3><p class="small muted">Veja os efeitos agora, sem entrar em partida. Somente animação visual.</p>'
-   +'<div class="es-v75-demo-actions"><button class="back" id="esDemoRole">Revelação</button><button class="back" id="esDemoWin">Vitória</button><button class="back" id="esDemoLose">Derrota</button></div>'
-   +'<div id="esDemoStage" class="es-v75-demo-preview" aria-live="polite"><strong>✦ Escolha um efeito</strong><p>Animações são opcionais e podem ser desligadas.</p></div></section>';
- }
- bindMotionDemo(){
-  const stage=$('esDemoStage');if(!stage)return;
-  const show=(type)=>{
-   if(window.ESMotion?.mode()==='off'){stage.textContent='Ative as animações acima para visualizar os efeitos.';return;}
-   stage.className='es-v75-demo-preview';
-   stage.innerHTML=type==='role'?'<strong>◈ CARTA REVELADA</strong><p>Seu papel permanece secreto para os demais.</p>'
-    :type==='win'?'<strong>✦ VITÓRIA ✦</strong><p>Você decifrou o mistério!</p>'
-    :'<strong>☾ DERROTA</strong><p>O segredo continua nas sombras.</p>';
-   // Force a new animation even if a previous preview has already played.
-   void stage.offsetWidth;
-   stage.classList.add('es-v75-preview-active');
-   stage.style.boxShadow=type==='win'?'0 0 22px #e2b75f9a':type==='lose'?'0 0 22px #9870cb88':'0 0 26px #ab79ffaf';
-  };
-  $('esDemoRole').onclick=()=>show('role');
-  $('esDemoWin').onclick=()=>show('win');
-  $('esDemoLose').onclick=()=>show('lose');
- }
  motionSettings(){
   return '<div class="es-v75-motion-controls"><label for="motionModeOn">Animações de cosméticos</label><select id="motionModeOn"><option value="auto">Automático · economiza bateria</option><option value="on">Ativado</option><option value="off">Desativado</option></select></div><p class="small muted">Apenas efeito visual; votação, cartas e microfone não são alterados.</p>';
  }
