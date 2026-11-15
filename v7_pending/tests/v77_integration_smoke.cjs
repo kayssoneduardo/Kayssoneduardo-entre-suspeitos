@@ -15,7 +15,7 @@ assert(sqlWeekly.includes('and x.voted')&&sqlSeason.includes('x.voted'));
 const els=new Map(),store=new Map();
 const parse=content=>{for(const m of String(content).matchAll(/id="([^"]+)"/g))els.set(m[1],{id:m[1],value:'',disabled:false,textContent:'',onclick:null,hidden:false});};
 class El {constructor(tag){this.tag=tag;this.children=[];this.style={};this.textContent='';this.className='';}
- append(...items){this.children.push(...items)}remove(){this.removed=true;}}
+ append(...items){this.children.push(...items)}appendChild(item){this.children.push(item)}remove(){this.removed=true;}}
 const body=new El('body');
 const app={html:'',buttons:[],selected:[],set innerHTML(value){this.html=value;parse(value)},get innerHTML(){return this.html},
  querySelectorAll(q){
