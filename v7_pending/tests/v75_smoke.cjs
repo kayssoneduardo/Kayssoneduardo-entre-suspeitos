@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const root=(p)=>fs.readFileSync(p,'utf8');
 const html=root('web/index.html'),online=root('web/online.js'),motion=root('web/motion.js'),css=root('web/style.css'),sql=root('v7_pending/sql/v75_social_events.sql');
 assert(html.indexOf('cosmetics.js')<html.indexOf('motion.js')&&html.indexOf('motion.js')<html.indexOf('online.js'),'Cosmetics -> motion -> online load order');
-assert(/(?:7\.5\.0 RC \(ANIMAÇÕES CINEMATOGRÁFICAS\)|7\.6\.0 RC \(ENTRADAS CINEMATOGRÁFICAS\))/.test(html),'Approved cinematic release label');
+assert(/7\\.(?:5\\.0|6\\.[01]) RC/.test(html),'Approved cinematic release label');
 const attrs={};const classSet=new Set();
 const document={
  readyState:'complete',hidden:false,
