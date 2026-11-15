@@ -26,6 +26,7 @@ jobs:
           node v7_pending/tests/v76_entrance_smoke.cjs
           node v7_pending/tests/v762_room_controls_smoke.cjs
           node v7_pending/tests/v77_integration_smoke.cjs
+          node v7_pending/tests/v77_android_race_smoke.cjs
       - name: Verificar arquivos e permissões da V7.4
         run: |
           test -f v7_pending/sql/v74_social_progress.sql
