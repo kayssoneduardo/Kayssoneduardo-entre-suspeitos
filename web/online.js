@@ -432,7 +432,7 @@ class OnlineUI{
    const info=r.me.impostor?[r.me.category?'Categoria: '+r.me.category:'',r.me.category!=='Pessoas de Loreto'&&r.me.hint?'Dica: '+r.me.hint:'',r.me.partners?.length?'Parceiros: '+r.players.filter(x=>r.me.partners.includes(x.id)).map(x=>x.nick).join(', '):''].filter(Boolean).join(' · '):'Categoria: '+r.me.category;
    const first=r.players.find(p=>p.id===r.starter)?.nick||'Sorteado';
    phase=`<section class="card center"><h2>${revealing?'Veja sua carta':'Abrindo votação'}</h2><div id="timerOnline" class="countdown">${countdown(revealing?r.revealEnds:r.phaseEnds)}</div><p class="subtext">Quem começa: <b>${ESC(first)}</b>. Após os 30 segundos, a votação abre e vocês podem conversar enquanto votam.</p>
-   ${revealing?`<div id="onlineSecret" class="card-reveal" tabindex="0"><div id="onlineSecretContent"><span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p></div></div>
+   ${revealing?`<div id="onlineSecret" class="card-reveal es-v75-reveal-spot" tabindex="0"><div id="onlineSecretContent"><span class="secret-label">CARTA SELADA</span><p>Segure para ver sua palavra ou papel.</p></div></div>
    <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Você tem 30 segundos para memorizar sua carta. Solte para ocultar.</p>`:'<p class="notice">Tempo de visualização encerrado. A votação vai começar.</p>'}</section>`;
   }else if(r.status==='voting'){
    const myVote=r.me.voted;
@@ -445,7 +445,7 @@ class OnlineUI{
    const mine=(r.results||[]).find(x=>x.user===me);const totalWins=(r.results||[]).filter(x=>x.win).length;
    phase=`<section class="card center v74-reveal"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p>
     <p class="notice">${impostors.length} impostor(es) revelado(s) · ${totalWins} vencedor(es).</p>
-    ${mine?`<div class="card ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${window.ESMotion?.outcome(mine.win)||''} ${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
+    ${mine?`<div class="card es-v75-outcome ${mine.win?'is-victory':'is-defeat'} ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${window.ESMotion?.outcome(mine.win)||''} ${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
     <h3>Os impostores eram</h3>${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
     <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member ${x.win?'v74-result-good':'v74-result-bad'}"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
     <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
@@ -575,9 +575,9 @@ class OnlineUI{
     return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-preview="${i}">Visualizar</button><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
    }).join('');
    this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC((selectedPreview?.kind==='frame'?selectedPreview.name:equippedFrame?.name)||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC((selectedPreview?.kind==='banner'?selectedPreview.name:equippedBanner?.name)||'Sombras Originais')}</span></section>
-    ${this.motionSettings()}${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
+    ${this.motionSettings()}${this.motionDemo()}${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
     <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery ${tab==='banner'?'banner-gallery':'frame-gallery'}">${tiles}</div><p id="onlineError" class="error"></p></section>${this.roomId?btn('cosmeticsBackRoom','← Voltar à sala','secondary'):''}${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
-   this.bindMotionSettings();
+   this.bindMotionSettings();this.bindMotionDemo();
     $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticPreview=null;this.cosmeticsPage();};
    $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticPreview=null;this.cosmeticsPage();};
    if($('cosmeticsBackRoom'))$('cosmeticsBackRoom').onclick=()=>this.enterRoom(this.roomId);
@@ -587,6 +587,28 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
 
+ motionDemo(){
+  return '<section class="es-v75-demo"><h3>Prévia cinematográfica</h3><p class="small muted">Veja os efeitos agora, sem entrar em partida. Somente animação visual.</p>'
+   +'<div class="es-v75-demo-actions"><button class="back" id="esDemoRole">Revelação</button><button class="back" id="esDemoWin">Vitória</button><button class="back" id="esDemoLose">Derrota</button></div>'
+   +'<div id="esDemoStage" class="es-v75-demo-preview" aria-live="polite"><strong>✦ Escolha um efeito</strong><p>Animações são opcionais e podem ser desligadas.</p></div></section>';
+ }
+ bindMotionDemo(){
+  const stage=$('esDemoStage');if(!stage)return;
+  const show=(type)=>{
+   window.ESMotion?.setMode(window.ESMotion.mode()==='off'?'on':window.ESMotion.mode());
+   stage.className='es-v75-demo-preview';
+   stage.innerHTML=type==='role'?'<strong>◈ CARTA REVELADA</strong><p>Seu papel permanece secreto para os demais.</p>'
+    :type==='win'?'<strong>✦ VITÓRIA ✦</strong><p>Você decifrou o mistério!</p>'
+    :'<strong>☾ DERROTA</strong><p>O segredo continua nas sombras.</p>';
+   // Force a new animation even if a previous preview has already played.
+   void stage.offsetWidth;
+   stage.classList.add('es-v75-preview-active');
+   stage.style.boxShadow=type==='win'?'0 0 22px #e2b75f9a':type==='lose'?'0 0 22px #9870cb88':'0 0 26px #ab79ffaf';
+  };
+  $('esDemoRole').onclick=()=>show('role');
+  $('esDemoWin').onclick=()=>show('win');
+  $('esDemoLose').onclick=()=>show('lose');
+ }
  motionSettings(){
   return '<div class="es-v75-motion-controls"><label for="motionModeOn">Animações de cosméticos</label><select id="motionModeOn"><option value="auto">Automático · economiza bateria</option><option value="on">Ativado</option><option value="off">Desativado</option></select></div><p class="small muted">Apenas efeito visual; votação, cartas e microfone não são alterados.</p>';
  }
