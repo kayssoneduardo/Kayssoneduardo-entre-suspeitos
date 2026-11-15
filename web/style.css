@@ -594,3 +594,16 @@ body.es-v75-paused .cosmetic-avatar-wrap::after{animation-play-state:paused!impo
  .es77-vote-seal,.es77-vote-seal span,.es77-achievement{animation:none!important}
  .es77-vote-choice{transition:none!important}
 }
+
+/* Conquest animation hierarchy. Legendary and mystical achievements are unmistakable. */
+.es77-achievement-raro{border-color:#8bc1ff;box-shadow:0 0 30px #82b1ec72}
+.es77-achievement-epico{border-color:#cd83ff;background:linear-gradient(110deg,#56317c,#21102d);box-shadow:0 0 42px #c66df7a5}
+.es77-achievement-lenda{border-color:#ffdf95;background:linear-gradient(120deg,#5a3b22,#1b1123);box-shadow:0 0 55px #f1b85fa8,inset 0 0 22px #ffe0a32d}
+.es77-achievement-lenda>span,.es77-achievement-lenda>strong{color:#ffe2a5}
+.es77-achievement-mistico{border-color:#e4aaff;background:linear-gradient(120deg,#341d5c,#170c29);box-shadow:0 0 60px #ce8dffbf,inset 0 0 24px #a77bd53d}
+.es77-achievement-mistico>strong{color:#f5d7ff}
+body[data-motion=on] .es77-achievement-lenda{animation:es77LegendAchieve .9s cubic-bezier(.15,.8,.19,1) both}
+@keyframes es77LegendAchieve{0%{opacity:0;transform:translateY(80px) scale(.65);filter:brightness(2.1)}
+ 60%{opacity:1;transform:translateY(-9px) scale(1.04);filter:brightness(1.4)}
+ 100%{opacity:1;transform:translateY(0) scale(1);filter:brightness(1)}}
+@media(prefers-reduced-motion:reduce){body[data-motion=on] .es77-achievement-lenda{animation:none!important}}
