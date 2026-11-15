@@ -12,5 +12,5 @@ assert(ui.includes("btn('inviteFriends'"),'Invite friends retained');
 assert(ui.includes("$('inviteFriends').onclick=()=>this.inviteFriends()"),'Direct friend invite handler retained');
 assert(ui.includes("$('copyCodeOn').onclick=async()=>"),'Copy room code handler retained');
 assert(ui.includes("this.entrancePending=true"),'Cinematic entrances retained');
-assert(index.includes('7.6.2 RC (SALA SIMPLIFICADA)'),'Release label must be updated');
+assert(index.includes('7.6.2 RC (SALA SIMPLIFICADA)')||index.includes('7.7.0 RC (TEMPORADAS E VOTAÇÃO)'),'Release label must be updated');
 console.log('PASSOU: sala simplificada; personalização, código, convites e animações intactos.');

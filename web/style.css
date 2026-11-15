@@ -521,3 +521,96 @@ body.es-v75-paused .cosmetic-avatar-wrap::after{animation-play-state:paused!impo
  .es-entrance-legend-portal{opacity:.28;transform:none}
  .es-entrance-legend-wings,.es-entrance-legend-flash,.es-entrance-legend-shockwave{display:none}
 }
+
+/* Entre Suspeitos V7.7: condensed mobile lobby, cinematic secret ballot, competitive seasons and weekly events. */
+.es77-ready-summary{padding:11px 13px;margin:10px 0 13px;border:1px solid #7f65aa7d;border-radius:13px;background:#43275c36}
+.es77-ready-summary>div{font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center}
+.es77-ready-summary b{color:#65efbc;font-size:19px}
+.es77-ready-summary progress,.es77-challenge progress{display:block;width:100%;height:10px;margin:8px 0;accent-color:#49d8a9}
+.es77-ready-summary small{color:var(--muted);font-size:11px}
+.es77-member-count{font-size:12px;font-weight:650;color:#b7a7ca}
+.es77-players .cosmetic-player{border-radius:14px;padding:9px 10px;margin:7px 0}
+.es77-players .cosmetic-player-foreground{min-height:62px;column-gap:8px}
+.es77-players .cosmetic-player .cosmetic-avatar-wrap{width:64px;height:64px;flex-basis:64px}
+.es77-players .cosmetic-player-name{font-size:15px;line-height:1.15}
+.es77-players .cosmetic-player .equipped-title{font-size:11px;margin:2px 0}
+.es77-players .cosmetic-nameplate{font-size:10px}
+.es77-players .cosmetic-player-controls{margin-top:5px;gap:4px}
+.es77-players .cosmetic-player-controls .back{padding:5px 8px;font-size:10px;min-height:33px}
+.es77-players .cosmetic-player-controls .pill{font-size:10px}
+.es77-players .cosmetic-player.es77-ready{border-color:#5bddac97;box-shadow:inset 3px 0 #56deb0,inset 0 0 14px #40dba218}
+.es77-players .cosmetic-player.es77-waiting{border-color:#876baa74}
+.es77-lobby .ready-action{box-shadow:0 0 18px #28c99448}
+.es77-voting{isolation:isolate;position:relative;overflow:hidden}
+.es77-voting::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(ellipse at 50% 0,#852d7540,transparent 65%)}
+.es77-vote-eyebrow{font-size:11px;letter-spacing:2px;font-weight:900;color:#d4a4ed}
+.es77-vote-choice{position:relative;min-height:66px;display:flex;gap:12px;align-items:center;border:1px solid #8a6aa788;
+ background:linear-gradient(115deg,#241430,#130f1f);cursor:pointer;transition:border-color .2s,transform .2s,background .2s}
+.es77-vote-choice input{flex:0 0 22px;width:22px;height:22px}
+.es77-vote-avatar{display:grid;place-items:center;flex:0 0 39px;height:39px;border:1px solid #bb97d6;border-radius:50%;font-size:18px;background:#422c59;color:#efdcff;font-weight:900}
+.es77-vote-choice strong{flex:1;overflow-wrap:anywhere}
+.es77-vote-mark{font-size:22px;opacity:.3;color:#d1a5ed}
+.es77-vote-choice:has(input:checked){border-color:#e4acd6;background:linear-gradient(105deg,#562445,#292038);box-shadow:inset 0 0 0 1px #dcb0d55b}
+.es77-vote-choice:has(input:checked) .es77-vote-mark{opacity:1}
+.es77-vote-choice:focus-within{outline:2px solid #d0a6ff;outline-offset:1px}
+.es77-vote-seal{position:fixed;z-index:10001;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+ background:radial-gradient(ellipse,#3b1c52f5,#080711fa 65%);color:#e9dcf5;pointer-events:none;animation:es77Seal 1s both}
+.es77-vote-seal span{font-size:clamp(86px,24vw,160px);line-height:1;color:#dbacd9;text-shadow:0 0 30px #dc94ca;animation:es77Sigil 1s both}
+.es77-vote-seal strong{font-size:clamp(18px,5vw,27px);letter-spacing:2px;text-align:center}
+.es77-vote-seal small{font-size:13px;color:#c6b7d4}
+.es77-season-card{border-color:#9e7bca88}
+.es77-season-player{display:flex;align-items:center;gap:12px;border-top:1px solid #a889bb38;padding:11px 0}
+.es77-season-player>span{display:flex;flex-direction:column;flex:1;min-width:0}
+.es77-season-player strong{font-size:14px;overflow-wrap:anywhere}
+.es77-season-player small{font-size:11px;color:var(--muted)}
+.es77-position{width:34px;color:#e4c2f9}
+.es77-points{font-size:14px;white-space:nowrap;color:#f3d48f}
+.es77-weekly{border:1px solid #ab8ac577;border-radius:16px;padding:15px;margin:12px 0;background:linear-gradient(140deg,#48315b44,#1b132a)}
+.es77-weekly h3{margin:0 0 7px;font-size:18px}
+.es77-challenge{padding:12px 0;border-bottom:1px solid #aa8bc235}
+.es77-challenge:last-child{border:0}
+.es77-challenge>strong{font-size:15px}
+.es77-challenge .back{font-size:12px}
+.es77-weekly-row{display:flex;align-items:center;justify-content:space-between;font-size:12px;gap:12px}
+.es77-weekly-row b{color:#edd099}
+.es77-invite-alert{padding:11px;border:1px solid #bb9def8c;border-radius:12px;background:#6d44934d;color:#f5deff;text-align:center;font-size:13px;font-weight:700}
+.es77-achievement{position:fixed;z-index:10002;left:12px;right:12px;bottom:max(26px,env(safe-area-inset-bottom));margin:0 auto;max-width:450px;
+ display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:19px;text-align:center;color:#f9e6ff;
+ background:linear-gradient(120deg,#3f2456,#1a112e);border:2px solid #ca95ee;box-shadow:0 0 35px #bd72e687;animation:es77Achieve .65s cubic-bezier(.2,.8,.18,1) both}
+.es77-achievement>span{font-size:11px;letter-spacing:2px;color:#dcaeea;font-weight:900}
+.es77-achievement>strong{font-size:22px;overflow-wrap:anywhere}
+.es77-achievement>small{font-size:12px}
+.es77-achievement>button{align-self:center;min-height:36px;padding:6px 18px;border:1px solid #b98aeb;border-radius:9px;background:#211331;color:#faf1ff}
+@keyframes es77Seal{0%{opacity:0;transform:scale(1.12)}25%,75%{opacity:1;transform:scale(1)}100%{opacity:0}}
+@keyframes es77Sigil{0%{transform:scale(.4) rotate(-70deg);opacity:0}60%{opacity:1;transform:scale(1.2) rotate(0)}100%{transform:scale(1) rotate(14deg)}}
+@keyframes es77Achieve{from{opacity:0;transform:translateY(35px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:420px){
+ .es77-vote-choice{gap:8px;padding:9px 10px}
+ .es77-vote-avatar{flex-basis:33px;height:33px;font-size:15px}
+ .es77-players .cosmetic-player .cosmetic-avatar-wrap{width:56px;height:56px;flex-basis:56px}
+ .es77-players .cosmetic-player-identity{flex-basis:100px}
+}
+@media(prefers-reduced-motion:reduce){
+ .es77-vote-seal,.es77-vote-seal span,.es77-achievement{animation:none!important}
+ .es77-vote-choice{transition:none!important}
+}
+
+/* Conquest animation hierarchy. Legendary and mystical achievements are unmistakable. */
+.es77-achievement-raro{border-color:#8bc1ff;box-shadow:0 0 30px #82b1ec72}
+.es77-achievement-epico{border-color:#cd83ff;background:linear-gradient(110deg,#56317c,#21102d);box-shadow:0 0 42px #c66df7a5}
+.es77-achievement-lenda{border-color:#ffdf95;background:linear-gradient(120deg,#5a3b22,#1b1123);box-shadow:0 0 55px #f1b85fa8,inset 0 0 22px #ffe0a32d}
+.es77-achievement-lenda>span,.es77-achievement-lenda>strong{color:#ffe2a5}
+.es77-achievement-mistico{border-color:#e4aaff;background:linear-gradient(120deg,#341d5c,#170c29);box-shadow:0 0 60px #ce8dffbf,inset 0 0 24px #a77bd53d}
+.es77-achievement-mistico>strong{color:#f5d7ff}
+body[data-motion=on] .es77-achievement-lenda{animation:es77LegendAchieve .9s cubic-bezier(.15,.8,.19,1) both}
+@keyframes es77LegendAchieve{0%{opacity:0;transform:translateY(80px) scale(.65);filter:brightness(2.1)}
+ 60%{opacity:1;transform:translateY(-9px) scale(1.04);filter:brightness(1.4)}
+ 100%{opacity:1;transform:translateY(0) scale(1);filter:brightness(1)}}
+@media(prefers-reduced-motion:reduce){body[data-motion=on] .es77-achievement-lenda{animation:none!important}}
+
+.es77-previous-title{margin:18px 0 7px!important;font-size:16px;color:#e7c8f7}
+.es77-season-archive{display:flex;flex-direction:column;gap:4px;padding:11px 0;border-top:1px solid #b8a0ce4a}
+.es77-season-archive b{font-size:12px;color:#eed8f6}
+.es77-season-archive small{font-size:11px;color:#c8b8d3}
+.es77-season-player .back{font-size:11px;padding:5px 8px;min-height:33px}
+@media(max-width:390px){.es77-season-player{gap:6px}.es77-season-player .back{font-size:10px;padding:4px 6px}.es77-points{font-size:12px}}
