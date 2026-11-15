@@ -204,7 +204,8 @@ class OnlineUI{
    if(destination==='missions')return this.progressHub();
    if(destination==='stats')return this.statsPage();
    if(destination==='history')return this.historyPage();
-   if(this.pendingJoinCode){const code=this.pendingJoinCode;this.pendingJoinCode=null;const u=new URL(window.location.href);u.searchParams.delete('room');window.history.replaceState(null,'',u.pathname+u.search+u.hash);return this.joinCode(code);}
+   this.cloud.rpc('es_my_titles').then(titles=>window.ESV77?.rememberAchievements(this.cloud.userId,titles)).catch(()=>{});
+  if(this.pendingJoinCode){const code=this.pendingJoinCode;this.pendingJoinCode=null;const u=new URL(window.location.href);u.searchParams.delete('room');window.history.replaceState(null,'',u.pathname+u.search+u.hash);return this.joinCode(code);}
   this.currentPage='home';this.header('Jogar online');
   this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
@@ -421,7 +422,7 @@ class OnlineUI{
 
  renderRoom(r){const selectedVotes=r.status==='voting'&&!r.me?.voted?[...this.app.querySelectorAll('[data-vote]:checked')].map(x=>x.dataset.vote):[];this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
   const allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors>=1&&r.impostors<=Math.floor((joined.length-1)/2);
-  if(r.status!==this.lastPhase){window.ESMotion?.enterPhase(r.status);this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;}
+  if(r.status!==this.lastPhase){window.ESMotion?.enterPhase(r.status);this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;if(r.status==='results')this.cloud.rpc('es_my_titles').then(titles=>{const fresh=window.ESV77?.rememberAchievements(this.cloud.userId,titles);if(fresh)window.ESV77?.achievement(fresh);}).catch(()=>{});}
   const head=`<section class="card"><div class="statusbar"><div><span class="eyebrow">${r.public?'SALA PÚBLICA':'SALA PRIVADA'}</span><div class="room-code">${ESC(r.code)}</div></div><span class="pill">${joined.length}/${r.max} jogadores</span></div>
   <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
