@@ -78,7 +78,7 @@ ui.cloud={userId:'usr1',rpc:async(name,params)=>{
  let seen=window.ESV77.rememberAchievements('usr1',[{code:'title1',name:'Lenda',rarity:'lenda'}]);assert.equal(seen,null);
  seen=window.ESV77.rememberAchievements('usr1',[{code:'title1',name:'Lenda',rarity:'lenda'},{code:'title2',name:'Mistério',rarity:'mistico'}]);
  assert(seen&&seen.code==='title2');window.ESV77.achievement(seen);
- assert(body.children.some(x=>x.className==='es77-achievement'));
+ assert(body.children.some(x=>x.className.startsWith('es77-achievement ')));
  const alert=window.ESV77.inviteAlert(2);assert.match(alert,/2 convites pendentes/);
  await ui.inviteFriends();assert.match(app.html,/Online agora/);
  assert.match(app.html,/Convidar/);
