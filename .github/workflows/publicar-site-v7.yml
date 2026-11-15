@@ -123,7 +123,8 @@ jobs:
           grep -q 'es-entrance-legend-portal' /tmp/entrance.js
           grep -q 'esLegendShockwave' /tmp/style.css
           grep -q 'esEntranceFigure' /tmp/style.css
-          grep -q 'es-v75-demo' /tmp/online.js
+          ! grep -q 'motionDemo()' /tmp/online.js
+          ! grep -q 'entranceDemo()' /tmp/online.js
           grep -q 'esV75AuraSpin' /tmp/style.css
           grep -q 'ESMotion' /tmp/motion.js
           grep -q 'v745-approved-cinematic-20261114-r1' /tmp/cosmetics.js
