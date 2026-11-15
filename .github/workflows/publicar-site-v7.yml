@@ -50,6 +50,7 @@ jobs:
           test -f web/index.html
           test -f web/online.js
           test -f web/server-config.js
+          test -f web/v77.js
           echo "Publicando a mesma versão do código web revisado."
       - name: Testes automáticos do site
         run: |
@@ -63,6 +64,9 @@ jobs:
           node v7_pending/tests/v75_ui_integration_smoke.cjs
           node v7_pending/tests/v76_entrance_smoke.cjs
           node v7_pending/tests/v762_room_controls_smoke.cjs
+          node v7_pending/tests/v77_integration_smoke.cjs
+          node v7_pending/tests/v77_android_race_smoke.cjs
+          node v7_pending/tests/v77_android_browser_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
@@ -107,7 +111,7 @@ jobs:
           done
           grep -qi '^content-type: *text/html' /tmp/header
           grep -q 'ENTRE SUSPEITOS' /tmp/index
-          for file in online.js app.js server-config.js words.js cosmetics.js motion.js entrance.js style.css; do
+          for file in online.js app.js server-config.js words.js cosmetics.js motion.js entrance.js v77.js style.css; do
             curl --silent --show-error --fail --location --retry 3 \
               --max-time 25 "$URL/$file" -o "/tmp/$file"
           done
@@ -115,10 +119,15 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          grep -q 'VERSÃO WEB 7.6.2' /tmp/index
-          grep -q 'SALA SIMPLIFICADA' /tmp/index
-          grep -q 'v762-lobby-clean-20261114-r1' /tmp/index
+          grep -q 'VERSÃO WEB 7.7.0' /tmp/index
+          grep -q 'TEMPORADAS E VOTAÇÃO' /tmp/index
+          grep -q 'v770-consolidated-release-20261114-r1' /tmp/index
           grep -q 'ESEntrance' /tmp/entrance.js
+          grep -q 'ESV77' /tmp/v77.js
+          grep -q 'es77-vote-choice' /tmp/online.js
+          grep -q 'es_v77_season_ranking' /tmp/online.js
+          grep -q 'es_v77_weekly_claim' /tmp/online.js
+          grep -q 'es77-ready-summary' /tmp/style.css
           ! grep -q 'esEntryLegend' /tmp/online.js
           ! grep -q 'esDemoRole' /tmp/online.js
           ! grep -q 'shareLinkOn' /tmp/online.js
