@@ -61,6 +61,7 @@ jobs:
           V745_REQUIRE_ASSETS=1 node v7_pending/tests/v745_banners_integrity_smoke.cjs
           node v7_pending/tests/v75_smoke.cjs
           node v7_pending/tests/v75_ui_integration_smoke.cjs
+          node v7_pending/tests/v76_entrance_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
@@ -105,7 +106,7 @@ jobs:
           done
           grep -qi '^content-type: *text/html' /tmp/header
           grep -q 'ENTRE SUSPEITOS' /tmp/index
-          for file in online.js app.js server-config.js words.js cosmetics.js motion.js style.css; do
+          for file in online.js app.js server-config.js words.js cosmetics.js motion.js entrance.js style.css; do
             curl --silent --show-error --fail --location --retry 3 \
               --max-time 25 "$URL/$file" -o "/tmp/$file"
           done
@@ -113,9 +114,12 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          grep -q 'VERSÃO WEB 7.5.0' /tmp/index
-          grep -q 'ANIMAÇÕES CINEMATOGRÁFICAS' /tmp/index
-          grep -q 'v750-cinematic-release-20261114-r2' /tmp/index
+          grep -q 'VERSÃO WEB 7.6.0' /tmp/index
+          grep -q 'ENTRADAS CINEMATOGRÁFICAS' /tmp/index
+          grep -q 'v760-entrances-release-20261114-r1' /tmp/index
+          grep -q 'ESEntrance' /tmp/entrance.js
+          grep -q 'esEntryLegend' /tmp/online.js
+          grep -q 'esEntranceFigure' /tmp/style.css
           grep -q 'es-v75-demo' /tmp/online.js
           grep -q 'esV75AuraSpin' /tmp/style.css
           grep -q 'ESMotion' /tmp/motion.js
