@@ -595,7 +595,7 @@ class OnlineUI{
  bindMotionDemo(){
   const stage=$('esDemoStage');if(!stage)return;
   const show=(type)=>{
-   window.ESMotion?.setMode(window.ESMotion.mode()==='off'?'on':window.ESMotion.mode());
+   if(window.ESMotion?.mode()==='off'){stage.textContent='Ative as animações acima para visualizar os efeitos.';return;}
    stage.className='es-v75-demo-preview';
    stage.innerHTML=type==='role'?'<strong>◈ CARTA REVELADA</strong><p>Seu papel permanece secreto para os demais.</p>'
     :type==='win'?'<strong>✦ VITÓRIA ✦</strong><p>Você decifrou o mistério!</p>'
