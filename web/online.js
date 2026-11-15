@@ -409,19 +409,19 @@ class OnlineUI{
   ${btn('roomCosmeticsOn','✦ Personalizar meu perfil','secondary')}${btn('copyCodeOn','Copiar código da sala','secondary')}</section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
   const cosmetics=window.ESCosmetics;
-  const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>{
+  const people=`<section class="card es77-players"><h3>Participantes <span class="es77-member-count">${joined.length}/${r.max}</span></h3>${r.players.map((p,i)=>{
    const t=this.titleCatalog?.find(t=>t.code===p.title);
    const rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?' title-'+t.rarity:'';
    const frame=cosmetics?.safeFrame(p.frame)||'classica',banner=cosmetics?.safeBanner(p.banner)||'padrao';
    const pic=avatarSrc(this.cloud,p.avatar);
    const avatar=cosmetics?cosmetics.avatar(frame,pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())):`<div class="avatar">${pic?`<img src="${ESC(pic)}" alt="">`:ESC(p.nick.charAt(0).toUpperCase())}</div>`;
-   return `<div class="cosmetic-player">${cosmetics?cosmetics.banner(banner):''}<div class="cosmetic-player-foreground">${avatar}<div class="cosmetic-player-identity"><strong class="cosmetic-player-name${rarity}">${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small class="cosmetic-player-status ${p.active&&p.online?'online':'offline'}">${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[frame]?.[0]||'Clássica')}</span>${equippedTitle(p.title)}</div></div>
+   return `<div class="cosmetic-player ${r.status==='lobby'?(p.ready?'es77-ready':'es77-waiting'):''}">${cosmetics?cosmetics.banner(banner):''}<div class="cosmetic-player-foreground">${avatar}<div class="cosmetic-player-identity"><strong class="cosmetic-player-name${rarity}">${ESC(p.nick)} ${p.id===r.owner?'♛':''}</strong><small class="cosmetic-player-status ${p.active&&p.online?'online':'offline'}">${!p.active?'Saiu':p.online?'Conectado':'Sem conexão recente'}</small><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[frame]?.[0]||'Clássica')}</span>${equippedTitle(p.title)}</div></div>
     <div class="cosmetic-player-controls">${p.id!==me?`<button class="back" data-social="${ESC(p.id)}">Perfil</button><button class="back" data-report="${ESC(p.id)}">Denunciar</button>`:''}${this.voice?.running&&p.id!==me?`<button class="back" data-mute="${ESC(p.id)}">Silenciar</button>`:''}<span class="pill ${(r.status==='voting'?p.voted:p.ready)?'good':''}">${r.status==='lobby'?(p.ready?'PRONTO':'NÃO PRONTO'):r.status==='voting'?(!p.active?'SAIU':p.voted?'JÁ VOTOU':'FALTA VOTAR'):i+1}</span></div></div>`;
   }).join('')}</section>`;
   let phase='';
   if(r.status==='lobby'){
    const myReady=!!r.players.find(p=>p.id===me)?.ready;
-   phase=`<section class="card"><h2>Aguardando jogadores</h2><p class="subtext">O anfitrião pode alterar as regras. Qualquer alteração zera o estado “Pronto” de todos.</p>
+   phase=`<section class="card es77-lobby"><h2>Aguardando jogadores</h2>${window.ESV77?.readySummary(joined)||''}<p class="subtext">O anfitrião pode alterar as regras. Qualquer alteração zera o estado “Pronto” de todos.</p>
    ${btn('readyOn',myReady?'Cancelar “Pronto”':'ESTOU PRONTO',myReady?'secondary':'ready-action')}
    ${owner?`${btn('editRules','Alterar regras','secondary')}${btn('inviteFriends','Convidar amigos','secondary')}${btn('startOn','INICIAR PARTIDA')}`:''}
    <p class="small muted">${allReady&&validImps?'Todos prontos: partida liberada.':!validImps?'Reduza o número de impostores para esta quantidade de jogadores.':'Mínimo de 3 participantes, todos prontos.'}</p></section>`;
@@ -435,9 +435,9 @@ class OnlineUI{
    <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Você tem 30 segundos para memorizar sua carta. Solte para ocultar.</p>`:'<p class="notice">Tempo de visualização encerrado. A votação vai começar.</p>'}</section>`;
   }else if(r.status==='voting'){
    const myVote=r.me.voted;
-   phase=`<section class="card"><h2>Votação secreta</h2><p class="small muted">${joined.filter(p=>p.voted).length} de ${joined.length} jogadores já votaram.</p><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
+   phase=`<section class="card es77-voting"><div class="es77-vote-eyebrow">◈ DECISÃO FINAL</div><h2>Votação secreta</h2><p class="small muted">${joined.filter(p=>p.voted).length} de ${joined.length} jogadores já votaram.</p><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
     <p class="subtext">Escolha ${r.impostors} suspeito(s), sem repetir nomes. Os votos dos outros permanecem secretos.</p>
-    ${myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check"><input type="checkbox" data-vote="${ESC(p.id)}">${ESC(p.nick)}</label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
+    ${myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check es77-vote-choice"><input type="checkbox" data-vote="${ESC(p.id)}"><span class="es77-vote-avatar" aria-hidden="true">${ESC(p.nick.charAt(0).toUpperCase())}</span><strong>${ESC(p.nick)}</strong><span class="es77-vote-mark" aria-hidden="true">◈</span></label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
     <p id="onlineError" class="error"></p></section>`;
   }else if(r.status==='results'){
    const impostors=r.players.filter(p=>r.me.impostors?.includes(p.id));
@@ -474,9 +474,18 @@ class OnlineUI{
    card.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key))show(e);});card.addEventListener('keyup',hide);
    document.addEventListener('visibilitychange',()=>{if(document.hidden)hide();},{once:true});
   }else if(r.status==='voting'&&!r.me.voted){$('submitVote').onclick=async()=>{
-   const targets=[...this.app.querySelectorAll('[data-vote]:checked')].map(x=>x.dataset.vote);
+   const inputs=[...this.app.querySelectorAll('[data-vote]:checked')];
+   const targets=inputs.map(x=>x.dataset.vote);
    if(targets.length!==r.impostors)return this.error('Escolha exatamente '+r.impostors+' suspeito(s).');
-   await this.action('es_vote',{p_room:r.id,p_targets:targets});this.sound('vote');};
+   if(new Set(targets).size!==targets.length)return this.error('Não repita suspeitos.');
+   if(!confirm('Confirmar seu voto secreto? Depois de registrado, não poderá ser alterado.'))return;
+   const button=$('submitVote');button.disabled=true;button.textContent='Registrando voto...';
+   try{
+    await this.cloud.rpc('es_vote',{p_room:r.id,p_targets:targets});
+    window.ESV77?.sealedVote();this.sound('vote');
+    this.lastFingerprint='';await this.refresh();
+   }catch(e){button.disabled=false;button.textContent='CONFIRMAR VOTO';this.error(e);}
+  };
   }else if(r.status==='results'&&owner){$('newRound').onclick=()=>this.action('es_next',{p_room:r.id});}
  }
  async action(name,p){try{await this.cloud.rpc(name,p);this.lastFingerprint='';await this.refresh();}catch(e){this.error(e);}}
