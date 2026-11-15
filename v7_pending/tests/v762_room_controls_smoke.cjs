@@ -1,0 +1,16 @@
+'use strict';
+const fs=require('node:fs'),assert=require('node:assert/strict');
+const ui=fs.readFileSync('web/online.js','utf8'),index=fs.readFileSync('web/index.html','utf8');
+assert(!ui.includes("btn('voiceOn'"),'Voice activation must not render');
+assert(!ui.includes("btn('shareLinkOn'"),'Redundant link sharing must not render');
+assert(!ui.includes("$('voiceOn').onclick"),'No missing voice DOM listener');
+assert(!ui.includes("$('shareLinkOn').onclick"),'No missing link DOM listener');
+assert(!ui.includes('id="voiceState"'),'No disabled-audio placeholder');
+assert(ui.includes("btn('roomCosmeticsOn'"),'Customise profile retained');
+assert(ui.includes("btn('copyCodeOn'"),'Room code retained');
+assert(ui.includes("btn('inviteFriends'"),'Invite friends retained');
+assert(ui.includes("$('inviteFriends').onclick=()=>this.inviteFriends()"),'Direct friend invite handler retained');
+assert(ui.includes("$('copyCodeOn').onclick=async()=>"),'Copy room code handler retained');
+assert(ui.includes("this.entrancePending=true"),'Cinematic entrances retained');
+assert(index.includes('7.6.2 RC (SALA SIMPLIFICADA)'),'Release label must be updated');
+console.log('PASSOU: sala simplificada; personalização, código, convites e animações intactos.');

@@ -62,6 +62,7 @@ jobs:
           node v7_pending/tests/v75_smoke.cjs
           node v7_pending/tests/v75_ui_integration_smoke.cjs
           node v7_pending/tests/v76_entrance_smoke.cjs
+          node v7_pending/tests/v762_room_controls_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
@@ -114,12 +115,16 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          grep -q 'VERSÃO WEB 7.6.1' /tmp/index
-          grep -q 'ENTRADA LENDÁRIA REFORÇADA' /tmp/index
-          grep -q 'v761-legendary-impact-20261114-r1' /tmp/index
+          grep -q 'VERSÃO WEB 7.6.2' /tmp/index
+          grep -q 'SALA SIMPLIFICADA' /tmp/index
+          grep -q 'v762-lobby-clean-20261114-r1' /tmp/index
           grep -q 'ESEntrance' /tmp/entrance.js
           ! grep -q 'esEntryLegend' /tmp/online.js
           ! grep -q 'esDemoRole' /tmp/online.js
+          ! grep -q 'shareLinkOn' /tmp/online.js
+          ! grep -q 'voiceOn' /tmp/online.js
+          grep -q 'inviteFriends' /tmp/online.js
+          grep -q 'copyCodeOn' /tmp/online.js
           grep -q 'es-entrance-legend-portal' /tmp/entrance.js
           grep -q 'esLegendShockwave' /tmp/style.css
           grep -q 'esEntranceFigure' /tmp/style.css
