@@ -21,5 +21,5 @@ for(const a of m.assets){
  }
 }
 for(const code of m.preserve_banners)assert(!m.assets.some(a=>a.code===code));
-assert.match(fs.readFileSync('web/index.html','utf8'),/v(?:745-cinematic-20261114-r1|750-(?:animations-social-20261114-dev|cinematic-release-20261114-r2)|760-entrances-release-20261114-r1|761-legendary-impact-20261114-r1|762-lobby-clean-20261114-r1|770-consolidated-dev-20261114-r1)/);
+assert.match(fs.readFileSync('web/index.html','utf8'),/v(?:745-cinematic-20261114-r1|750-(?:animations-social-20261114-dev|cinematic-release-20261114-r2)|760-entrances-release-20261114-r1|761-legendary-impact-20261114-r1|762-lobby-clean-20261114-r1|770-consolidated-dev-20261114-r1|770-consolidated-release-20261114-r1)/);
 console.log('PASSOU: catálogo, 13 artes planejadas, versões de cache e 3 banners preservados.'+(process.env.V745_REQUIRE_ASSETS==='1'?' Integridade de todos os WebP confirmada.':' Envio dos WebP ainda pendente.'));
