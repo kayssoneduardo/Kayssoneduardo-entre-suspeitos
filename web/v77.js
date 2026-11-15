@@ -24,14 +24,25 @@ function seasonPanel(data){
  '<p class="small muted">Vitória +25 · derrota −25. A temporada não zera nem altera o ranking histórico.</p>'+
  (rows.length?rows.map(entry).join(''):'<p>Sem partidas válidas nesta temporada.</p>')+'</section>';
 }
-function weeklyPanel(missions){
+function weeklyPanel(missions,challenges=[]){
  const weekly=(missions||[]).filter(m=>String(m.period||'').toLowerCase().includes('seman'));
- if(!weekly.length)return '';
- return '<section class="es77-weekly"><h3>Desafios da semana</h3>'+
- '<p class="small muted">O progresso e as recompensas são verificados no servidor. Reinício conforme os períodos das missões.</p>'+
- weekly.map(m=>'<div class="es77-weekly-row"><b>'+esc(m.title)+'</b><span>'+Number(m.progress||0)+'/'+Number(m.target||0)+'</span></div>').join('')+
- '</section>';
+ const defined=Array.isArray(challenges)?challenges:[];
+ if(!weekly.length&&!defined.length)return '';
+ let html='<section class="es77-weekly"><h3>Desafios da semana</h3>'+
+ '<p class="small muted">Progresso validado pelo servidor. Recompensas apenas uma vez por semana. Não alteram pontos de ranking.</p>';
+ for(const m of defined){
+  const progress=Math.min(Math.max(0,Number(m.progress)||0),Math.max(1,Number(m.target)||1));
+  const target=Math.max(1,Number(m.target)||1),claimed=!!m.claimed;
+  html+='<div class="es77-challenge"><strong>'+esc(m.title)+'</strong><p class="small muted">'+esc(m.description)+'</p>'+
+   '<div class="es77-weekly-row"><span>'+progress+'/'+target+'</span><b>+'+Number(m.reward_xp||0)+' XP</b></div>'+
+   '<progress max="'+target+'" value="'+progress+'"></progress>'+
+   (claimed?'<span class="pill good">Resgatado</span>':progress>=target?
+    '<button class="back" data-week-claim="'+esc(m.code)+'">Resgatar recompensa</button>':'<span class="small muted">Em andamento</span>')+'</div>';
+ }
+ if(weekly.length)html+='<p class="small muted">Missões semanais tradicionais continuam disponíveis abaixo.</p>';
+ return html+'</section>';
 }
+
 function achievement(title){
  if(!title||typeof document==='undefined'||!document.body)return;
  if(window.ESMotion&&!window.ESMotion.enabled())return;
