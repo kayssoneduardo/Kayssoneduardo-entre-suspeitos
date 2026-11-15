@@ -23,6 +23,7 @@ jobs:
           V745_REQUIRE_ASSETS=1 node v7_pending/tests/v745_banners_integrity_smoke.cjs
           node v7_pending/tests/v75_smoke.cjs
           node v7_pending/tests/v75_ui_integration_smoke.cjs
+          node v7_pending/tests/v76_entrance_smoke.cjs
       - name: Verificar arquivos e permissões da V7.4
         run: |
           test -f v7_pending/sql/v74_social_progress.sql

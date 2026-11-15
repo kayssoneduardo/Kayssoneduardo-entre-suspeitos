@@ -374,7 +374,7 @@ class OnlineUI{
   ${this.formRules()}${btn('makeRoom','CRIAR SALA')}<p id="onlineError" class="error"></p></section>`;
   $('makeRoom').onclick=async()=>{try{const p=this.getRules(),name=$('roomNameOn').value.replace(/\s+/g,' ').trim();if(name&&([...name].length<3||[...name].length>50))throw new Error('Use de 3 a 50 caracteres no nome da sala.');this.enterRoom(await this.cloud.rpc('es_create_named',{p_public:$('publicOn').value==='true',p_name:name,...p}));}catch(e){this.error(e);}};
  }
- enterRoom(id){this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.activeEvent=null;this.cloud.rpc('es_v74_events_list').then(events=>{if(this.roomId===id){this.activeEvent=events.find(e=>e.active)||null;if(this.room)this.renderRoom(this.room);}}).catch(()=>{});this.header('Sala online');
+ enterRoom(id){this.entrancePending=true;this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.activeEvent=null;this.cloud.rpc('es_v74_events_list').then(events=>{if(this.roomId===id){this.activeEvent=events.find(e=>e.active)||null;if(this.room)this.renderRoom(this.room);}}).catch(()=>{});this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
@@ -453,6 +453,11 @@ class OnlineUI{
   }
   this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${Math.min(Math.max(0,event.progress),event.target)}/${event.target} · ${event.progress>=event.target?'Concluído · Moldura Névoa':'Moldura Névoa'}</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
   this.bindPublicProfiles();
+   if(this.entrancePending && r.status==='lobby'){
+    this.entrancePending=false;
+    const mine=r.players.find(p=>p.id===me);
+    if(mine && window.ESEntrance && window.ESMotion?.enabled())window.ESEntrance.play({frame:mine.frame,nickname:mine.nick});
+   }
    this.app.querySelectorAll('[data-report]').forEach(b=>b.onclick=async()=>{const reason=prompt('Descreva o motivo da denúncia (mínimo de 5 caracteres):');if(!reason)return;try{await this.cloud.rpc('es_feedback_send',{p_type:'denuncia',p_body:reason,p_target:b.dataset.report});this.note('Denúncia enviada para análise do administrador.');}catch(e){this.error(e);}});
   this.app.querySelectorAll('[data-mute]').forEach(b=>b.onclick=()=>{const a=this.voice?.audio.get(b.dataset.mute);if(a){a.muted=!a.muted;b.textContent=a.muted?'Ouvir':'Silenciar';}});
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
@@ -575,9 +580,9 @@ class OnlineUI{
     return `<article class="cosmetic-tile ${x.equipped?'is-equipped':''} ${x.unlocked?'':'is-locked'}">${visual}<h4>${ESC(x.name)}</h4><div class="cosmetic-tier">${ESC(x.rarity)}</div><p>${x.equipped?'✓ Equipado':x.unlocked?'Desbloqueado':ESC(requirement)}</p><button class="back" data-preview="${i}">Visualizar</button><button class="back" data-cosmetic="${i}" ${!x.unlocked||x.equipped?'disabled':''}>${x.equipped?'Equipado':x.unlocked?'Equipar':'Bloqueado'}</button></article>`;
    }).join('');
    this.app.innerHTML=`<section class="cosmetic-profile-hero">${cosmetics.banner(currentBanner)}<div class="cosmetic-profile-main">${cosmetics.avatar(currentFrame,photo)}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC((selectedPreview?.kind==='frame'?selectedPreview.name:equippedFrame?.name)||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC((selectedPreview?.kind==='banner'?selectedPreview.name:equippedBanner?.name)||'Sombras Originais')}</span></section>
-    ${this.motionSettings()}${this.motionDemo()}${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
+    ${this.motionSettings()}${this.motionDemo()}${this.entranceDemo()}${selectedPreview?`<p class="notice">Pré-visualização: ${ESC(selectedPreview.name)} · ${selectedPreview.unlocked?'Disponível':'Bloqueado'}</p>`:''}<div class="cosmetic-tabs">${btn('cosmeticsBanners','Banners',tab==='banner'?'':'secondary')}${btn('cosmeticsFrames','Molduras',tab==='frame'?'':'secondary')}</div>
     <section class="card"><h2>${tab==='banner'?'Banners · Fundo do perfil':'Molduras · Borda do avatar'}</h2><p class="subtext">Itens puramente visuais. Conquiste jogando partidas públicas ou participando de eventos. O título escolhido determina a cor do seu nome.</p><div class="cosmetic-gallery ${tab==='banner'?'banner-gallery':'frame-gallery'}">${tiles}</div><p id="onlineError" class="error"></p></section>${this.roomId?btn('cosmeticsBackRoom','← Voltar à sala','secondary'):''}${btn('cosmeticsBack','Voltar ao meu perfil','secondary')}`;
-   this.bindMotionSettings();this.bindMotionDemo();
+   this.bindMotionSettings();this.bindMotionDemo();this.bindEntranceDemo();
     $('cosmeticsBanners').onclick=()=>{this.cosmeticTab='banner';this.cosmeticPreview=null;this.cosmeticsPage();};
    $('cosmeticsFrames').onclick=()=>{this.cosmeticTab='frame';this.cosmeticPreview=null;this.cosmeticsPage();};
    if($('cosmeticsBackRoom'))$('cosmeticsBackRoom').onclick=()=>this.enterRoom(this.roomId);
@@ -587,6 +592,18 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
 
+ entranceDemo(){
+  return '<section class="es-v75-demo"><h3>Novas entradas cinematográficas · prévia V7.6</h3>'
+   +'<p class="small muted">Cada entrada usa efeitos diferentes, sem revelar palavra ou papel. Teste os três níveis.</p>'
+   +'<div class="es-v75-demo-actions"><button class="back" id="esEntryCommon">Comum</button>'
+   +'<button class="back" id="esEntryEpic">Épica</button><button class="back" id="esEntryLegend">Lendária</button></div></section>';
+ }
+ bindEntranceDemo(){
+  for(const [id,rarity] of [['esEntryCommon','comum'],['esEntryEpic','epico'],['esEntryLegend','lenda']]){
+   const button=$(id);if(!button)continue;
+   button.onclick=()=>{if(!window.ESEntrance?.play({rarity,nickname:'Zero'}))this.note('Ative as animações para assistir à entrada.');};
+  }
+ }
  motionDemo(){
   return '<section class="es-v75-demo"><h3>Prévia cinematográfica</h3><p class="small muted">Veja os efeitos agora, sem entrar em partida. Somente animação visual.</p>'
    +'<div class="es-v75-demo-actions"><button class="back" id="esDemoRole">Revelação</button><button class="back" id="esDemoWin">Vitória</button><button class="back" id="esDemoLose">Derrota</button></div>'
