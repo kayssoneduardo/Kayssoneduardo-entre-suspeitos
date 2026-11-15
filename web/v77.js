@@ -11,7 +11,7 @@ function readySummary(players){
  '<progress aria-label="Jogadores prontos" value="'+ready+'" max="'+Math.max(1,active.length)+'"></progress>'+
  '<small>'+pct+'% preparados para começar</small></div>';
 }
-function seasonPanel(data){
+function seasonPanel(data,history=[]){
  if(!data||!Array.isArray(data.players))return '<section class="card"><h3>Temporada</h3><p class="small muted">Classificação sazonal ainda indisponível. O ranking histórico continua funcionando.</p></section>';
  const start=new Date(data.starts_at),end=new Date(data.ends_at);
  const date=v=>Number.isFinite(v.getTime())?v.toLocaleDateString('pt-BR',{timeZone:'UTC'}):'—';
@@ -23,7 +23,16 @@ function seasonPanel(data){
  return '<section class="card es77-season-card"><span class="eyebrow">TEMPORADA ATUAL · UTC</span><h2>Classificação sazonal</h2>'+
  '<p class="small muted">'+date(start)+' a '+date(end)+' (fim exclusivo) · apenas partidas públicas concluídas com voto.</p>'+
  '<p class="small muted">Vitória +25 · derrota −25. A temporada não zera nem altera o ranking histórico.</p>'+
- (rows.length?rows.map(entry).join(''):'<p>Sem partidas válidas nesta temporada.</p>')+'</section>';
+ (rows.length?rows.map(entry).join(''):'<p>Sem partidas válidas nesta temporada.</p>')+
+ (Array.isArray(history)&&history.length?'<h3 class="es77-previous-title">Temporadas anteriores</h3>'+
+ history.slice(0,3).map(season=>{
+  const from=date(new Date(season.starts_at)),to=date(new Date(season.ends_at));
+  const champions=Array.isArray(season.champions)?season.champions:[];
+  return '<div class="es77-season-archive"><b>'+from+' a '+to+'</b>'+
+   (champions.length?'<small>🏆 '+esc(champions[0].nickname)+' · '+Number(champions[0].points||0)+' pts</small>':'<small>Sem partidas registradas</small>')+
+   (season.my_position?'<small>Sua posição: '+Number(season.my_position)+'º · '+Number(season.my_points||0)+' pts</small>':'')+
+   '</div>';
+ }).join(''):'')+'</section>';
 }
 function weeklyPanel(missions,challenges=[]){
  const weekly=(missions||[]).filter(m=>String(m.period||'').toLowerCase().includes('seman'));
