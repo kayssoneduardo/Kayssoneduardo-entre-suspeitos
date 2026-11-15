@@ -2,7 +2,7 @@
    No role, vote, XP, title ownership, or ranking changes in client code. */
 (function(){
 'use strict';
-const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;':'&quot;',"'":'&#39;'}[c]));
+const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function readySummary(players){
  const active=(players||[]).filter(p=>p.active);
  const ready=active.filter(p=>p.ready).length;
