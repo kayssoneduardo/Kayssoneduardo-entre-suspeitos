@@ -114,7 +114,7 @@ jobs:
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
           grep -q 'VERSÃO WEB 7.5.0' /tmp/index
-          grep -q 'BANNERS CINEMATOGRÁFICOS' /tmp/index
+          grep -q 'ANIMAÇÕES CINEMATOGRÁFICAS' /tmp/index
           grep -q 'v750-cinematic-release-20261114-r2' /tmp/index
           grep -q 'es-v75-demo' /tmp/online.js
           grep -q 'esV75AuraSpin' /tmp/style.css
