@@ -167,7 +167,7 @@ class Voice{
 }
 class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
-  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.nextRefreshAt=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';}
+  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.nextRefreshAt=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';this.roomEpoch=0;this.onForeground=null;}
  open({app,topbar,back,sound,bank,destination}){const invite=new URLSearchParams(window.location.search).get('room');if(invite&&/^[a-z0-9]{6}$/i.test(invite))this.pendingJoinCode=invite.toUpperCase();this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
   const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
@@ -177,7 +177,7 @@ class OnlineUI{
  homeOrMenu(){if(this.roomId){if(confirm('Sair da sala? Após o início, não votar será considerado derrota.'))this.leave();}
   else{this.destroy();this.back();}}
  destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
- stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);this.refreshTimer=null;this.tickTimer=null;}
+ stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);this.refreshTimer=null;this.tickTimer=null;this.roomEpoch++;this.refreshing=false;if(this.onForeground){document.removeEventListener?.('visibilitychange',this.onForeground);window.removeEventListener?.('online',this.onForeground);this.onForeground=null;}}
  error(e){const msg=prettyError(e);let box=$('onlineError');if(box){box.textContent=msg;box.hidden=false;}else alert(msg);}
  connectionFailed(e){this.connectionFailures++;this.nextRefreshAt=Date.now()+Math.min(30000,1500*2**Math.min(this.connectionFailures-1,5));const box=$('onlineError');if(box){box.textContent='Conexão interrompida. Tentando recuperar a sala automaticamente. '+prettyError(e);box.hidden=false;box.dataset.connectionError='1';}}
  connectionRestored(){if(!this.connectionFailures)return;this.connectionFailures=0;this.nextRefreshAt=0;const box=$('onlineError');if(box?.dataset.connectionError==='1'){box.textContent='';box.hidden=true;delete box.dataset.connectionError;}}
@@ -377,6 +377,8 @@ class OnlineUI{
  }
  enterRoom(id){this.entrancePending=true;this.stopLoop();this.connectionFailures=0;this.nextRefreshAt=0;save('lastRoom',id);this.roomId=id;this.room=null;this.titleCatalog=null;this.lastFingerprint='';this.lastPhase='';this.currentPage='room';this.activeEvent=null;this.cloud.rpc('es_v74_events_list').then(events=>{if(this.roomId===id){this.activeEvent=events.find(e=>e.active)||null;if(this.room)this.renderRoom(this.room);}}).catch(()=>{});this.header('Sala online');
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
+  this.onForeground=()=>{if(!document.hidden&&this.roomId===id&&this.currentPage==='room'){this.nextRefreshAt=0;this.refresh().catch(e=>this.connectionFailed(e));}};
+  document.addEventListener?.('visibilitychange',this.onForeground);window.addEventListener?.('online',this.onForeground);
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
    if(!this.roomId||document.hidden||Date.now()<this.nextRefreshAt)return;
@@ -388,19 +390,36 @@ class OnlineUI{
    if(remaining===0&&this.room.status==='discussion'&&this.lastPhase==='discussion'&&!this.timerPlayed){this.sound('timer');this.timerPlayed=true;}
   }},300);
  }
- async refresh(){if(!this.roomId||this.refreshing)return;this.refreshing=true;
-  try{const [r,catalog]=await Promise.all([this.cloud.rpc('es_room_view',{p_room:this.roomId}),this.titleCatalog?Promise.resolve(this.titleCatalog):this.cloud.rpc('es_title_catalog').catch(()=>null)]);if(!this.roomId)return;
+ async refresh(){
+  const roomId=this.roomId,epoch=this.roomEpoch;
+  if(!roomId||this.refreshing||this.currentPage!=='room')return;
+  this.refreshing=true;
+  const active=()=>this.roomId===roomId&&this.roomEpoch===epoch&&this.currentPage==='room';
+  try{
+   const [r,catalog]=await Promise.all([this.cloud.rpc('es_room_view',{p_room:roomId}),
+    this.titleCatalog?Promise.resolve(this.titleCatalog):this.cloud.rpc('es_title_catalog').catch(()=>null)]);
+   if(!active())return;
    const titlesChanged=catalog!==this.titleCatalog;this.titleCatalog=catalog;
-   this.connectionRestored();this.room=r;if(r.status==='discussion'&&seconds(r.phaseEnds)===0){await this.cloud.rpc('es_begin_vote',{p_room:this.roomId}).catch(()=>{});}
-   if(r.status==='voting'){await this.cloud.rpc('es_finalize',{p_room:this.roomId}).catch(()=>{});}
-   const sig=JSON.stringify(r);if(sig!==this.lastFingerprint||titlesChanged){
-    // Evita apagar uma carta revelada ou um formulário enquanto o usuário interage.
-    if((this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))||this.app.querySelector('.online-editing'))return;
-    this.lastFingerprint=sig;this.renderRoom(r);}
+   this.connectionRestored();this.room=r;
+   if(r.status==='discussion'&&seconds(r.phaseEnds)===0){
+    await this.cloud.rpc('es_begin_vote',{p_room:roomId}).catch(()=>{});if(!active())return;
+   }
+   if(r.status==='voting'){
+    await this.cloud.rpc('es_finalize',{p_room:roomId}).catch(()=>{});if(!active())return;
+   }
+   const sig=JSON.stringify(r);
+   if(sig!==this.lastFingerprint||titlesChanged){
+    // Do not destroy a revealed card, selected secret ballot or active rules editor.
+    if((this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))
+      ||this.app.querySelector('.online-editing'))return;
+    this.lastFingerprint=sig;this.renderRoom(r);
+   }
    if(this.voice)this.voice.update(r.players).catch(e=>{this.voice.error=prettyError(e);});
-  }catch(e){this.connectionFailed(e);}finally{this.refreshing=false;}
+  }catch(e){if(active())this.connectionFailed(e);}
+  finally{if(this.roomEpoch===epoch)this.refreshing=false;}
  }
- renderRoom(r){this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
+
+ renderRoom(r){const selectedVotes=r.status==='voting'&&!r.me?.voted?[...this.app.querySelectorAll('[data-vote]:checked')].map(x=>x.dataset.vote):[];this.header('Sala '+r.code);const me=this.cloud.userId,owner=r.owner===me,joined=r.players.filter(x=>x.active);
   const allReady=joined.length>=3&&joined.every(p=>p.ready),validImps=r.impostors>=1&&r.impostors<=Math.floor((joined.length-1)/2);
   if(r.status!==this.lastPhase){window.ESMotion?.enterPhase(r.status);this.timerPlayed=false;if(this.lastPhase&&r.status==='voting')this.sound('timer');if(this.lastPhase&&r.status==='results')this.sound('finish');this.lastPhase=r.status;}
   const head=`<section class="card"><div class="statusbar"><div><span class="eyebrow">${r.public?'SALA PÚBLICA':'SALA PRIVADA'}</span><div class="room-code">${ESC(r.code)}</div></div><span class="pill">${joined.length}/${r.max} jogadores</span></div>
@@ -452,6 +471,7 @@ class OnlineUI{
     ${owner?btn('newRound','NOVA RODADA'):''}</section>`;
   }
   this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${Math.min(Math.max(0,event.progress),event.target)}/${event.target} · ${event.progress>=event.target?'Concluído · Moldura Névoa':'Moldura Névoa'}</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
+  if(selectedVotes.length)this.app.querySelectorAll('[data-vote]').forEach(el=>{el.checked=selectedVotes.includes(el.dataset.vote);});
   this.bindPublicProfiles();
    if(this.entrancePending && r.status==='lobby'){
     this.entrancePending=false;
