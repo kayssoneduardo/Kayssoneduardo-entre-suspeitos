@@ -46,7 +46,7 @@ function weeklyPanel(missions,challenges=[]){
 function achievement(title){
  if(!title||typeof document==='undefined'||!document.body)return;
  if(window.ESMotion&&!window.ESMotion.enabled())return;
- const modal=document.createElement('aside');modal.className='es77-achievement';
+ const modal=document.createElement('aside');const rarity=['comum','incomum','raro','epico','lenda','mistico'].includes(title.rarity)?title.rarity:'comum';modal.className='es77-achievement es77-achievement-'+rarity;
  const tag=document.createElement('span');tag.textContent='✦ NOVA CONQUISTA ✦';
  const name=document.createElement('strong');name.textContent=String(title.name||'Título desbloqueado');
  const detail=document.createElement('small');detail.textContent='Raridade: '+String(title.rarity||'comum');
