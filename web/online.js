@@ -509,7 +509,7 @@ class OnlineUI{
      const canClaim=e.code==='noite_dos_suspeitos_2026'&&progress>=e.target&&!claimed;
      const scene=e.code==='nevoa_2026'?'ecos_da_nevoa':e.code==='noite_dos_suspeitos_2026'?'reino_dos_suspeitos':'padrao';
      return `<section class="es-v75-event-card"><div class="cosmetic-room-banner" style="height:114px">${window.ESCosmetics?.banner(scene)||''}<div class="cosmetic-room-banner-content"><div class="es-v75-event-tag">EVENTO ESPECIAL</div><h3>${ESC(e.name)}</h3></div></div><p class="subtext">${ESC(e.description)}</p><p>${e.active?'Em andamento':new Date(e.starts_at)>new Date()?'Em breve':'Encerrado'} · ${progress}/${e.target}</p><progress value="${progress}" max="${e.target}"></progress><p class="small muted">Recompensa: ${ESC(reward)} · Até ${new Date(e.ends_at).toLocaleDateString('pt-BR')}</p>${canClaim?'<button class="back" data-event-claim="'+ESC(e.code)+'">Resgatar 60 XP</button>':claimed?'<span class="pill good">Recompensa resgatada</span>':''}</section>`;};
-   this.app.innerHTML=`<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">XP de missões soma ao nível, sem alterar o ranking. Molduras de eventos são desbloqueadas por participação.</p><p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p>`;
+   this.app.innerHTML=`${window.ESV77?.weeklyPanel(missions)||''}<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">XP de missões soma ao nível, sem alterar o ranking. Molduras de eventos são desbloqueadas por participação.</p><p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p>`;
    this.app.querySelectorAll('[data-event-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const result=await this.cloud.rpc('es_v75_event_claim',{p_code:b.dataset.eventClaim});this.note('Evento concluído: +'+result.xp_awarded+' XP!');await this.progressHub();}catch(e){this.error(e);b.disabled=false;}});
     this.app.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{const m=missions[Number(b.dataset.claim)];b.disabled=true;try{const result=await this.cloud.rpc('es_v74_mission_claim',{p_code:m.code});this.note('Recompensa recebida: '+result.xp_awarded+' XP.');await this.progressHub();}catch(e){this.error(e);b.disabled=false;}});
   }catch(e){this.error(e);}
@@ -525,7 +525,7 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
  async profile(){this.currentPage='profile';this.header('Meu perfil');let p,titles=[],frames=[];try{[p,titles,frames]=await Promise.all([this.cloud.rpc('es_me'),this.cloud.rpc('es_my_titles'),this.cloud.rpc('es_v74_frames')]);}catch(e){return this.error(e);}
-  const progress=xpProgress(p.xp);const cosmetics=window.ESCosmetics;const title=titles.find(t=>t.equipped);const rarity=title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?' title-'+title.rarity:'';const avatarUrl=avatarSrc(this.cloud,p.avatar_url);
+  const newlyUnlocked=window.ESV77?.rememberAchievements(this.cloud.userId,titles);const progress=xpProgress(p.xp);const cosmetics=window.ESCosmetics;const title=titles.find(t=>t.equipped);const rarity=title&&['comum','incomum','raro','lenda','mistico'].includes(title.rarity)?' title-'+title.rarity:'';const avatarUrl=avatarSrc(this.cloud,p.avatar_url);
   const avatar=cosmetics?cosmetics.avatar(p.equipped_frame||'classica',avatarUrl?`<img src="${ESC(avatarUrl)}" alt="Minha foto">`:ESC((p.nickname||'?').charAt(0).toUpperCase())):`<div class="avatar profile-avatar">${ESC((p.nickname||'?').charAt(0).toUpperCase())}</div>`;
   this.app.innerHTML=`<section class="card"><h2>Meu perfil</h2>
    <div class="cosmetic-profile-hero">${cosmetics?cosmetics.banner(p.equipped_banner||'padrao'):''}<div class="cosmetic-profile-main">${avatar}<div><strong class="cosmetic-player-name${rarity}">${ESC(p.nickname)}</strong><span class="cosmetic-nameplate">✦ Moldura: ${ESC(cosmetics?.frames[cosmetics.safeFrame(p.equipped_frame)]?.[0]||'Clássica')}</span>${title?`<div class="equipped-title title-${ESC(title.rarity)}">${ESC(title.name)}</div>`:''}</div></div><span class="cosmetic-profile-banner-name">Banner: ${ESC(cosmetics?.banners[cosmetics.safeBanner(p.equipped_banner)]?.[0]||'Sombras Originais')}</span></div>${btn('openCosmetics','Personalizar banners e molduras','secondary')}
@@ -564,6 +564,7 @@ class OnlineUI{
     await this.cloud.uploadAvatar(blob);this.profile();
   }catch(e){this.error(e);}};
   $('saveNick').onclick=async()=>{try{await this.cloud.rpc('es_set_nickname',{p_nick:$('nicknameOn').value});this.profile();}catch(e){this.error(e);}};
+  if(newlyUnlocked)window.ESV77?.achievement(newlyUnlocked);
  }
 
  async cosmeticsPage(){
@@ -650,11 +651,11 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
 
- async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog;try{[rank,catalog]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').then(rows=>Array.isArray(rows)&&rows.length?rows:this.cloud.rpc('es_leaderboard')).catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog')]);}catch(e){return this.error(e);}
+ async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog,season=null;try{[rank,catalog,season]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').then(rows=>Array.isArray(rows)&&rows.length?rows:this.cloud.rpc('es_leaderboard')).catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog'),this.cloud.rpc('es_v77_season_ranking').catch(()=>null)]);}catch(e){return this.error(e);}
   const ranked=rankedPlayers(rank);
   const medals={1:['🥇','Ouro'],2:['🥈','Prata'],3:['🥉','Bronze']};
   const podium=ranked.filter(p=>p.position<=3);
-  this.app.innerHTML=`<section class="card"><h2>Ranking público</h2>
+  this.app.innerHTML=`${window.ESV77?.seasonPanel(season)||''}<section class="card"><h2>Ranking histórico · todos os tempos</h2>
    <p class="subtext">Vitória: <b>+25 pontos</b> · Derrota: <b>−25 pontos</b>. Partidas privadas não alteram o ranking. O saldo pode ficar negativo.</p>
    <p class="small muted">Ordem por pontos de ranking; desempate por vitórias públicas. Empate nos dois critérios mantém a mesma posição.</p>
    ${podium.length?`<div class="ranking-podium" aria-label="Pódio atual">${podium.map(p=>`<article class="podium-card podium-${p.position}"><span class="podium-medal" aria-hidden="true">${medals[p.position][0]}</span><small>${p.position}º LUGAR · ${medals[p.position][1]}</small><strong>${ESC(p.nickname)}</strong><b>${p.ranking_points} pontos</b></article>`).join('')}</div><p class="small muted">Medalhas de destaque enquanto o jogador ocupar o pódio. Não concedem XP nem títulos permanentes.</p>`:''}
