@@ -171,7 +171,7 @@ function renderReveal(){
  const imp=game.imps.includes(i);
  setTop('Papéis secretos',guardBack);
  app.innerHTML=`<section class="rolehead center"><span class="pill red">JOGADOR ${i+1} DE ${game.names.length}</span><h2>${esc(game.names[i])}</h2><p class="subtext">Segure a carta com o dedo para ver seu papel. Solte para esconder.</p></section>
- <div id="card" class="card-reveal" role="button" tabindex="0" aria-label="Mantenha pressionado para ver seu papel secreto">
+ <div id="card" class="card-reveal es-v75-reveal-spot" role="button" tabindex="0" aria-label="Mantenha pressionado para ver seu papel secreto">
  <div id="cardContent"><div class="icon">◈</div><div class="secret-label">CARTA SELADA</div><div class="hold-hint">MANTENHA PRESSIONADO PARA REVELAR</div></div></div>
  <div class="notice center">Ao soltar o dedo, a carta se fecha sozinha. Confira que a informação está oculta antes de passar o celular.</div>
  ${button('next',i===game.names.length-1?'Iniciar discussão →':'Próximo jogador →','secondary')}`;
