@@ -32,12 +32,12 @@ ui.cloud={userId:'user',rpc:async(name,params)=>{calls.push([name,params]);if(na
  assert.match(app.html,/Banner: Sombras Originais/);
  ui.cloud.userId='host';ui.sound=()=>{};
  const room={id:'room123',code:'ABC123',owner:'host',status:'results',max:5,impostors:1,categories:['Animais'],difficulty:'Fácil',clue:'none',know:false,public:true,name:'Teste',players:[{id:'host',nick:'Host',active:true,ready:true},{id:'guest',nick:'Guest',active:true,ready:true}],me:{impostors:['guest'],word:'Gato',category:'Animais'},results:[{user:'host',impostor:false,win:true,votes:0,xp:75},{user:'guest',impostor:true,win:false,votes:1,xp:20}]};
- ui.renderRoom(room);assert.match(app.html,/VOCÊ VENCEU/);assert.match(app.html,/SEGREDOS REVELADOS/);assert.match(app.html,/Compartilhar convite por link/);assert.match(app.html,/\+75 XP de partida/);
+ ui.renderRoom(room);assert.match(app.html,/VOCÊ VENCEU/);assert.match(app.html,/SEGREDOS REVELADOS/);assert.doesNotMatch(app.html,/Compartilhar convite por link|Ativar voz da sala|Áudio desligado/);assert.match(app.html,/Copiar código da sala/);assert.match(app.html,/Personalizar meu perfil/);assert.match(app.html,/\+75 XP de partida/);
 
- assert.match(source,/navigator\.share/);
+ assert.doesNotMatch(source,/shareLinkOn|voiceOn/);assert.match(source,/Convidar amigos/);
  assert.match(source,/connectionFailed\(e\)/);
  assert.match(source,/this\.nextRefreshAt/);
  assert.match(source,/v74-reveal/);
- assert.match(source,/searchParams\.set\('room'/,'Room deep-link check');
+ assert.match(source,/searchParams\.get\('room'/,'Room deep-link compatibility check');
  console.log('PASSOU: V7.4 progress dashboard, event, statistics zero-case and static navigation.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
