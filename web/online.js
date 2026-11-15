@@ -406,8 +406,7 @@ class OnlineUI{
   <h2 class="room-name">${ESC(r.name||'Sala online')}</h2>${r.creatorName?`<p class="small muted">Criada por: ${ESC(r.creatorName)}</p>`:''}
   <div class="round-overview">${pill(r.difficulty)}${pill(r.impostors+' impostor(es)')}${pill(r.categories.length+' categorias')}</div>
   <p class="subtext">${r.clue==='both'?'Impostor: categoria e dica':r.clue==='category'?'Impostor: somente categoria':r.clue==='hint'?'Impostor: somente dica':'Impostor: sem dicas'} · ${r.know?'Impostores se conhecem':'Impostores não se conhecem'}</p>
-  ${btn('roomCosmeticsOn','✦ Personalizar meu perfil','secondary')}${btn('copyCodeOn','Copiar código da sala','secondary')}${btn('shareLinkOn','Compartilhar convite por link','secondary')}${btn('voiceOn',this.voice?.running?'Desativar microfone':'Ativar voz da sala','secondary')}
-  <p id="voiceState" class="small muted">${this.voice?.running?'Microfone conectado (WebRTC)':'Áudio desligado. Toque para entrar na conversa.'}${this.voice?.error?' · '+ESC(this.voice.error):''}</p></section>`;
+  ${btn('roomCosmeticsOn','✦ Personalizar meu perfil','secondary')}${btn('copyCodeOn','Copiar código da sala','secondary')}</section>`;
   const equippedTitle=code=>{const t=this.titleCatalog?.find(t=>t.code===code);if(!t)return '';const rarity=['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';return `<div class="equipped-title title-${rarity}">${ESC(t.name)}</div>`;};
   const cosmetics=window.ESCosmetics;
   const people=`<section class="card"><h3>Participantes</h3>${r.players.map((p,i)=>{
@@ -463,8 +462,7 @@ class OnlineUI{
   $('leaveOn').onclick=()=>{if(confirm('Quer sair da sala? Se não votar durante a partida, será derrota individual.'))this.leave();};
   $('roomCosmeticsOn').onclick=()=>this.cosmeticsPage();
    $('copyCodeOn').onclick=async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('Cópia automática indisponível.');await navigator.clipboard.writeText(r.code);this.note('Código da sala copiado: '+r.code);}catch(e){this.note('Copie este código e compartilhe com seu amigo: '+r.code);}};
-   $('shareLinkOn').onclick=async()=>{const u=new URL(window.location.origin+window.location.pathname);u.searchParams.set('room',r.code);const link=u.toString();try{if(navigator.share)await navigator.share({title:'Entre Suspeitos',text:'Entre na minha sala',url:link});else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(link);this.note('Link de convite copiado!');}else this.note('Convide pelo link: '+link);}catch(e){if(e?.name!=='AbortError')this.note('Convide pelo link: '+link);}};
-   $('voiceOn').onclick=()=>this.toggleVoice();
+
   if(r.status==='lobby'){
    $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
    if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(allReady&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
