@@ -114,11 +114,14 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          grep -q 'VERSÃO WEB 7.6.0' /tmp/index
-          grep -q 'ENTRADAS CINEMATOGRÁFICAS' /tmp/index
-          grep -q 'v760-entrances-release-20261114-r1' /tmp/index
+          grep -q 'VERSÃO WEB 7.6.1' /tmp/index
+          grep -q 'ENTRADA LENDÁRIA REFORÇADA' /tmp/index
+          grep -q 'v761-legendary-impact-20261114-r1' /tmp/index
           grep -q 'ESEntrance' /tmp/entrance.js
-          grep -q 'esEntryLegend' /tmp/online.js
+          ! grep -q 'esEntryLegend' /tmp/online.js
+          ! grep -q 'esDemoRole' /tmp/online.js
+          grep -q 'es-entrance-legend-portal' /tmp/entrance.js
+          grep -q 'esLegendShockwave' /tmp/style.css
           grep -q 'esEntranceFigure' /tmp/style.css
           grep -q 'es-v75-demo' /tmp/online.js
           grep -q 'esV75AuraSpin' /tmp/style.css

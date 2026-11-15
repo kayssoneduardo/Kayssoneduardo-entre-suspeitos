@@ -4,7 +4,7 @@
 const STYLES={
  comum:{label:'ENTRADA DISCRETA',title:'Uma nova presença',duration:1400,style:'common'},
  epico:{label:'ENTRADA ÉPICA',title:'Das sombras, uma presença',duration:2200,style:'epic'},
- lenda:{label:'ENTRADA LENDÁRIA',title:'O mistério tem um nome',duration:2800,style:'legend'}
+ lenda:{label:'ENTRADA LENDÁRIA',title:'O mistério tem um nome',duration:3400,style:'legend'}
 };
 let live=null,timer=null;
 function clean(){if(timer)clearTimeout(timer);timer=null;if(live){live.remove();live=null;}}
@@ -38,7 +38,15 @@ function play(opts={}){
  const sub=document.createElement('span');sub.textContent=cfg.title;
  words.append(eyebrow,title,sub);
  const skip=document.createElement('button');skip.className='es-entrance-skip';skip.type='button';skip.textContent='Pular ✕';skip.onclick=clean;
- root.append(shade,shards,sigil,figure,words,skip);
+ if(rarity==='lenda'){
+  const portal=document.createElement('div');portal.className='es-entrance-legend-portal';
+  const wings=document.createElement('div');wings.className='es-entrance-legend-wings';
+  const flash=document.createElement('div');flash.className='es-entrance-legend-flash';
+  const shockwave=document.createElement('div');shockwave.className='es-entrance-legend-shockwave';
+  const crown=document.createElement('div');crown.className='es-entrance-legend-crown';crown.textContent='♛';
+  // Decorative layers only. Never includes the hidden role or word.
+  root.append(shade,portal,wings,flash,shards,shockwave,sigil,figure,crown,words,skip);
+ }else root.append(shade,shards,sigil,figure,words,skip);
  root.addEventListener('click',e=>{if(e.target===root)clean();});
  document.body.appendChild(root);
  timer=setTimeout(clean,duration+250);

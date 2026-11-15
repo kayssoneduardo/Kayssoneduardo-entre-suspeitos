@@ -3,7 +3,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const js=fs.readFileSync('web/entrance.js','utf8'),css=fs.readFileSync('web/style.css','utf8'),ui=fs.readFileSync('web/online.js','utf8'),html=fs.readFileSync('web/index.html','utf8');
 assert(html.indexOf('motion.js')<html.indexOf('entrance.js')&&html.indexOf('entrance.js')<html.indexOf('online.js'));
 assert(ui.includes('this.entrancePending=true')&&ui.includes("r.status==='lobby'"));
-assert(ui.includes('bindEntranceDemo()')&&ui.includes('esEntryLegend'));
+assert(!ui.includes('bindEntranceDemo()')&&!ui.includes('esEntryLegend')&&!ui.includes('motionDemo()')&&!ui.includes('esDemoRole'),'No preview controls should appear in production UI');
+assert(js.includes('es-entrance-legend-portal')&&js.includes('es-entrance-legend-shockwave')&&js.includes('es-entrance-legend-crown'),'Legendary entrance must have distinct cinematic layers');
+assert(css.includes('esLegendPortal')&&css.includes('esLegendWings')&&css.includes('esLegendShockwave')&&css.includes('esLegendCrown'),'Legendary cinematic animations must exist');
 assert(css.includes('esEntranceFigure')&&css.includes('esEntranceSigil')&&css.includes('esEntranceScatter'));
 assert(css.includes('prefers-reduced-motion:reduce'));
 assert(!js.includes('es_vote')&&!js.includes('es_start')&&!js.includes('es_me'));
