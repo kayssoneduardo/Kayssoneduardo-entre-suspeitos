@@ -34,11 +34,11 @@ ui.cloud={userId:'u',rpc:async(name,params)=>{
 (async()=>{
  const pending=ui.refresh();assert.equal(ui.refreshing,true);
  ui.stopLoop();ui.roomId='new';ui.currentPage='room';
- await ui.refresh();assert.match(app.html,/Sala new/);
+ await ui.refresh();assert.match(app.html,/class="room-code">new</);
  assert.equal(ui.room.code,'new');assert.equal(ui.refreshing,false);
  oldResolve(makeRoom('old'));await pending;
  assert.equal(ui.room.code,'new','Stale server response must never replace current room');
- assert.match(app.html,/Sala new/);
+ assert.match(app.html,/class="room-code">new</);
  const voteRoom={...makeRoom('new'),status:'voting',me:{voted:false}};
  const choice={dataset:{vote:'v'},checked:false};
  app.checked=[{dataset:{vote:'v'}}];app.choices=[choice];
