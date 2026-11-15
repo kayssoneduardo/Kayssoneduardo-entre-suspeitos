@@ -208,12 +208,13 @@ class OnlineUI{
   this.currentPage='home';this.header('Jogar online');
   this.app.innerHTML=`<section class="card center online-hub"><div class="hub-emblem" aria-hidden="true">?</div><div class="eyebrow">ENTRE SUSPEITOS ONLINE</div><h2>O segredo não conhece distância.</h2><p class="subtext">Salas públicas e privadas, voz, votação secreta e ranking.</p>
   ${load('lastRoom')?btn('resumeOn','RETOMAR ÚLTIMA SALA','secondary'):''}
-  <div class="hub-primary">${btn('public','▣ &nbsp; Buscar salas públicas')}${btn('create','＋ &nbsp; Criar sala')}</div><div class="hub-divider">ENTRAR COM OPÇÕES</div><div class="hub-secondary">${btn('join','‹ › &nbsp; Entrar com código','secondary')}${btn('invitesOn','♧ &nbsp; Convites de amigos','secondary')}</div>
+  <div id="es77PendingInvites" aria-live="polite"></div><div class="hub-primary">${btn('public','▣ &nbsp; Buscar salas públicas')}${btn('create','＋ &nbsp; Criar sala')}</div><div class="hub-divider">ENTRAR COM OPÇÕES</div><div class="hub-secondary">${btn('join','‹ › &nbsp; Entrar com código','secondary')}${btn('invitesOn','♧ &nbsp; Convites de amigos','secondary')}</div>
   <div class="tiles"><button class="tile" id="profileOn">♟ Meu perfil</button><button class="tile" id="cosmeticsOn">✦ Personalização · Molduras e banners</button><button class="tile" id="rankingOn">♛ Ranking</button><button class="tile" id="friendsOn">♧ Amigos</button><button class="tile" id="missionsOn">✦ Missões e eventos</button><button class="tile" id="statsOn">▤ Estatísticas</button><button class="tile" id="historyOn">◷ Histórico de partidas</button><button class="tile" id="feedbackOn">✉ Sugestões e denúncias</button></div>
   ${btn('adminOn','Painel administrativo','secondary')}${btn('serverOn','Configurar servidor','secondary')}${btn('logout','Sair da conta','ghost')}
   <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
   if($('resumeOn'))$('resumeOn').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_rejoin',{p_room:load('lastRoom')}));}catch(e){this.error(e);}};
   $('invitesOn').onclick=()=>this.invites();
+  this.cloud.rpc('es_invite_list').then(list=>{if(this.currentPage==='home'&&$('es77PendingInvites'))$('es77PendingInvites').innerHTML=window.ESV77?.inviteAlert(Array.isArray(list)?list.length:0)||'';}).catch(()=>{});
   $('public').onclick=()=>this.publicRooms();$('create').onclick=()=>this.createRoom();$('join').onclick=()=>this.joinCode();
   $('profileOn').onclick=()=>this.profile();$('cosmeticsOn').onclick=()=>this.cosmeticsPage();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();$('historyOn').onclick=()=>this.historyPage();
   $('feedbackOn').onclick=()=>this.feedback();$('adminOn').onclick=()=>this.admin();
@@ -378,7 +379,7 @@ class OnlineUI{
   this.app.innerHTML='<section class="card"><h2>Entrando na sala...</h2></section>';this.refresh();
   let lastPing=0;
   this.refreshTimer=setInterval(async()=>{
-   if(!this.roomId||Date.now()<this.nextRefreshAt)return;
+   if(!this.roomId||document.hidden||Date.now()<this.nextRefreshAt)return;
    try{if(Date.now()-lastPing>9000){await this.cloud.rpc('es_touch',{p_room:this.roomId});lastPing=Date.now();}
     await this.refresh();}catch(e){this.connectionFailed(e);}
   },2200);
@@ -678,11 +679,11 @@ class OnlineUI{
   this.app.innerHTML=`<section class="card"><h2>Convites recebidos</h2>${list.map((v,i)=>`<div class="member"><div class="member-info"><strong>${ESC(v.from_nick)}</strong><small>Sala ${ESC(v.code)} · ${v.is_public?'Pública':'Privada'}</small></div><button class="back" data-invite="${i}">Entrar</button></div>`).join('')||'<p>Nenhum convite pendente.</p>'}<p id="onlineError" class="error"></p></section>`;
   this.app.querySelectorAll('[data-invite]').forEach(b=>b.onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_invite_accept',{p_invite:list[+b.dataset.invite].id}));}catch(e){this.error(e);}});
  }
- async inviteFriends(){const room=this.roomId;this.stopLoop();this.header('Convidar amigos');let all=[];try{all=await this.cloud.rpc('es_friend_list');}catch(e){return this.error(e);}
+ async inviteFriends(){const room=this.roomId;this.stopLoop();this.header('Convidar amigos');let all=[],presence=[];try{[all,presence]=await Promise.all([this.cloud.rpc('es_friend_list'),this.cloud.rpc('es_v74_friend_presence').catch(()=>[])]);}catch(e){return this.error(e);}
   const friends=all.filter(x=>x.accepted);this.app.innerHTML=`<section class="card"><h2>Convites diretos</h2><p class="subtext">Seus amigos receberão o convite na área Convites de amigos.</p>
-  ${friends.map((p,i)=>`<div class="member"><div class="member-info">${ESC(p.nickname)}</div><button class="back" data-send="${i}">Convidar</button></div>`).join('')||'<p>Você ainda não tem amigos adicionados.</p>'}
+  ${friends.map((p,i)=>`<div class="member"><div class="member-info"><strong>${ESC(p.nickname)}</strong><small>${presence.some(x=>x.id===p.id&&x.online)?'● Online agora':'○ Offline · convite disponível'}</small></div><button class="back" data-send="${i}">Convidar</button></div>`).join('')||'<p>Você ainda não tem amigos adicionados.</p>'}
   ${btn('backRoom','Voltar para sala','secondary')}<p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p></section>`;
-  this.app.querySelectorAll('[data-send]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_invite_send',{p_room:room,p_to:friends[+b.dataset.send].id});this.note('Convite enviado!');}catch(e){this.error(e);}});
+  this.app.querySelectorAll('[data-send]').forEach(b=>b.onclick=async()=>{try{await this.cloud.rpc('es_invite_send',{p_room:room,p_to:friends[+b.dataset.send].id});b.disabled=true;b.textContent='Enviado ✓';this.note('Convite enviado!');}catch(e){this.error(e);}});
   $('backRoom').onclick=()=>this.enterRoom(room);
  }
  feedback(){this.currentPage='feedback';this.header('Ajuda e sugestões');
