@@ -687,11 +687,11 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
 
- async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog,season=null;try{[rank,catalog,season]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').then(rows=>Array.isArray(rows)&&rows.length?rows:this.cloud.rpc('es_leaderboard')).catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog'),this.cloud.rpc('es_v77_season_ranking').catch(()=>null)]);}catch(e){return this.error(e);}
+ async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog,season=null,history=[];try{[rank,catalog,season,history]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').then(rows=>Array.isArray(rows)&&rows.length?rows:this.cloud.rpc('es_leaderboard')).catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog'),this.cloud.rpc('es_v77_season_ranking').catch(()=>null),this.cloud.rpc('es_v77_season_history').catch(()=>[])]);}catch(e){return this.error(e);}
   const ranked=rankedPlayers(rank);
   const medals={1:['🥇','Ouro'],2:['🥈','Prata'],3:['🥉','Bronze']};
   const podium=ranked.filter(p=>p.position<=3);
-  this.app.innerHTML=`${window.ESV77?.seasonPanel(season)||''}<section class="card"><h2>Ranking histórico · todos os tempos</h2>
+  this.app.innerHTML=`${window.ESV77?.seasonPanel(season,history)||''}<section class="card"><h2>Ranking histórico · todos os tempos</h2>
    <p class="subtext">Vitória: <b>+25 pontos</b> · Derrota: <b>−25 pontos</b>. Partidas privadas não alteram o ranking. O saldo pode ficar negativo.</p>
    <p class="small muted">Ordem por pontos de ranking; desempate por vitórias públicas. Empate nos dois critérios mantém a mesma posição.</p>
    ${podium.length?`<div class="ranking-podium" aria-label="Pódio atual">${podium.map(p=>`<article class="podium-card podium-${p.position}"><span class="podium-medal" aria-hidden="true">${medals[p.position][0]}</span><small>${p.position}º LUGAR · ${medals[p.position][1]}</small><strong>${ESC(p.nickname)}</strong><b>${p.ranking_points} pontos</b></article>`).join('')}</div><p class="small muted">Medalhas de destaque enquanto o jogador ocupar o pódio. Não concedem XP nem títulos permanentes.</p>`:''}
