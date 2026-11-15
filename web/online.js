@@ -502,7 +502,7 @@ class OnlineUI{
   this.stopLoop();this.currentPage='missions';this.header('Missões e eventos');
   this.app.innerHTML='<section class="card"><h2>Missões e eventos</h2><p>Carregando...</p><p id="onlineError" class="error"></p></section>';
   try{
-   const [missions,events,claims,eventClaims]=await Promise.all([this.cloud.rpc('es_v74_missions'),this.cloud.rpc('es_v74_events_list'),this.cloud.rpc('es_v74_claims'),this.cloud.rpc('es_v75_event_claims').catch(()=>[])]);
+   const [missions,events,claims,eventClaims,weeklyChallenges]=await Promise.all([this.cloud.rpc('es_v74_missions'),this.cloud.rpc('es_v74_events_list'),this.cloud.rpc('es_v74_claims'),this.cloud.rpc('es_v75_event_claims').catch(()=>[]),this.cloud.rpc('es_v77_weekly_challenges').catch(()=>[])]);
    if(this.currentPage!=='missions')return;
    const mission=(m,i)=>{const claimed=claims.some(c=>c.code===m.code&&Date.parse(c.period_end)===Date.parse(m.renews_at));return `<div class="member"><div class="member-info"><strong>${ESC(m.title)}</strong><small>${ESC(m.period)} · ${m.progress}/${m.target} · ${claimed?'Recompensa resgatada':m.complete?'Concluída':'Em andamento'}</small><progress class="mission-progress" value="${m.progress}" max="${m.target}"></progress></div>${m.complete&&!claimed?`<button class="back" data-claim="${i}">Resgatar ${m.code.startsWith('daily')?15:40} XP</button>`:''}</div>`;};
    const event=e=>{const claimed=eventClaims.some(c=>c.code===e.code),progress=Math.min(Math.max(0,Number(e.progress)||0),Number(e.target)||1);
@@ -510,7 +510,15 @@ class OnlineUI{
      const canClaim=e.code==='noite_dos_suspeitos_2026'&&progress>=e.target&&!claimed;
      const scene=e.code==='nevoa_2026'?'ecos_da_nevoa':e.code==='noite_dos_suspeitos_2026'?'reino_dos_suspeitos':'padrao';
      return `<section class="es-v75-event-card"><div class="cosmetic-room-banner" style="height:114px">${window.ESCosmetics?.banner(scene)||''}<div class="cosmetic-room-banner-content"><div class="es-v75-event-tag">EVENTO ESPECIAL</div><h3>${ESC(e.name)}</h3></div></div><p class="subtext">${ESC(e.description)}</p><p>${e.active?'Em andamento':new Date(e.starts_at)>new Date()?'Em breve':'Encerrado'} · ${progress}/${e.target}</p><progress value="${progress}" max="${e.target}"></progress><p class="small muted">Recompensa: ${ESC(reward)} · Até ${new Date(e.ends_at).toLocaleDateString('pt-BR')}</p>${canClaim?'<button class="back" data-event-claim="'+ESC(e.code)+'">Resgatar 60 XP</button>':claimed?'<span class="pill good">Recompensa resgatada</span>':''}</section>`;};
-   this.app.innerHTML=`${window.ESV77?.weeklyPanel(missions)||''}<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">XP de missões soma ao nível, sem alterar o ranking. Molduras de eventos são desbloqueadas por participação.</p><p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p>`;
+   this.app.innerHTML=`${window.ESV77?.weeklyPanel(missions,weeklyChallenges)||''}<section class="card"><h2>Missões diárias e semanais</h2><p class="subtext">Desafios calculados no servidor. Reinício em UTC. Não alteram o ranking.</p>${missions.map(mission).join('')||'<p>Sem missões.</p>'}</section><section class="card"><h2>Eventos temporários</h2></section>${events.map(event).join('')||'<p class="notice">Nenhum evento ativo.</p>'}<p class="small muted">XP de missões soma ao nível, sem alterar o ranking. Molduras de eventos são desbloqueadas por participação.</p><p id="onlineError" class="error"></p><p id="onlineInfo" class="subtext"></p>`;
+   this.app.querySelectorAll('[data-week-claim]').forEach(b=>b.onclick=async()=>{
+    b.disabled=true;
+    try{
+     const reward=await this.cloud.rpc('es_v77_weekly_claim',{p_code:b.dataset.weekClaim});
+     this.note('Desafio semanal concluído: +'+reward.xp_awarded+' XP!');
+     await this.progressHub();
+    }catch(e){b.disabled=false;this.error(e);}
+   });
    this.app.querySelectorAll('[data-event-claim]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const result=await this.cloud.rpc('es_v75_event_claim',{p_code:b.dataset.eventClaim});this.note('Evento concluído: +'+result.xp_awarded+' XP!');await this.progressHub();}catch(e){this.error(e);b.disabled=false;}});
     this.app.querySelectorAll('[data-claim]').forEach(b=>b.onclick=async()=>{const m=missions[Number(b.dataset.claim)];b.disabled=true;try{const result=await this.cloud.rpc('es_v74_mission_claim',{p_code:m.code});this.note('Recompensa recebida: '+result.xp_awarded+' XP.');await this.progressHub();}catch(e){this.error(e);b.disabled=false;}});
   }catch(e){this.error(e);}
