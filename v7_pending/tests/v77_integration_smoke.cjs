@@ -4,7 +4,7 @@ const uiSource=fs.readFileSync('web/online.js','utf8').replace('const online=new
 const v77=fs.readFileSync('web/v77.js','utf8'),css=fs.readFileSync('web/style.css','utf8'),html=fs.readFileSync('web/index.html','utf8');
 const sqlSeason=fs.readFileSync('v7_pending/sql/v77_season_ranking.sql','utf8');
 const sqlWeekly=fs.readFileSync('v7_pending/sql/v77_weekly_challenges.sql','utf8');
-assert.match(html,/7\.7\.0 RC \(EM TESTES/);
+assert.match(html,/7\.7\.0 RC \(TEMPORADAS E VOTAÇÃO/);
 assert(html.indexOf('v77.js')<html.indexOf('online.js'));
 assert(css.includes('.es77-vote-choice')&&css.includes('.es77-season-player')&&css.includes('prefers-reduced-motion:reduce'));
 assert(!sqlSeason.includes('update public.es_profiles'));
