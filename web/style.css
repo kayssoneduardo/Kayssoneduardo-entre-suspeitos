@@ -437,3 +437,87 @@ body.es-v75-paused .cosmetic-avatar-wrap::after{animation-play-state:paused!impo
 @keyframes esEntranceWords{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
 @keyframes esEntranceExit{0%,80%{opacity:1}100%{opacity:0}}
 @media(prefers-reduced-motion:reduce){.es-entrance-overlay,.es-entrance-overlay *{animation:none!important}.es-entrance-figure{opacity:1;filter:none;transform:none}.es-entrance-words{opacity:1}.es-entrance-sigil{opacity:.25}}
+
+/* V7.6.1 — legendary-only cinematic impact.
+   Stage 1: massive sealed portal, stage 2: doors break, stage 3: explosive arrival.
+   The other tiers intentionally remain restrained; no global shake or gameplay delay. */
+.es-entrance-legend{background:#020206;animation:esLegendSceneExit 3.65s both}
+.es-entrance-legend .es-entrance-shade{background:radial-gradient(ellipse at 50% 48%,#5c284b 0%,#150b1ce8 38%,#030308 80%);
+ animation:esLegendCamera 3.4s cubic-bezier(.15,.8,.15,1) both}
+.es-entrance-legend-portal{position:absolute;top:calc(50% - 155px);left:calc(50% - 133px);width:266px;height:310px;
+ border:5px solid #daaa60;outline:1px solid #ecca89a8;border-radius:132px 132px 15px 15px;
+ background:radial-gradient(ellipse at 50% 40%,#280d31e0,#030107ed 70%);
+ box-shadow:0 0 0 7px #1a0e1bd8,0 0 0 9px #b47c4abf,0 0 32px 8px #ffbc5870,inset 0 0 35px #eabd8459;
+ transform:perspective(600px) scale(.48);opacity:0;
+ animation:esLegendPortal 3.4s cubic-bezier(.25,.7,.15,1) both}
+.es-entrance-legend-portal::after{content:'◈';position:absolute;left:0;right:0;top:30%;text-align:center;font-size:118px;line-height:1;
+ color:#ffdc998e;text-shadow:0 0 36px #fbc47a;animation:esLegendSeal 3.4s ease-out both}
+.es-entrance-legend-wings{position:absolute;inset:0;pointer-events:none}
+.es-entrance-legend-wings::before,.es-entrance-legend-wings::after{content:'';position:absolute;top:16%;width:50.5%;height:70%;
+ background:linear-gradient(105deg,#030209e8,#230b27c7 70%,#9e6245c9);
+ box-shadow:0 0 35px #d8966b7a;animation:esLegendWings 3.4s cubic-bezier(.2,.75,.1,1) both}
+.es-entrance-legend-wings::before{left:-2%;transform-origin:left center;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+.es-entrance-legend-wings::after{right:-2%;transform-origin:right center;background:linear-gradient(255deg,#030209e8,#230b27c7 70%,#9e6245c9);animation-name:esLegendWingsRight}
+.es-entrance-legend-flash{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 47%,#fff8dd 0%,#ffd49e 13%,#e5a65b85 33%,transparent 69%);
+ pointer-events:none;opacity:0;mix-blend-mode:screen;animation:esLegendFlash 3.4s ease-out both}
+.es-entrance-legend-shockwave{position:absolute;left:50%;top:45%;width:120px;height:120px;border-radius:50%;
+ border:5px solid #ffe0a6;box-shadow:0 0 38px #ffc46c,0 0 88px #e89a5f;opacity:0;pointer-events:none;
+ animation:esLegendShockwave 3.4s cubic-bezier(.12,.7,.16,1) both}
+.es-entrance-legend .es-entrance-sigil{color:#ffc96db3;filter:drop-shadow(0 0 27px #fbb25e);
+ animation:esLegendSigil 3.4s ease-out both}
+.es-entrance-legend .es-entrance-figure{width:156px;height:205px;transform:translateY(66px) scale(.68);
+ animation:esLegendFigure 3.4s cubic-bezier(.19,.85,.13,1) both;z-index:4}
+.es-entrance-legend .es-entrance-hood{
+ background:linear-gradient(115deg,#02020b 6%,#5b4050 40%,#1c1727 59%,#030309 91%);
+ filter:drop-shadow(0 0 18px #f5ba72)}
+.es-entrance-legend .es-entrance-mask{color:#ffe5b0;text-shadow:0 0 12px #ffc56d,0 0 26px #ffc56d;
+ border:2px solid #ffdc9e}
+.es-entrance-legend-crown{position:absolute;top:calc(50% - 166px);left:0;right:0;text-align:center;
+ color:#ffda8b;font-size:65px;z-index:5;opacity:0;text-shadow:0 0 12px #fff1b3,0 0 35px #e8ac65;
+ animation:esLegendCrown 3.4s ease-out both;pointer-events:none}
+.es-entrance-legend .es-entrance-words{z-index:6;top:calc(50% + 92px);animation:esLegendWords 3.4s ease-out both}
+.es-entrance-legend .es-entrance-words strong{font-size:clamp(31px,9vw,52px);color:#fff3d8;
+ text-shadow:0 0 9px #d39d55,0 2px 28px #ffbd6db0}
+.es-entrance-legend .es-entrance-words small{color:#f6d08c;font-size:11px;letter-spacing:3.5px}
+.es-entrance-legend .es-entrance-shards i{height:17px;width:4px;background:#fff1c8;
+ animation:esLegendEmbers 3.4s ease-out both}
+.es-entrance-skip{z-index:10}
+@keyframes esLegendPortal{0%,9%{opacity:0;transform:perspective(600px) scale(.42)}
+ 25%{opacity:1;transform:perspective(600px) scale(.86)}42%{transform:perspective(600px) scale(1)}
+ 62%{opacity:1;transform:perspective(600px) scale(1.35)}78%,100%{opacity:0;transform:perspective(600px) scale(1.65)}}
+@keyframes esLegendSeal{0%,30%{opacity:0;transform:scale(.3) rotate(-70deg)}
+ 40%{opacity:1;transform:scale(1) rotate(0)}52%{opacity:1;transform:scale(1.1)}
+ 58%,100%{opacity:0;transform:scale(2.6) rotate(80deg)}}
+@keyframes esLegendWings{0%,32%{opacity:0;transform:translateX(0)}
+ 42%,53%{opacity:.94;transform:translateX(0)}
+ 68%,100%{opacity:0;transform:translateX(-125%) rotate(-14deg)}}
+@keyframes esLegendWingsRight{0%,32%{opacity:0;transform:translateX(0)}
+ 42%,53%{opacity:.94;transform:translateX(0)}
+ 68%,100%{opacity:0;transform:translateX(125%) rotate(14deg)}}
+@keyframes esLegendFlash{0%,48%{opacity:0}54%{opacity:1}59%{opacity:.75}80%,100%{opacity:0}}
+@keyframes esLegendShockwave{0%,51%{opacity:0;transform:translate(-50%,-50%) scale(.2)}
+ 59%{opacity:1}83%,100%{opacity:0;transform:translate(-50%,-50%) scale(7)}}
+@keyframes esLegendSigil{0%,25%{opacity:0;transform:scale(.2) rotate(-100deg)}
+ 38%{opacity:.9;transform:scale(.95) rotate(0)}53%{opacity:.7;transform:scale(1.3)}
+ 65%,100%{opacity:0;transform:scale(2.3) rotate(60deg)}}
+@keyframes esLegendCamera{0%{transform:scale(.75);filter:brightness(.45)}
+ 52%{transform:scale(1);filter:brightness(.8)}
+ 58%{transform:scale(1.11);filter:brightness(2)}
+ 100%{transform:scale(1.05);filter:brightness(1)}}
+@keyframes esLegendFigure{0%,45%{opacity:0;filter:blur(18px);transform:translateY(80px) scale(.55)}
+ 59%{opacity:1;filter:blur(1px);transform:translateY(-25px) scale(1.2)}
+ 70%,100%{opacity:1;filter:blur(0);transform:translateY(-18px) scale(1.12)}}
+@keyframes esLegendCrown{0%,59%{opacity:0;transform:translateY(-35px) scale(1.8)}
+ 70%{opacity:1;transform:translateY(8px) scale(1.03)}80%,100%{opacity:1;transform:translateY(5px) scale(1)}}
+@keyframes esLegendWords{0%,65%{opacity:0;transform:translateY(35px) scale(.8)}
+ 77%,100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes esLegendEmbers{0%,53%{opacity:0;transform:rotate(var(--a)) translateY(0)}
+ 63%{opacity:1}98%,100%{opacity:0;transform:rotate(var(--a)) translateY(-230px) scale(.2)}}
+@keyframes esLegendSceneExit{0%,91%{opacity:1}100%{opacity:0}}
+@media(prefers-reduced-motion:reduce){
+ .es-entrance-legend,.es-entrance-legend *{animation:none!important}
+ .es-entrance-legend .es-entrance-figure,.es-entrance-legend .es-entrance-words,
+ .es-entrance-legend-crown{opacity:1;filter:none;transform:none}
+ .es-entrance-legend-portal{opacity:.28;transform:none}
+ .es-entrance-legend-wings,.es-entrance-legend-flash,.es-entrance-legend-shockwave{display:none}
+}
