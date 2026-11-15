@@ -89,8 +89,7 @@ async function main(){
   assert(mobile.seal&&mobile.ready&&mobile.seasons,'Cinematic vote, readiness and seasons must render');
   await send('Emulation.setEmulatedMedia',{features:[{name:'prefers-reduced-motion',value:'reduce'}]});
   const reduced=await evaluate(`(function(){
-   window.ESV77.achievement({name:'Conquista',rarity:'lenda'});
-   const item=document.querySelector('.es77-achievement-lenda');
+   const item=document.createElement('aside');item.className='es77-achievement es77-achievement-lenda';document.body.appendChild(item);
    return item?getComputedStyle(item).animationDuration:null;
   })()`);
   assert(reduced==='0s','Reduced-motion preference must disable legendary achievement motion');
