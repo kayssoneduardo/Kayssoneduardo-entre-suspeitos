@@ -167,7 +167,7 @@ class Voice{
 }
 class OnlineUI{
  constructor(){this.cloud=null;this.app=null;this.topbar=null;this.back=null;this.sound=null;this.bank=null;
-  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.nextRefreshAt=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';this.roomEpoch=0;this.onForeground=null;}
+  this.roomId=null;this.room=null;this.refreshTimer=null;this.tickTimer=null;this.refreshing=false;this.voice=null;this.connectionFailures=0;this.nextRefreshAt=0;this.lastPhase='';this.lastFingerprint='';this.view='';this.currentPage='';this.roomEpoch=0;this.onForeground=null;this.inviteTimer=null;}
  open({app,topbar,back,sound,bank,destination}){const invite=new URLSearchParams(window.location.search).get('room');if(invite&&/^[a-z0-9]{6}$/i.test(invite))this.pendingJoinCode=invite.toUpperCase();this.pendingDestination=destination;this.app=app;this.topbar=topbar;this.back=back;this.sound=sound;this.bank=bank;
   const config=(COMPILED_CLOUD.url&&COMPILED_CLOUD.key)?COMPILED_CLOUD:load('cloud');if(config?.url&&config?.key){this.cloud=new Cloud(config.url,config.key);this.cloud.session=load('session');this.cloud.completeFromUrl().then(kind=>{if(kind==='recovery'){this.login();this.showRecoveryForm();}else this.home();}).catch(e=>{this.login();this.error(e);});}
   else this.setup();
@@ -177,7 +177,7 @@ class OnlineUI{
  homeOrMenu(){if(this.roomId){if(confirm('Sair da sala? Após o início, não votar será considerado derrota.'))this.leave();}
   else{this.destroy();this.back();}}
  destroy(){this.stopLoop();this.voice?.close();this.voice=null;this.roomId=null;this.room=null;this.lastPhase='';this.lastFingerprint='';}
- stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);this.refreshTimer=null;this.tickTimer=null;this.roomEpoch++;this.refreshing=false;if(this.onForeground){document.removeEventListener?.('visibilitychange',this.onForeground);window.removeEventListener?.('online',this.onForeground);this.onForeground=null;}}
+ stopLoop(){if(this.refreshTimer)clearInterval(this.refreshTimer);if(this.tickTimer)clearInterval(this.tickTimer);if(this.inviteTimer)clearInterval(this.inviteTimer);this.inviteTimer=null;this.refreshTimer=null;this.tickTimer=null;this.roomEpoch++;this.refreshing=false;if(this.onForeground){document.removeEventListener?.('visibilitychange',this.onForeground);window.removeEventListener?.('online',this.onForeground);this.onForeground=null;}}
  error(e){const msg=prettyError(e);let box=$('onlineError');if(box){box.textContent=msg;box.hidden=false;}else alert(msg);}
  connectionFailed(e){this.connectionFailures++;this.nextRefreshAt=Date.now()+Math.min(30000,1500*2**Math.min(this.connectionFailures-1,5));const box=$('onlineError');if(box){box.textContent='Conexão interrompida. Tentando recuperar a sala automaticamente. '+prettyError(e);box.hidden=false;box.dataset.connectionError='1';}}
  connectionRestored(){if(!this.connectionFailures)return;this.connectionFailures=0;this.nextRefreshAt=0;const box=$('onlineError');if(box?.dataset.connectionError==='1'){box.textContent='';box.hidden=true;delete box.dataset.connectionError;}}
@@ -215,7 +215,13 @@ class OnlineUI{
   <p class="small muted">Online em testes: é necessário internet e servidor ativo. O chat por voz depende da permissão de microfone e da rede de cada participante.</p></section>`;
   if($('resumeOn'))$('resumeOn').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_rejoin',{p_room:load('lastRoom')}));}catch(e){this.error(e);}};
   $('invitesOn').onclick=()=>this.invites();
-  this.cloud.rpc('es_invite_list').then(list=>{if(this.currentPage==='home'&&$('es77PendingInvites'))$('es77PendingInvites').innerHTML=window.ESV77?.inviteAlert(Array.isArray(list)?list.length:0)||'';}).catch(()=>{});
+  const checkInvites=()=>{
+   if(this.currentPage!=='home'){if(this.inviteTimer)clearInterval(this.inviteTimer);this.inviteTimer=null;return;}
+   if(document.hidden)return;
+   this.cloud.rpc('es_invite_list').then(list=>{if(this.currentPage==='home'&&$('es77PendingInvites'))$('es77PendingInvites').innerHTML=window.ESV77?.inviteAlert(Array.isArray(list)?list.length:0)||'';}).catch(()=>{});
+  };
+  checkInvites();
+  this.inviteTimer=setInterval(checkInvites,15000);
   $('public').onclick=()=>this.publicRooms();$('create').onclick=()=>this.createRoom();$('join').onclick=()=>this.joinCode();
   $('profileOn').onclick=()=>this.profile();$('cosmeticsOn').onclick=()=>this.cosmeticsPage();$('rankingOn').onclick=()=>this.ranking();$('friendsOn').onclick=()=>this.friends();$('missionsOn').onclick=()=>this.progressHub();$('statsOn').onclick=()=>this.statsPage();$('historyOn').onclick=()=>this.historyPage();
   $('feedbackOn').onclick=()=>this.feedback();$('adminOn').onclick=()=>this.admin();
