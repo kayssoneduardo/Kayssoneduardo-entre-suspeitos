@@ -43,6 +43,7 @@ ui.cloud={userId:'usr1',rpc:async(name,params)=>{
  if(name==='es_v75_leaderboard')return [{id:'usr1',nickname:'Zero',ranking_points:50,online_wins:2,online_losses:0,xp:400}];
  if(name==='es_title_catalog')return [];
  if(name==='es_v77_season_ranking')return season;
+ if(name==='es_v77_season_history')return [{starts_at:'2026-07-01T00:00:00Z',ends_at:'2026-10-01T00:00:00Z',champions:[{position:1,nickname:'Veterano',id:'12345678-1234-1234-1234-123456789012',points:75}],my_position:2,my_points:25}];
  if(name==='es_v74_missions')return [];
  if(name==='es_v74_events_list')return [];
  if(name==='es_v74_claims'||name==='es_v75_event_claims')return [];
@@ -71,7 +72,7 @@ ui.cloud={userId:'usr1',rpc:async(name,params)=>{
  assert.equal(votes[0].p_targets[0],'friend1');
  assert(body.children.some(e=>e.className==='es77-vote-seal'),'After backend success, vote seal should display');
  await ui.ranking();assert.match(app.html,/Classificação sazonal/);assert.match(app.html,/Zero &amp; Cia/);
- assert.match(app.html,/Ranking histórico/);
+ assert.match(app.html,/Ranking histórico/);assert.match(app.html,/Temporadas anteriores/);assert.match(app.html,/Veterano/);
  await ui.progressHub();assert.match(app.html,/Investigador da semana/);assert.match(app.html,/Resgatar recompensa/);
  let btn=app.querySelectorAll('[data-week-claim]')[0];btn.onclick=async()=>{btn.disabled=true;const reward=await ui.cloud.rpc('es_v77_weekly_claim',{p_code:btn.dataset.weekClaim});await ui.progressHub();};
  await btn.onclick();assert.equal(rewards,1);assert.match(app.html,/Resgatado/);
