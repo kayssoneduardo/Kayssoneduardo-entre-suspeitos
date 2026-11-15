@@ -59,6 +59,8 @@ jobs:
           node v7_pending/tests/word_bank_smoke.cjs
           node v7_pending/tests/v743_banner_assets_smoke.cjs
           V745_REQUIRE_ASSETS=1 node v7_pending/tests/v745_banners_integrity_smoke.cjs
+          node v7_pending/tests/v75_smoke.cjs
+          node v7_pending/tests/v75_ui_integration_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
@@ -103,7 +105,7 @@ jobs:
           done
           grep -qi '^content-type: *text/html' /tmp/header
           grep -q 'ENTRE SUSPEITOS' /tmp/index
-          for file in online.js app.js server-config.js words.js cosmetics.js style.css; do
+          for file in online.js app.js server-config.js words.js cosmetics.js motion.js style.css; do
             curl --silent --show-error --fail --location --retry 3 \
               --max-time 25 "$URL/$file" -o "/tmp/$file"
           done
@@ -111,9 +113,12 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          grep -q 'VERSÃO WEB 7.4.5 RC' /tmp/index
+          grep -q 'VERSÃO WEB 7.5.0' /tmp/index
           grep -q 'BANNERS CINEMATOGRÁFICOS' /tmp/index
-          grep -q 'v745-cinematic-20261114-r1' /tmp/index
+          grep -q 'v750-cinematic-release-20261114-r2' /tmp/index
+          grep -q 'es-v75-demo' /tmp/online.js
+          grep -q 'esV75AuraSpin' /tmp/style.css
+          grep -q 'ESMotion' /tmp/motion.js
           grep -q 'v745-approved-cinematic-20261114-r1' /tmp/cosmetics.js
           for code in padrao ecos_da_nevoa trono_arcano cacada_sombria lua_partida conspiracao cidade_sem_rosto corredor_espectral floresta_rubra eclipse_violeta juramento_oculto ruinas_do_segredo reino_dos_suspeitos escuta_noturna segredo_carmesim vidro_estilhacado; do
             curl --silent --show-error --fail --location --retry 4 --retry-delay 3 --max-time 25 "$URL/assets/banners/$code.webp?v=v745-approved-cinematic-20261114-r1" -o "/tmp/banner-$code.webp"
