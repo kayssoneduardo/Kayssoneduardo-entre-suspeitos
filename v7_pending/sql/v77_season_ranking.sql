@@ -41,3 +41,52 @@ end;
 $v77$;
 revoke all on function public.es_v77_season_ranking() from public,anon;
 grant execute on function public.es_v77_season_ranking() to authenticated;
+
+-- Public historical standings: bounded last 3 completed UTC quarters.
+-- Seasonal records are read-only commemorative placements, not permanent point bonuses.
+create or replace function public.es_v77_season_history()
+returns jsonb language plpgsql stable security definer set search_path = ''
+as $v77$
+declare
+ uid uuid := (select auth.uid());
+ current_quarter timestamptz := date_trunc('quarter', now() at time zone 'UTC') at time zone 'UTC';
+ result jsonb;
+begin
+ if uid is null then raise exception 'Autenticação necessária'; end if;
+ with periods as (
+  select (current_quarter - (g.n * interval '3 months')) as starts_at,
+   (current_quarter - ((g.n - 1) * interval '3 months')) as ends_at
+  from generate_series(1,3) as g(n)
+ ), scores as (
+  select pr.starts_at, x.user_id,
+   count(*)::integer as games,
+   count(*) filter(where x.win)::integer as wins,
+   sum(case when x.win then 25 else -25 end)::integer as points
+  from periods pr
+  join public.es_rounds rd on rd.finished_at>=pr.starts_at
+    and rd.finished_at<pr.ends_at and rd.finished_at is not null
+  join public.es_rooms rm on rm.id=rd.room_id and rm.is_public
+  join public.es_results x on x.round_id=rd.id and x.voted
+  group by pr.starts_at,x.user_id
+ ), placed as (
+  select s.*,dense_rank() over(partition by s.starts_at order by s.points desc,s.wins desc)::integer as position
+  from scores s
+ )
+ select coalesce(jsonb_agg(
+   jsonb_build_object(
+    'starts_at',pr.starts_at,'ends_at',pr.ends_at,
+    'champions',coalesce((
+      select jsonb_agg(jsonb_build_object('position',z.position,'nickname',p.nickname,'id',p.id,'points',z.points)
+       order by z.position,p.nickname)
+      from placed z join public.es_profiles p on p.id=z.user_id
+      where z.starts_at=pr.starts_at and z.position<=3
+    ),'[]'::jsonb),
+    'my_position',(select z.position from placed z where z.starts_at=pr.starts_at and z.user_id=uid),
+    'my_points',(select z.points from placed z where z.starts_at=pr.starts_at and z.user_id=uid)
+   ) order by pr.starts_at desc),'[]'::jsonb)
+ into result from periods pr;
+ return result;
+end;
+$v77$;
+revoke all on function public.es_v77_season_history() from public,anon;
+grant execute on function public.es_v77_season_history() to authenticated;
