@@ -607,3 +607,10 @@ body[data-motion=on] .es77-achievement-lenda{animation:es77LegendAchieve .9s cub
  60%{opacity:1;transform:translateY(-9px) scale(1.04);filter:brightness(1.4)}
  100%{opacity:1;transform:translateY(0) scale(1);filter:brightness(1)}}
 @media(prefers-reduced-motion:reduce){body[data-motion=on] .es77-achievement-lenda{animation:none!important}}
+
+.es77-previous-title{margin:18px 0 7px!important;font-size:16px;color:#e7c8f7}
+.es77-season-archive{display:flex;flex-direction:column;gap:4px;padding:11px 0;border-top:1px solid #b8a0ce4a}
+.es77-season-archive b{font-size:12px;color:#eed8f6}
+.es77-season-archive small{font-size:11px;color:#c8b8d3}
+.es77-season-player .back{font-size:11px;padding:5px 8px;min-height:33px}
+@media(max-width:390px){.es77-season-player{gap:6px}.es77-season-player .back{font-size:10px;padding:4px 6px}.es77-points{font-size:12px}}
