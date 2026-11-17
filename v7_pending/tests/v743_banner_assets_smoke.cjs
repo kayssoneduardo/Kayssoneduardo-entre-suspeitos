@@ -58,7 +58,7 @@ for(const kind of ['banners','frames']){
  assert.match(bannerCheck,/assets\/banners\/cacada_sombria\.webp\?v=v745-approved-cinematic-20261114-r1/);
  assert.match(frameCheck,/assets\/frames\/classica\.webp\?v=v745-approved-cinematic-20261114-r1/);
  const index=fs.readFileSync('web/index.html','utf8');
- assert.match(index,/cosmetics\.js\?v=v(?:745-cinematic-20261114-r1|750-(?:animations-social-20261114-dev|cinematic-release-20261114-r2)|760-entrances-release-20261114-r1|761-legendary-impact-20261114-r1|762-lobby-clean-20261114-r1|770-consolidated-dev-20261114-r1|770-consolidated-release-20261114-r1)/);
+ assert.match(index,/cosmetics\.js\?v=v(?:745-cinematic-20261114-r1|750-(?:animations-social-20261114-dev|cinematic-release-20261114-r2)|760-entrances-release-20261114-r1|761-legendary-impact-20261114-r1|762-lobby-clean-20261114-r1|770-consolidated-dev-20261114-r1|770-consolidated-release-20261114-r1|780-perfil-votos-20261117-r1)/);
  const css=fs.readFileSync('web/style.css','utf8');
 assert.match(css,/\.cosmetic-banner-illustration/);
 assert.match(css,/\.cosmetic-frame-illustration/);
