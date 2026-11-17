@@ -56,7 +56,7 @@
   if(!stage||typeof stage.querySelectorAll!=='function')return;
   const inputs=[...stage.querySelectorAll('[data-vote]')];
   const counter=container.querySelector('[data-judge-counter]');
-  const button=container.querySelector('#submitVote')||document.getElementById('submitVote');
+  const button=container.querySelector('#submitVote')||container.querySelector('#demoConfirm')||document.getElementById('submitVote')||document.getElementById('demoConfirm');
   const n=Math.max(1,Math.floor(Number(required)||1));
   const update=()=>{
    const chosen=inputs.filter(x=>x.checked);
