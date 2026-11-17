@@ -417,7 +417,8 @@ class OnlineUI{
    const sig=JSON.stringify(r);
    if(sig!==this.lastFingerprint||titlesChanged){
     // Do not destroy a revealed card, selected secret ballot or active rules editor.
-    if((this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))
+    if((r.status==='results'&&this.app.querySelector('.es-vote-replay.is-playing'))
+      ||(this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))
       ||this.app.querySelector('.online-editing'))return;
     this.lastFingerprint=sig;this.renderRoom(r);
    }
@@ -471,6 +472,7 @@ class OnlineUI{
    const mine=(r.results||[]).find(x=>x.user===me);const totalWins=(r.results||[]).filter(x=>x.win).length;
    phase=`<section class="card center v74-reveal"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p>
     <p class="notice">${impostors.length} impostor(es) revelado(s) · ${totalWins} vencedor(es).</p>
+    ${window.ESVoteReplay?`<div class="es-vote-replay-card"><div id="voteReplay"><p class="small muted">Carregando a revelação dos votos…</p></div>${btn('replayVotes','REVER DISPAROS','secondary')}</div>`:''}
     ${mine?`<div class="card es-v75-outcome ${mine.win?'is-victory':'is-defeat'} ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${window.ESMotion?.outcome(mine.win)||''} ${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
     <h3>Os impostores eram</h3>${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
     <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member ${x.win?'v74-result-good':'v74-result-bad'}"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
@@ -491,6 +493,7 @@ class OnlineUI{
   $('roomCosmeticsOn').onclick=()=>this.cosmeticsPage();
    $('copyCodeOn').onclick=async()=>{try{if(!navigator.clipboard?.writeText)throw new Error('Cópia automática indisponível.');await navigator.clipboard.writeText(r.code);this.note('Código da sala copiado: '+r.code);}catch(e){this.note('Copie este código e compartilhe com seu amigo: '+r.code);}};
 
+  if(r.status==='results'&&window.ESVoteReplay)this.showVoteReplay(r);
   if(r.status==='lobby'){
    $('readyOn').onclick=async()=>this.action('es_ready',{p_room:r.id,p_ready:!r.players.find(p=>p.id===me)?.ready});
    if(owner){$('inviteFriends').onclick=()=>this.inviteFriends();$('editRules').onclick=()=>this.editRules();$('startOn').disabled=!(allReady&&validImps);$('startOn').onclick=()=>this.action('es_start',{p_room:r.id});}
@@ -515,6 +518,33 @@ class OnlineUI{
    }catch(e){button.disabled=false;button.textContent='CONFIRMAR VOTO';this.error(e);}
   };
   }else if(r.status==='results'&&owner){$('newRound').onclick=()=>this.action('es_next',{p_room:r.id});}
+ }
+ showVoteReplay(r){
+  const key=String(r.id)+':'+String(r.round);
+  if(!this.voteReplayCache||this.voteReplayCache.key!==key)
+   this.voteReplayCache={key,ballots:null,promise:null,error:null};
+  const cache=this.voteReplayCache;
+  const current=()=>this.roomId===r.id&&this.currentPage==='room'&&String(this.room?.round)===String(r.round);
+  const draw=animated=>{
+   if(!current()||!$('voteReplay'))return;
+   window.ESVoteReplay.mount($('voteReplay'),cache.ballots,r.players,r.impostors,animated);
+   this.voteReplayPlayedKey=key;
+  };
+  if(cache.ballots!==null)draw(this.voteReplayPlayedKey!==key);
+  else if(cache.error){if($('voteReplay'))$('voteReplay').textContent='Replay indisponível. Os resultados individuais permanecem válidos.';}
+  else if(!cache.promise){
+   cache.promise=this.cloud.rpc('es_v78_vote_replay',{p_room:r.id}).then(ballots=>{
+    if(!Array.isArray(ballots))throw Error('Resposta de votação inválida');
+    cache.ballots=ballots;draw(this.voteReplayPlayedKey!==key);
+   }).catch(error=>{
+    cache.error=error;
+    if(current()&&$('voteReplay'))$('voteReplay').textContent='Replay indisponível. Os resultados individuais permanecem válidos.';
+   });
+  }
+  if($('replayVotes'))$('replayVotes').onclick=()=>{
+   if(cache.ballots!==null)draw(true);
+   else this.note('O replay ainda não está disponível.');
+  };
  }
  async action(name,p){try{await this.cloud.rpc(name,p);this.lastFingerprint='';await this.refresh();}catch(e){this.error(e);}}
  editRules(){const r=this.room;this.stopLoop();this.header('Alterar regras');this.app.innerHTML=`<section class="card online-editing"><h2>Regras da sala</h2><p class="subtext">Depois de salvar, todos precisarão confirmar “Pronto” novamente.</p>${this.formRules(r)}${btn('saveRules','SALVAR REGRAS')}<p id="onlineError" class="error"></p></section>`;
