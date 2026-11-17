@@ -5,20 +5,21 @@
 (function(){
  'use strict';
  const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
- function tally(ballots,players,slots){
+ function tally(aggregates,players,slots){
   const all=Array.isArray(players)?players:[];
   const known=new Set(all.map(p=>String(p.id)));
-  const shots=[],counts=new Map(all.map(p=>[String(p.id),0]));
-  for(const ballot of Array.isArray(ballots)?ballots:[]){
-   const from=String(ballot?.from??'');
-   if(!known.has(from)||!Array.isArray(ballot.targets))continue;
-   for(const raw of ballot.targets){
-    const to=String(raw);
-    if(!known.has(to)||to===from)continue;
-    shots.push({from,to});
-    counts.set(to,(counts.get(to)||0)+1);
-   }
+  const counts=new Map(all.map(p=>[String(p.id),0]));
+  // The API never supplies the identity of the voter, even after the match.
+  for(const entry of Array.isArray(aggregates)?aggregates:[]){
+   const to=String(entry?.to??'');
+   if(!known.has(to))continue;
+   const n=Number(entry?.count);
+   if(!Number.isSafeInteger(n)||n<0||n>100)continue;
+   counts.set(to,counts.get(to)+n);
   }
+  const shots=[];
+  for(const [to,n] of counts)for(let i=0;i<n;i++)shots.push({to});
+  // For presentation only; official wins/XP are still server-calculated.
   const scored=[...counts].filter(([,votes])=>votes>0).sort((a,b)=>b[1]-a[1]);
   const eliminated=[],tied=[];
   let remaining=Math.max(0,Number(slots)||0);
@@ -34,7 +35,7 @@
   const gone=new Set(summary.eliminated);
   return '<div class="es-vote-replay" aria-label="Revelação da votação">'+
    '<div class="es-vote-replay-header"><span class="eyebrow">◈ VEREDITO</span>'+
-   '<h3>Disparos da votação</h3><p class="small muted">Os votos só aparecem após o encerramento. Os personagens representam os jogadores.</p></div>'+
+   '<h3>Disparos da votação</h3><p class="small muted">Somente os totais são revelados. Quem votou em quem permanece secreto.</p></div>'+
    '<div class="es-vote-arena" aria-label="Personagens e disparos">'+
    players.map(p=>{
     const id=String(p.id),nick=String(p.nick||'Jogador');
@@ -44,7 +45,7 @@
      '<span class="es-vote-legs"></span></div>'+
      '<strong>'+esc(nick)+'</strong><small class="es-vote-hit-count" data-count="'+esc(id)+'">0 votos</small>'+
      '</article>';
-   }).join('')+'</div>'+
+   }).join('')+'<span class="es-vote-source" aria-hidden="true">◈</span></div>'+
    '<p class="es-vote-announcement" role="status" aria-live="polite">Revelando os votos encerrados…</p>'+
    '</div>';
  }
@@ -82,11 +83,11 @@
   const interval=Math.max(45,Math.min(155,2600/Math.max(1,summary.shots.length)));
   function fire(shot){
    if(!root.isConnected)return;
-   const from=actors.get(shot.from),to=actors.get(shot.to);
-   if(!from||!to)return;
-   const gun=from.querySelector('.es-vote-gun'),head=to.querySelector('.es-vote-head');
-   if(gun&&head&&arena&&typeof gun.getBoundingClientRect==='function'){
-    const start=gun.getBoundingClientRect(),end=head.getBoundingClientRect(),area=arena.getBoundingClientRect();
+   const to=actors.get(shot.to);
+   if(!to)return;
+   const source=root.querySelector('.es-vote-source'),head=to.querySelector('.es-vote-head');
+   if(source&&head&&arena&&typeof source.getBoundingClientRect==='function'){
+    const start=source.getBoundingClientRect(),end=head.getBoundingClientRect(),area=arena.getBoundingClientRect();
     const x=start.left+start.width/2-area.left,y=start.top+start.height/2-area.top;
     const dx=end.left+end.width/2-area.left-x,dy=end.top+end.height/2-area.top-y;
     const beam=document.createElement('span');beam.className='es-vote-beam';beam.setAttribute('aria-hidden','true');
@@ -95,11 +96,11 @@
     beam.innerHTML='<i></i>';
     arena.appendChild(beam);window.setTimeout(()=>beam.remove(),530);
    }
-   from.classList.add('is-firing');to.classList.add('is-hit');
+   to.classList.add('is-hit');
    displayCounts[shot.to]=(displayCounts[shot.to]||0)+1;
    const label=to.querySelector('.es-vote-hit-count');
    if(label)label.textContent=displayCounts[shot.to]+' voto(s)';
-   window.setTimeout(()=>{from.classList.remove('is-firing');to.classList.remove('is-hit');},360);
+   window.setTimeout(()=>{to.classList.remove('is-hit');},360);
   }
   summary.shots.forEach((shot,i)=>window.setTimeout(()=>fire(shot),Math.round(i*interval)));
   window.setTimeout(finish,Math.round(summary.shots.length*interval+570));
