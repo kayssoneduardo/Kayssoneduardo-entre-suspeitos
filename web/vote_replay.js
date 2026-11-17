@@ -32,6 +32,7 @@
   return {shots,counts:Object.fromEntries(counts),eliminated,tied};
  }
  function build(players,summary){
+  if(window.ESJudgmentArena?.resultMarkup)return window.ESJudgmentArena.resultMarkup(players,summary);
   const gone=new Set(summary.eliminated);
   return '<div class="es-vote-replay" aria-label="Revelação da votação">'+
    '<div class="es-vote-replay-header"><span class="eyebrow">◈ VEREDITO</span>'+
@@ -69,13 +70,13 @@
     const id=String(p.id),actor=actors.get(id);
     if(!actor)continue;
     const label=actor.querySelector('.es-vote-hit-count');
-    if(label)label.textContent=(summary.counts[id]||0)+' voto(s)';
+    if(label)label.textContent=(summary.counts[id]||0)+' golpe(s)';
     actor.classList.toggle('is-eliminated',summary.eliminated.includes(id));
    }
    const name=id=>roster.find(p=>String(p.id)===id)?.nick||'Jogador';
    const eliminated=summary.eliminated.map(name);
    const tie=summary.tied.map(name);
-   text.textContent=(eliminated.length?'Eliminados pela votação: '+eliminated.join(', ')+'. ':'Nenhum eliminado nesta votação. ')+
+   text.textContent=(eliminated.length?'Mais atingidos na votação: '+eliminated.join(', ')+'. ':'Nenhum personagem foi eliminado nesta votação. ')+
     (tie.length?'Empate sem eliminação: '+tie.join(', ')+'.':'');
   };
   if(!canAnimate){finish();return summary;}
@@ -85,7 +86,7 @@
    if(!root.isConnected)return;
    const to=actors.get(shot.to);
    if(!to)return;
-   const source=root.querySelector('.es-vote-source'),head=to.querySelector('.es-vote-head');
+   const source=root.querySelector('.es-vote-source'),head=to.querySelector('.es-vote-head')||to.querySelector('.judge-helm');
    if(source&&head&&arena&&typeof source.getBoundingClientRect==='function'){
     const start=source.getBoundingClientRect(),end=head.getBoundingClientRect(),area=arena.getBoundingClientRect();
     const x=start.left+start.width/2-area.left,y=start.top+start.height/2-area.top;
@@ -96,11 +97,11 @@
     beam.innerHTML='<i></i>';
     arena.appendChild(beam);window.setTimeout(()=>beam.remove(),530);
    }
-   to.classList.add('is-hit');
+   to.classList.add('is-hit');to.classList.add('judge-impact');
    displayCounts[shot.to]=(displayCounts[shot.to]||0)+1;
    const label=to.querySelector('.es-vote-hit-count');
    if(label)label.textContent=displayCounts[shot.to]+' voto(s)';
-   window.setTimeout(()=>{to.classList.remove('is-hit');},360);
+   window.setTimeout(()=>{to.classList.remove('is-hit');to.classList.remove('judge-impact');},360);
   }
   summary.shots.forEach((shot,i)=>window.setTimeout(()=>fire(shot),Math.round(i*interval)));
   window.setTimeout(finish,Math.round(summary.shots.length*interval+570));
