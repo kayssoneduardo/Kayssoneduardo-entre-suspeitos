@@ -67,6 +67,7 @@ jobs:
           node v7_pending/tests/v77_integration_smoke.cjs
           node v7_pending/tests/v77_android_race_smoke.cjs
           node v7_pending/tests/v77_android_browser_smoke.cjs
+          node v7_pending/tests/v78_vote_replay_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
@@ -111,7 +112,7 @@ jobs:
           done
           grep -qi '^content-type: *text/html' /tmp/header
           grep -q 'ENTRE SUSPEITOS' /tmp/index
-          for file in online.js app.js server-config.js words.js cosmetics.js motion.js entrance.js v77.js style.css; do
+          for file in online.js app.js server-config.js words.js cosmetics.js motion.js entrance.js v77.js vote_replay.js style.css; do
             curl --silent --show-error --fail --location --retry 3 \
               --max-time 25 "$URL/$file" -o "/tmp/$file"
           done
@@ -119,9 +120,9 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          grep -q 'VERSÃO WEB 7.7.0' /tmp/index
-          grep -q 'TEMPORADAS E VOTAÇÃO' /tmp/index
-          grep -q 'v770-consolidated-release-20261114-r1' /tmp/index
+          grep -q 'VERSÃO WEB 7.8.0' /tmp/index
+          grep -q 'PERFIL E VEREDITO' /tmp/index
+          grep -q 'v780-perfil-votos-20261117-r1' /tmp/index
           grep -q 'ESEntrance' /tmp/entrance.js
           grep -q 'ESV77' /tmp/v77.js
           grep -q 'es77-vote-choice' /tmp/online.js
