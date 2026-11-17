@@ -46,7 +46,7 @@ end;
 $function$;
 
 -- Nunca expor votos de uma rodada ainda aberta. Somente membros ativos
--- de uma sala encerrada podem assistir ao replay cinematográfico.
+-- de uma sala encerrada podem consultar somente totais anônimos.
 create or replace function public.es_v78_vote_replay(p_room uuid)
 returns jsonb
 language plpgsql
@@ -74,15 +74,19 @@ begin
   end if;
   select rd.id into round_id from public.es_rounds rd
     where rd.room_id=p_room and rd.round_no=round_number;
+  -- Only target totals: never disclose who voted for whom.
   select coalesce(
-    jsonb_agg(jsonb_build_object('from',v.user_id,'targets',to_jsonb(v.targets))
-      order by m.joined_at),
+    jsonb_agg(jsonb_build_object('to',c.target,'count',c.votes) order by c.target),
     '[]'::jsonb
   ) into ballots
-  from public.es_votes v
-  join public.es_members m on m.room_id=p_room and m.user_id=v.user_id
-  where v.round_id=round_id;
-  return coalesce(ballots,'[]'::jsonb);
+  from (
+    select chosen.target, count(*)::integer as votes
+    from public.es_votes v
+    cross join lateral unnest(v.targets) as chosen(target)
+    where v.round_id=round_id
+    group by chosen.target
+  ) c;
+  return ballots;
 end;
 $function$;
 
