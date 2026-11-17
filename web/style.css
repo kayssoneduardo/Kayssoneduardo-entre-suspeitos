@@ -644,3 +644,7 @@ body[data-motion=on] .es77-achievement-lenda{animation:es77LegendAchieve .9s cub
 @keyframes esV78Kick{0%,100%{transform:translateX(0)}40%{transform:translateX(-4px)}}
 @media(max-width:400px){.es-vote-arena{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;padding:10px 3px}.es-vote-replay{padding:10px 7px}.es-vote-figure{transform:scale(.86);margin:-4px 0 -3px}.es-vote-actor strong{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.es-vote-replay *,.es-vote-replay *:before,.es-vote-replay *:after{animation:none!important;transition:none!important}.es-vote-replay.is-finished .es-vote-actor.is-eliminated .es-vote-figure{transform:none}}
+
+/* V7.8 — origem simbólica e neutra: a animação não atribui votos a pessoas. */
+.es-vote-source{position:absolute;z-index:6;left:50%;top:3px;transform:translateX(-50%);width:30px;height:30px;display:grid;place-items:center;border-radius:50%;border:1px solid #f8dfad;background:#382849;color:#fce6af;font-size:20px;box-shadow:0 0 15px #d5a36b80;pointer-events:none}
+.es-vote-arena{padding-top:42px}
