@@ -648,3 +648,92 @@ body[data-motion=on] .es77-achievement-lenda{animation:es77LegendAchieve .9s cub
 /* V7.8 — origem simbólica e neutra: a animação não atribui votos a pessoas. */
 .es-vote-source{position:absolute;z-index:6;left:50%;top:3px;transform:translateX(-50%);width:30px;height:30px;display:grid;place-items:center;border-radius:50%;border:1px solid #f8dfad;background:#382849;color:#fce6af;font-size:20px;box-shadow:0 0 15px #d5a36b80;pointer-events:none}
 .es-vote-arena{padding-top:42px}
+
+
+/* V7.9 — ARENA DO JULGAMENTO, PALCO DE FRENTE.
+   Todos os lutadores são originais em CSS (sem sprites de terceiros). */
+.judge-panel{border:1px solid #a883d275;border-radius:18px;padding:12px;margin:12px 0 16px;background:#0b0918;box-shadow:inset 0 1px 0 #ffffff15,0 12px 30px #07011166}
+.judge-heading{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;margin:4px 0 12px}
+.judge-heading strong{font-size:clamp(19px,5vw,25px);letter-spacing:.5px;color:#f4e3ff}
+.judge-heading small{font-size:11px;color:#c9bedb}
+.judge-stage{position:relative;isolation:isolate;overflow:hidden;min-height:258px;border:1px solid #9175bcaa;border-radius:15px;background:
+ radial-gradient(ellipse at 50% 17%,#71509a70,transparent 52%),
+ linear-gradient(180deg,#19152f 0%,#28203c 48%,#392d45 71%,#181225 100%);
+ padding:40px 7px 26px}
+.judge-arches{position:absolute;inset:6px 0 36%;display:flex;align-items:flex-end;justify-content:space-around;gap:6px;z-index:-1;pointer-events:none}
+.judge-arches i{display:block;height:100%;width:28%;max-width:165px;border:6px solid #4e425d;border-bottom:0;border-radius:50% 50% 0 0;box-shadow:inset 0 9px 19px #0d0b23,0 0 5px #c8a5ee55;background:linear-gradient(#13102a,#3b2f4a77)}
+.judge-arches i:nth-child(2){height:116%;width:32%;border-color:#6c5972}
+.judge-platform{position:absolute;z-index:-1;left:3%;right:3%;bottom:12px;height:59px;background:linear-gradient(#66556e,#24192f 45%,#110f1c);border:2px solid #b58fb78c;transform:perspective(180px) rotateX(17deg);border-radius:50% 50% 12px 12px/30% 30% 8px 8px;box-shadow:0 15px 18px #09041499}
+.judge-floor{position:absolute;z-index:-2;inset:66% 0 0;background:repeating-linear-gradient(90deg,transparent 0 24px,#e9b1fb10 25px 27px),linear-gradient(#563e5e,#161321)}
+.judge-cast{display:grid;position:relative;z-index:2;grid-template-columns:repeat(auto-fit,minmax(87px,1fr));align-items:end;justify-items:stretch;gap:9px 5px;margin:0 auto;max-width:730px}
+.judge-actor{display:flex;position:relative;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;min-width:0;min-height:168px;padding:11px 2px 9px;border:1px solid #ac90c45e;border-radius:12px;background:linear-gradient(180deg,#d8adf00c,#0908155e 80%);color:#fff;cursor:default;touch-action:manipulation;transition:box-shadow .18s,border-color .18s,background .18s}
+.judge-selectable.es77-vote-choice{display:flex;flex-direction:column;gap:3px;min-height:168px;padding:11px 2px 9px;border:1px solid #a98cb86b;background:linear-gradient(180deg,#d8adf00c,#0908155e 80%);border-radius:12px;cursor:pointer}
+.judge-selectable .judge-checkbox,.es77-vote-choice .judge-checkbox{position:absolute;left:50%;top:0;width:1px;height:1px;opacity:0;pointer-events:none;padding:0;margin:0}
+.judge-selectable:focus-within{outline:2px solid #f8dfaa;outline-offset:2px}
+.judge-selectable.judge-selected,.judge-selectable:has(input:checked){border-color:#e9c17d;background:linear-gradient(180deg,#dbb15d30,#5f335066);box-shadow:0 0 0 1px #f6d8a078,inset 0 0 20px #f7c87938,0 0 16px #f7c87935}
+.judge-actor.judge-self{border-color:#9bd7e4a0;background:linear-gradient(#5ba9bf22,#10101b77)}
+.judge-actor.judge-disconnected{opacity:.55;filter:grayscale(.35)}
+.judge-figure{position:relative;display:block;flex:0 0 100px;width:73px;height:100px;transform-origin:50% 96%;filter:drop-shadow(0 0 8px #c5abeb35);--judge-metal:#8873b0;--judge-metal-hi:#b39cdd;--judge-accent:#7c64b4}
+.judge-color-amber{--judge-metal:#9d7645;--judge-metal-hi:#e3b16d;--judge-accent:#ca8747}
+.judge-color-teal{--judge-metal:#397f85;--judge-metal-hi:#83c8c4;--judge-accent:#48afbd}
+.judge-color-rose{--judge-metal:#995c7d;--judge-metal-hi:#e5a0bc;--judge-accent:#c679ac}
+.judge-color-blue{--judge-metal:#426d9d;--judge-metal-hi:#94bbef;--judge-accent:#638acb}
+.judge-color-silver{--judge-metal:#78818a;--judge-metal-hi:#d4e0ea;--judge-accent:#a2b5c7}
+.judge-color-emerald{--judge-metal:#3e7f62;--judge-metal-hi:#a0dcaf;--judge-accent:#65b684}
+.judge-color-scarlet{--judge-metal:#923e58;--judge-metal-hi:#e47d8a;--judge-accent:#c25b7a}
+.judge-color-indigo{--judge-metal:#454f98;--judge-metal-hi:#9699f5;--judge-accent:#727dd4}
+.judge-color-copper{--judge-metal:#98644d;--judge-metal-hi:#e6b094;--judge-accent:#c18a60}
+.judge-shadow{position:absolute;left:10px;bottom:0;width:53px;height:9px;border-radius:50%;background:#0b0616a6}
+.judge-legs{position:absolute;z-index:1;top:68px;left:21px;width:12px;height:28px;background:var(--judge-metal);border:1px solid #d8cbef88;box-shadow:19px 0 0 -1px var(--judge-metal),19px 0 0 #d8cbef55;border-radius:0 0 4px 4px}
+.judge-torso{position:absolute;z-index:3;top:38px;left:16px;width:42px;height:43px;border:2px solid var(--judge-metal-hi);border-radius:13px 13px 9px 9px;background:linear-gradient(110deg,var(--judge-metal-hi),var(--judge-metal) 39%,#202239 85%);box-shadow:inset 0 1px 0 #ffffff90}
+.judge-crest{display:grid;place-items:center;font-size:17px;color:#f7edff99;margin:8px auto}
+.judge-arm{position:absolute;top:42px;width:15px;height:36px;background:linear-gradient(var(--judge-metal-hi),var(--judge-metal));border:1px solid #e4d4ec80;border-radius:8px;z-index:2}
+.judge-arm-left{left:7px;transform:rotate(13deg)}
+.judge-arm-right{right:5px;transform:rotate(-12deg)}
+.judge-weapon{position:absolute;z-index:4;right:-2px;top:11px;height:72px;width:6px;border-radius:3px 3px 2px 2px;background:linear-gradient(90deg,#f9f2f6,#8b97b9,#f4e8ff);box-shadow:0 0 5px #e9dbff99;transform:rotate(24deg);transform-origin:bottom center}
+.judge-weapon:after{content:'';position:absolute;bottom:13px;left:-9px;width:25px;height:5px;border-radius:3px;background:#d2a669;box-shadow:0 0 3px #000a}
+.judge-helm{position:absolute;z-index:5;left:20px;top:9px;height:35px;width:33px;display:flex;align-items:center;justify-content:center;background:linear-gradient(110deg,var(--judge-metal-hi),var(--judge-metal));border:2px solid #e3d9ed;border-radius:40% 40% 28% 28%;box-shadow:0 -5px 0 -2px #c6acd6,0 0 10px #c6acd566}
+.judge-visor{display:grid;place-items:center;width:26px;height:13px;background:linear-gradient(#0c101e,#33475a);border:1px solid #ced5ea;border-radius:5px;color:#ecf0ff;font-size:10px;font-weight:900;line-height:1}
+.judge-name{display:block;text-align:center;font-size:clamp(10px,3vw,12px);line-height:1.25;font-weight:850;overflow-wrap:anywhere;max-width:100%}
+.judge-marker{min-height:18px;font-size:8px;letter-spacing:.04em;font-weight:750;color:#d3beda;text-align:center}
+.judge-target{position:absolute;top:3px;right:5px;font-size:16px;opacity:0;color:#ffe2a0;transform:scale(.7);transition:transform .15s,opacity .15s}
+.judge-selected .judge-target,.judge-selectable:has(input:checked) .judge-target{opacity:1;transform:scale(1.1)}
+.judge-selected .judge-marker,.judge-selectable:has(input:checked) .judge-marker{color:#f6dfa2}
+.judge-dais{position:relative;z-index:3;margin:12px auto -12px;width:35px;height:27px;display:grid;place-items:center;color:#f0d0a4;font-weight:900;font-size:22px;text-shadow:0 0 8px #ffe0a7;pointer-events:none}
+.judge-controls{text-align:center;margin:10px auto 0;max-width:460px}
+.judge-selection-status{display:block;font-weight:850;color:#f3dbb6;font-size:13px;margin:7px auto}
+.judge-controls .small{line-height:1.5;margin:7px auto}
+.judge-actor.judge-impact .judge-figure{animation:judgeHit .5s ease-out}
+.judge-actor.judge-impact{box-shadow:inset 0 0 34px #f6cd7c99,0 0 22px #ffe0a57a}
+.judge-actor.judge-impact:after{content:'⚔';position:absolute;z-index:8;top:13px;left:50%;font-size:35px;color:#fff6c7;text-shadow:0 0 24px #ffd77d;animation:judgeSlash .46s ease-out both}
+@keyframes judgeHit{0%{transform:translateX(0) rotate(0)}30%{transform:translateX(7px) rotate(10deg)}100%{transform:translateX(0) rotate(0)}}
+@keyframes judgeSlash{0%{opacity:0;transform:translate(-50%,-15px) rotate(-60deg) scale(.5)}45%{opacity:1;transform:translate(-50%,8px) rotate(30deg) scale(1.3)}100%{opacity:0;transform:translate(-50%,15px) rotate(58deg) scale(1)}}
+/* Resultado usa exatamente o mesmo palco frontal; não contém dados de quem atacou. */
+.es-judgment-result .es-vote-arena{display:block;min-height:252px;padding:35px 7px 23px}
+.es-judgment-result .es-vote-arena .judge-cast{display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:7px 4px}
+.es-judgment-result .es-vote-actor{display:flex;min-height:165px;position:relative;margin:0;padding:11px 2px 8px}
+.es-judgment-result .es-vote-figure{position:relative;display:block;width:73px;height:100px;margin-bottom:4px;transform:none}
+.es-judgment-result .es-vote-figure .judge-figure{width:73px;height:100px}
+.es-judgment-result .es-vote-source{position:relative;left:auto;top:auto;transform:none;margin:12px auto -12px}
+.es-judgment-result .es-vote-replay-header{text-align:center}
+.es-judgment-result .es-vote-replay-header p{max-width:450px;margin:7px auto 11px}
+.es-judgment-result .es-vote-beam{height:8px;z-index:9}
+.es-judgment-result .es-vote-beam i{background:linear-gradient(90deg,#ffeac8,#ffffff,#d8a5fb);box-shadow:0 0 14px #ffe7d5;clip-path:polygon(0 35%,100% 0,100% 100%,0 65%)}
+.es-judgment-result .es-vote-replay.is-finished .es-vote-actor.is-eliminated .es-vote-figure,
+.es-judgment-result.es-vote-replay.is-finished .es-vote-actor.is-eliminated .es-vote-figure{transform:translateY(10px) rotate(-48deg);filter:grayscale(.95);opacity:.68}
+.es-judgment-result .es-vote-hit-count{color:#ead7be}
+@media(max-width:420px){
+ .judge-panel{padding:9px 6px}
+ .judge-stage{padding:30px 4px 21px}
+ .judge-cast,.es-judgment-result .es-vote-arena .judge-cast{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 3px}
+ .judge-actor,.judge-selectable.es77-vote-choice{min-height:151px;padding:7px 1px}
+ .judge-figure{transform:scale(.86);margin:-6px auto -6px;flex-basis:100px}
+ .judge-name{font-size:11px}
+ .judge-actor .judge-marker{font-size:8px}
+ .es-judgment-result .es-vote-figure{margin:-6px 0 0;transform:scale(.86)}
+ .es-judgment-result .es-vote-arena{padding:30px 4px 22px}
+}
+@media(prefers-reduced-motion:reduce){
+ .judge-panel *,.judge-panel *:before,.judge-panel *:after,
+ .es-judgment-result *,.es-judgment-result *:before,.es-judgment-result *:after{animation:none!important;transition:none!important}
+}
