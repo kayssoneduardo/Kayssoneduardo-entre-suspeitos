@@ -28,7 +28,7 @@ let room={id:'sala',code:'ABC123',owner:'host',status:'lobby',public:true,max:6,
 ui.renderRoom(room);
 assert.match(app.html,/cosmetic-frame-illustration/);
 assert.match(app.html,/cosmetic-banner-svg/);
-assert.match(app.html,/Moldura: Coroa Arcana/);
+assert.doesNotMatch(app.html,/Moldura: Coroa Arcana/,'Moldura deve ser visual, sem etiqueta na sala');
 assert.match(app.html,/cosmetic-player-name title-mistico/);
 assert.match(app.html,/Verdade Silenciosa/);
 assert.match(app.html,/Operação Névoa/);
