@@ -463,16 +463,17 @@ class OnlineUI{
    <p id="onlineSecretValue" data-secret="${ESC(secret)}" data-info="${ESC(info)}" hidden></p><p class="notice">Você tem 30 segundos para memorizar sua carta. Solte para ocultar.</p>`:'<p class="notice">Tempo de visualização encerrado. A votação vai começar.</p>'}</section>`;
   }else if(r.status==='voting'){
    const myVote=r.me.voted;
+   const arenaBallot=window.ESJudgmentArena?.markup(joined,me,r.impostors,myVote)||null;
    phase=`<section class="card es77-voting"><div class="es77-vote-eyebrow">◈ DECISÃO FINAL</div><h2>Votação secreta</h2><p class="small muted">${joined.filter(p=>p.voted).length} de ${joined.length} jogadores já votaram.</p><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
     <p class="subtext">Escolha ${r.impostors} suspeito(s), sem repetir nomes. Os votos dos outros permanecem secretos.</p>
-    ${myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check es77-vote-choice"><input type="checkbox" data-vote="${ESC(p.id)}"><span class="es77-vote-avatar" aria-hidden="true">${ESC(p.nick.charAt(0).toUpperCase())}</span><strong>${ESC(p.nick)}</strong><span class="es77-vote-mark" aria-hidden="true">◈</span></label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
+    ${arenaBallot?arenaBallot+(myVote?'':btn('submitVote','CONFIRMAR GOLPES')):myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check es77-vote-choice"><input type="checkbox" data-vote="${ESC(p.id)}"><span class="es77-vote-avatar" aria-hidden="true">${ESC(p.nick.charAt(0).toUpperCase())}</span><strong>${ESC(p.nick)}</strong><span class="es77-vote-mark" aria-hidden="true">◈</span></label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
     <p id="onlineError" class="error"></p></section>`;
   }else if(r.status==='results'){
    const impostors=r.players.filter(p=>r.me.impostors?.includes(p.id));
    const mine=(r.results||[]).find(x=>x.user===me);const totalWins=(r.results||[]).filter(x=>x.win).length;
    phase=`<section class="card center v74-reveal"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p>
     <p class="notice">${impostors.length} impostor(es) revelado(s) · ${totalWins} vencedor(es).</p>
-    ${window.ESVoteReplay?`<div class="es-vote-replay-card"><div id="voteReplay"><p class="small muted">Carregando a revelação dos votos…</p></div>${btn('replayVotes','REVER DISPAROS','secondary')}</div>`:''}
+    ${window.ESVoteReplay?`<div class="es-vote-replay-card"><div id="voteReplay"><p class="small muted">Preparando a cena dos golpes…</p></div>${btn('replayVotes','REVER GOLPES','secondary')}</div>`:''}
     ${mine?`<div class="card es-v75-outcome ${mine.win?'is-victory':'is-defeat'} ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${window.ESMotion?.outcome(mine.win)||''} ${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong></div>`:''}
     <h3>Os impostores eram</h3>${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
     <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member ${x.win?'v74-result-good':'v74-result-bad'}"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
@@ -481,6 +482,7 @@ class OnlineUI{
   }
   this.currentPage='room';const event=this.activeEvent;const eventCard=event&&window.ESCosmetics?`<section class="cosmetic-room-banner">${window.ESCosmetics.banner('ecos_da_nevoa')}<div class="cosmetic-room-banner-content"><span class="eyebrow">EVENTO ESPECIAL</span><h3>${ESC(event.name)}</h3><p>${ESC(event.description)}</p><progress value="${Math.min(event.progress,event.target)}" max="${event.target}"></progress><p>${Math.min(Math.max(0,event.progress),event.target)}/${event.target} · ${event.progress>=event.target?'Concluído · Moldura Névoa':'Moldura Névoa'}</p></div></section>`:'';this.app.innerHTML=head+phase+eventCard+people+btn('leaveOn','Sair da sala','ghost')+`<p id="onlineError" class="error"></p>`;
   if(selectedVotes.length)this.app.querySelectorAll('[data-vote]').forEach(el=>{el.checked=selectedVotes.includes(el.dataset.vote);});
+  if(r.status==='voting'&&!r.me.voted)window.ESJudgmentArena?.bind(this.app,r.impostors);
   this.bindPublicProfiles();
    if(this.entrancePending && r.status==='lobby'){
     this.entrancePending=false;
@@ -513,6 +515,8 @@ class OnlineUI{
    const button=$('submitVote');button.disabled=true;button.textContent='Registrando voto...';
    try{
     await this.cloud.rpc('es_vote',{p_room:r.id,p_targets:targets});
+    const arenaStage=this.app.querySelector?.('#judgmentStage');
+    if(arenaStage&&window.ESJudgmentArena?.impact)await window.ESJudgmentArena.impact(arenaStage,targets);
     window.ESV77?.sealedVote();this.sound('vote');
     this.lastFingerprint='';await this.refresh();
    }catch(e){button.disabled=false;button.textContent='CONFIRMAR VOTO';this.error(e);}

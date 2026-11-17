@@ -65,7 +65,7 @@ async function main(){
    ready=await evaluate("document.readyState==='complete'&&!!window.ESV77").catch(()=>false);
   }
   assert(ready,'V7.7 must load in a real browser');
-  const initial=await evaluate('({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,version:document.body.textContent.includes("7.8.0")})');
+  const initial=await evaluate('({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,version:document.body.textContent.includes("7.9.0")})');
   assert(initial.version,'RC must be visible in the page');
   assert(initial.scrollWidth<=initial.width+5,'Initial page must not scroll sideways at 360px');
   const mobile=await evaluate(`(function(){
@@ -93,6 +93,27 @@ async function main(){
    return item?getComputedStyle(item).animationDuration:null;
   })()`);
   assert(reduced==='0s','Reduced-motion preference must disable legendary achievement motion');
+  // Real Android-sized Chrome interaction with the playable front-arena demo.
+  await send('Page.navigate',{url:url.replace('index.html','arena-demo.html')});
+  let arenaLoaded=false;
+  for(let n=0;n<45&&!arenaLoaded;n++){
+    await delay(120);
+    arenaLoaded=await evaluate("document.readyState==='complete'&&!!window.ESJudgmentArena&&!!document.getElementById('demoConfirm')").catch(()=>false);
+  }
+  assert(arenaLoaded,'Front arena demo must load in real Chromium');
+  const arenaSelection=await evaluate("(function(){const items=[...document.querySelectorAll('[data-vote]')];items[0].click();items[1].click();return {inputs:items.length,enabled:!document.getElementById('demoConfirm').disabled,selected:document.querySelectorAll('[data-vote]:checked').length,width:innerWidth,scroll:document.documentElement.scrollWidth};})()");
+  assert.equal(arenaSelection.inputs,5,'Demo has five possible suspects');
+  assert.equal(arenaSelection.selected,2);
+  assert.equal(arenaSelection.enabled,true,'Selecting exactly two fighters enables attack');
+  assert(arenaSelection.scroll<=arenaSelection.width+5,'Front arena must not overflow at 360px');
+  await evaluate("document.getElementById('demoConfirm').click(); true");
+  let arenaFinished=false;
+  for(let n=0;n<45&&!arenaFinished;n++){
+    await delay(120);
+    arenaFinished=await evaluate("!!document.querySelector('#demoReplay .es-judgment-result')&&document.querySelector('#demoReplay .es-vote-replay')?.classList.contains('is-finished')").catch(()=>false);
+  }
+  assert(arenaFinished,'Demo must reveal a completed anonymous front-facing replay');
+  console.log('PASSOU V7.9 CHROME/ANDROID: escolha por toque, dois golpes, resultado frontal e tela 360px.');
   console.log('PASSOU V7.7 CHROME/ANDROID: 360px no overflow; vote seal, ready status, season ranking, reduced motion.');
  }finally{
   try{ws?.close()}catch{}

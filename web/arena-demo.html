@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c071c">
+<title>Entre Suspeitos — Teste da Arena do Julgamento</title>
+<link rel="stylesheet" href="style.css?v=v790-arena-frontal-20261117-r1">
+</head>
+<body data-theme="shadow" data-motion="on">
+<div class="shell">
+<header class="topbar"><a class="back" style="text-decoration:none" href="./">← Jogo</a><strong>ARENA DO JULGAMENTO</strong><span></span></header>
+<main id="app">
+<section class="card">
+<div class="eyebrow">VERSÃO 7.9 · TESTE LOCAL</div>
+<h2>Confronto de votação</h2>
+<p class="subtext">Toque nos personagens, escolha dois suspeitos e confirme seus golpes. Esta demonstração não precisa de conta, não envia votos ao servidor e não altera ranking nem XP.</p>
+<div id="demoCast"></div>
+<button class="btn" id="demoConfirm" type="button">CONFIRMAR GOLPES</button>
+<p class="error" id="demoError" role="alert"></p>
+</section>
+<div id="demoOutcome" hidden></div>
+</main>
+<footer>ENTRE SUSPEITOS <span>•</span> ARENA FRONTAL 7.9 DEMO</footer>
+</div>
+<script src="judgment_arena.js?v=v790-arena-frontal-20261117-r1"></script>
+<script src="vote_replay.js?v=v790-arena-frontal-20261117-r1"></script>
+<script>
+(function(){
+ 'use strict';
+ const roster=[
+  {id:'zero',nick:'Zero',active:true,online:true},
+  {id:'ana',nick:'Ana',active:true,online:true},
+  {id:'bento',nick:'Bento',active:true,online:true},
+  {id:'celso',nick:'Celso',active:true,online:true},
+  {id:'diana',nick:'Diana',active:true,online:true},
+  {id:'fabio',nick:'Fábio',active:true,online:true}
+ ];
+ const max=2,cast=document.getElementById('demoCast'),button=document.getElementById('demoConfirm');
+ const error=document.getElementById('demoError'),outcome=document.getElementById('demoOutcome');
+ function begin(){
+  cast.innerHTML=window.ESJudgmentArena.markup(roster,'zero',max,false);
+  outcome.hidden=true;outcome.innerHTML='';error.textContent='';button.hidden=false;
+  button.disabled=true;button.textContent='CONFIRMAR GOLPES';
+  // The live multiplayer also uses data-vote and this exact selection component.
+  window.ESJudgmentArena.bind(document.getElementById('app'),max);
+ }
+ button.addEventListener('click',async()=>{
+  const targets=[...cast.querySelectorAll('[data-vote]:checked')].map(x=>x.dataset.vote);
+  if(targets.length!==max){error.textContent='Escolha exatamente dois suspeitos.';return;}
+  button.disabled=true;
+  try{
+   await window.ESJudgmentArena.impact(cast.querySelector('#judgmentStage'),targets);
+   // Example anonymous totals from five fictional voters; never identities.
+   const totals={zero:0,ana:3,bento:2,celso:2,diana:2,fabio:1};
+   for(const id of targets)totals[id]++;
+   const anonymous=Object.entries(totals).map(([to,count])=>({to,count}));
+   cast.querySelectorAll('[data-vote]').forEach(x=>x.disabled=true);
+   outcome.hidden=false;
+   outcome.innerHTML='<section class="card center"><h2>Veredito da arena</h2>'+
+    '<p class="small muted">Este resultado é uma simulação local. Ninguém consegue saber quem votou em quem.</p>'+
+    '<div id="demoReplay"></div><button type="button" class="btn secondary" id="demoAgain">REVER CONFRONTO</button>'+
+    '<button type="button" class="btn ghost" id="demoRestart">NOVA SIMULAÇÃO</button></section>';
+   function replay(){window.ESVoteReplay.mount(document.getElementById('demoReplay'),anonymous,roster,max,true);}
+   document.getElementById('demoAgain').onclick=replay;
+   document.getElementById('demoRestart').onclick=begin;
+   button.hidden=true;replay();
+   outcome.scrollIntoView({behavior:'smooth',block:'start'});
+  }catch(e){error.textContent='Não foi possível mostrar os golpes: '+String(e.message||e);button.disabled=false;}
+ });
+ begin();
+})();
+</script>
+</body>
+</html>
