@@ -20,7 +20,7 @@
   return '<div class="judge-arches" aria-hidden="true"><i></i><i></i><i></i></div>'+
    '<div class="judge-platform" aria-hidden="true"></div><div class="judge-floor" aria-hidden="true"></div>';
  }
- function markup(players,myId,required,alreadyVoted){
+ function markup(players,myId,required,alreadyVoted,titleCatalog){
   const roster=(Array.isArray(players)?players:[]).filter(p=>p&&p.active);
   const max=Math.max(1,Math.floor(Number(required)||1));
   let eligible=0;
@@ -28,7 +28,10 @@
    const id=String(p.id),name=String(p.nick||'Jogador'),self=id===String(myId);
    const canVote=!alreadyVoted&&!self&&!!p.online;
    if(canVote)eligible++;
-   const body=fighter(p,i)+'<strong class="judge-name">'+esc(name)+'</strong>'+
+   const t=(Array.isArray(titleCatalog)?titleCatalog:[]).find(item=>item.code===p.title);
+   const rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';
+   const title=t?'<span class="judge-title title-'+rarity+'">'+esc(t.name)+'</span>':'';
+   const body=title+fighter(p,i)+'<strong class="judge-name">'+esc(name)+'</strong>'+
     '<span class="judge-marker">'+(self?'VOCÊ':!p.online?'SEM CONEXÃO':alreadyVoted?'JOGADOR':'TOQUE PARA ACUSAR')+'</span>'+
     '<span class="judge-target" aria-hidden="true">⚔</span>';
    if(canVote){

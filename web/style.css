@@ -737,3 +737,10 @@ body[data-motion=on] .es77-achievement-lenda{animation:es77LegendAchieve .9s cub
  .judge-panel *,.judge-panel *:before,.judge-panel *:after,
  .es-judgment-result *,.es-judgment-result *:before,.es-judgment-result *:after{animation:none!important;transition:none!important}
 }
+
+/* V8.1 — esconder duplicacoes na votação; identificar titulo no proprio guerreiro */
+.judge-title{font-size:10px;line-height:1.2;font-weight:900;min-height:15px;max-width:100%;text-align:center;overflow-wrap:anywhere}
+.judge-title.title-mistico{color:#ff3159;text-shadow:0 0 10px #f0134d}
+.judge-title.title-lenda{color:#ffdc79;text-shadow:0 0 7px #a77026}
+.v81-point-delta{margin:9px 0 2px;font-weight:900;letter-spacing:.04em;color:#f5d889}
+.v81-rank-crown{color:#f6ce63;font-size:19px;text-shadow:0 0 8px #edb84d;vertical-align:middle}
