@@ -80,6 +80,15 @@ function shape(s){
  s.weapon==='book'?'<path d="M123 93L158 93L154 136L120 134Z" fill="'+dark+'" stroke="'+light+'" stroke-width="3"/><path d="M138 95v38" stroke="'+light+'"/>':
  s.weapon==='spirit'?'<path d="M134 65Q149 107 135 144Q118 171 141 205" fill="none" stroke="'+light+'" stroke-width="7" opacity=".7"/>':
  '<path d="M138 44L142 190" stroke="'+light+'" stroke-width="'+(s.weapon==='dagger'?4:8)+'"/><path d="M128 91L152 91" stroke="'+dark+'" stroke-width="6"/>';
+ const runes=['◈','◇','✦','☽','✧','⊕','⟡','⌘'];
+ const heraldry=Array.from({length:4},(_,i)=>{
+  const symbol=runes[(s.seed>>>(i*6))&7],x=62+i*12;
+  return '<text x="'+x+'" y="161" fill="'+light+'" opacity=".78" font-size="7" text-anchor="middle">'+symbol+'</text>';
+ }).join('');
+ const texture=Array.from({length:4},(_,i)=>{
+  const x=60+i*13,y=114+((s.seed>>>(i*4))&7);
+  return '<path d="M'+x+' '+y+'l3 4l-3 4l-3 -4Z" fill="'+light+'" opacity=".3"/>';
+ }).join('');
  const armored=s.armor==='plate'?'<path d="M49 92L111 92L101 153L61 153Z" fill="'+light+'" opacity=".2"/>':
  s.armor==='scale'?Array.from({length:4},(_,i)=>'<path d="M53 '+(105+i*13)+'Q80 '+(115+i*13)+' 106 '+(105+i*13)+'" stroke="'+light+'" stroke-width="2" fill="none"/>').join(''):'';
  const coat=waist===49?'M50 93L114 93L100 166L58 166Z':'M45 91L117 91L104 171L56 171Z';
@@ -93,6 +102,7 @@ function shape(s){
  '<path d="M110 93L139 100L146 152L121 154L104 112Z" fill="'+base+'" stroke="'+light+'" stroke-width="3"/>'+
  '<path d="'+coat+'" fill="url(#'+id+')" stroke="'+light+'" stroke-width="4"/>'+armored+
  '<path d="M45 98L27 115L53 127L61 107M118 99L137 115L112 128L101 107" fill="'+dark+'" stroke="'+light+'" stroke-width="3"/>'+
+ '+texture+heraldry+
  '<path d="M57 148L103 148L110 157L51 158Z" fill="'+dark+'" stroke="'+light+'" stroke-width="3"/>'+
  '<path d="M59 49Q60 19 81 21Q103 21 103 47L103 73L59 73Z" fill="'+base+'" stroke="'+light+'" stroke-width="3"/>'+
  '<path d="M65 50L99 50L96 64L66 64Z" fill="'+dark+'" stroke="'+light+'" stroke-width="2"/>'+
