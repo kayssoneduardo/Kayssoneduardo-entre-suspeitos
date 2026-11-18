@@ -53,6 +53,8 @@ jobs:
           test -f web/v77.js
           test -f web/judgment_arena.js
           test -f web/arena-demo.html
+          test -f web/v83_arena.js
+          test -f web/v83_skin_assets_4.js
           echo "Publicando a mesma versão do código web revisado."
       - name: Testes automáticos do site
         run: |
@@ -71,6 +73,7 @@ jobs:
           node v7_pending/tests/v77_android_browser_smoke.cjs
           node v7_pending/tests/v78_vote_replay_smoke.cjs
           node v7_pending/tests/v79_arena_frontal_smoke.cjs
+          node v7_pending/tests/v83_execution_vote_smoke.cjs
           node v7_pending/tests/v81_arena_crown_rules_smoke.cjs
           node v7_pending/tests/v81_scoring_sql_smoke.cjs
           node v7_pending/tests/v81_live_room_ux_smoke.cjs
@@ -118,7 +121,7 @@ jobs:
           done
           grep -qi '^content-type: *text/html' /tmp/header
           grep -q 'ENTRE SUSPEITOS' /tmp/index
-          for file in online.js app.js server-config.js words.js cosmetics.js motion.js entrance.js v77.js judgment_arena.js vote_replay.js style.css arena-demo.html; do
+          for file in online.js app.js server-config.js words.js cosmetics.js motion.js entrance.js v77.js judgment_arena.js vote_replay.js style.css arena-demo.html v83_arena.js v83_arena.css v83_skin_manifest.js v83_skin_assets_1.js v83_skin_assets_2.js v83_skin_assets_3.js v83_skin_assets_4.js; do
             curl --silent --show-error --fail --location --retry 3 \
               --max-time 25 "$URL/$file" -o "/tmp/$file"
           done
@@ -126,9 +129,11 @@ jobs:
           node --check /tmp/app.js
           grep -q 'MIN=3' /tmp/online.js
           test "$(grep -o '"w":' /tmp/words.js | wc -l)" -eq 1348
-          grep -q 'VERSÃO WEB 7.9.0' /tmp/index
-          grep -q 'ARENA DO JULGAMENTO' /tmp/index
-          grep -q 'v790-arena-frontal-20261117-r1' /tmp/index
+          grep -q 'VERSÃO WEB 8.3.0' /tmp/index
+          grep -q 'EXECUÇÃO E STATUS DE VOTO' /tmp/index
+          grep -q 'v830-court-votes-r1' /tmp/index
+          grep -q 'ES83Arena' /tmp/v83_arena.js
+          grep -q 'JÁ VOTOU' /tmp/v83_arena.js
           grep -q 'ESJudgmentArena' /tmp/judgment_arena.js
           grep -q 'ESJudgmentArena' /tmp/arena-demo.html
           grep -q '7.9' /tmp/arena-demo.html
