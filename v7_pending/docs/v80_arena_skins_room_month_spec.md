@@ -29,3 +29,9 @@ Data: 17/11/2026. Estado: **protótipo web isolado + especificação**, sem migr
 https://kayssoneduardo.github.io/Kayssoneduardo-entre-suspeitos/arena-skins-demo.html
 
 **Não afetado pela demo:** contas, títulos reais, votos reais, pontos reais, Supabase, APK e jogo online publicado.
+## Complemento V8.1 — 17/11/2026
+- Objetivo: 30 pessoas por sala (20 nao e limite). Demo V8.1 com 6, 10, 20 e 30; servidor real segue em 10 ate migracao, revisao de voz e testes.
+- Visual: personagens com proporcoes humanas, armadura, escudo, espada e pernas visiveis; silhueta por raridade. Somente a pessoa em primeiro do ranking da sala usa coroa dourada, independentemente da raridade, e a coroa muda quando muda a lideranca.
+- Pontuacao atual confirmada no banco: +25 pontos por vitoria publica, -25 por derrota publica.
+- Regra adicional: pessoa comum inocente, acusada (recebeu voto) e derrotada, que votou corretamente sozinha em pelo menos um impostor verdadeiro, nao perde nem ganha pontos de ranking nessa rodada: 0 em vez de -25. Vale com multiplos impostores quando ao menos um foi apontado exclusivamente por essa pessoa. Nao transforma derrota em vitoria; XP e estatisticas seguem independentes. Nao se aplica a impostores, ausentes ou quem nao votou.
+- Calculo da excecao exclusivamente no servidor, sem divulgar quem votou em quem, persistindo delta de pontos para rankings global, por sala e sazonais. Nenhuma alteracao de banco de producao foi aplicada pela demo.

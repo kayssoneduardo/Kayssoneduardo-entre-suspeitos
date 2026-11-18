@@ -71,6 +71,8 @@ jobs:
           node v7_pending/tests/v77_android_browser_smoke.cjs
           node v7_pending/tests/v78_vote_replay_smoke.cjs
           node v7_pending/tests/v79_arena_frontal_smoke.cjs
+          node v7_pending/tests/v81_arena_crown_rules_smoke.cjs
+          node v7_pending/tests/v81_scoring_sql_smoke.cjs
           python3 - <<'PY'
           from pathlib import Path
           assert 'MIN=3' in Path('web/online.js').read_text()
