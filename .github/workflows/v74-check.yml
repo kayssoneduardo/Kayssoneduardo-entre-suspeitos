@@ -27,10 +27,10 @@ jobs:
           node v7_pending/tests/v762_room_controls_smoke.cjs
           node v7_pending/tests/v77_integration_smoke.cjs
           node v7_pending/tests/v77_android_race_smoke.cjs
-          node v7_pending/tests/v77_android_browser_smoke.cjs
+          node v7_pending/tests/v81_title_skins_smoke.cjs
           node v7_pending/tests/v78_vote_replay_smoke.cjs
           node v7_pending/tests/v79_arena_frontal_smoke.cjs
-          node v7_pending/tests/v81_title_skins_smoke.cjs
+          node v7_pending/tests/v77_android_browser_smoke.cjs
       - name: Verificar arquivos e permissões da V7.4
         run: |
           test -f v7_pending/sql/v74_social_progress.sql
