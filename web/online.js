@@ -2,7 +2,7 @@
    O banco é Supabase/PostgREST, com RPCs SECURITY DEFINER e RLS. */
 (function(){
 'use strict';
-const PREFIX='es3_', MIN=3, MAX=10;
+const PREFIX='es3_', MIN=3, MAX=30;
 const CATEGORIES=Object.keys(window.ES_WORD_BANK||{});
 const COMPILED_CLOUD=window.ES_SERVER_CONFIG||{url:'',key:''};
 const ESC=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -365,15 +365,15 @@ class OnlineUI{
   $('enterCode').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_join_code',{p_code:$('roomCode').value.trim()}));}catch(e){this.error(e);}};
  }
  formRules(c={}){
-  const val=c.categories||CATEGORIES, max=c.max||10,imp=c.impostors||2;
-  return `<div class="option-grid">${input('maxOn','Máximo de jogadores','number',max,'min="3" max="10"')}${input('impOn','Impostores','number',imp,'min="1" max="4"')}</div>
+  const val=c.categories||CATEGORIES, max=c.max||30,imp=c.impostors||2;
+  return `<div class="option-grid">${input('maxOn','Máximo de jogadores','number',max,'min="3" max="30"')}${input('impOn','Impostores','number',imp,'min="1" max="10"')}</div>
    <div class="field"><label>Dificuldade</label><select id="difficultyOn">${['Fácil','Médio','Difícil','Misturado'].map(x=>`<option ${c.difficulty===x?'selected':''}>${x}</option>`).join('')}</select></div>
    <div class="field"><label>Dicas para o impostor</label><select id="clueOn">${[['both','Categoria e dica'],['category','Só categoria'],['hint','Só dica'],['none','Nenhuma']].map(x=>`<option value="${x[0]}" ${c.clue===x[0]?'selected':''}>${x[1]}</option>`).join('')}</select></div>
    <label class="check"><input type="checkbox" id="knowOn" ${c.know?'checked':''}> Impostores conhecem seus parceiros</label>
    <h3>Categorias</h3><div class="online-words">${CATEGORIES.map((x,i)=>`<label class="check"><input type="checkbox" data-oc="${i}" ${val.includes(x)?'checked':''}>${ESC(x)}</label>`).join('')}</div>`;
  }
  getRules(){const max=Number($('maxOn').value),imp=Number($('impOn').value),categories=[...this.app.querySelectorAll('[data-oc]:checked')].map(x=>CATEGORIES[Number(x.dataset.oc)]);
-  if(max<MIN||max>MAX||imp<1||imp>Math.floor((max-1)/2)||!categories.length)throw new Error('Escolha 3 a 10 jogadores, uma quantidade válida de impostores e pelo menos uma categoria.');
+  if(max<MIN||max>MAX||imp<1||imp>10||imp>Math.floor((max-1)/2)||!categories.length)throw new Error('Escolha 3 a 30 jogadores, até 10 impostores e pelo menos uma categoria.');
   return {p_max:max,p_impostors:imp,p_categories:categories,p_difficulty:$('difficultyOn').value,p_clue:$('clueOn').value,p_know:$('knowOn').checked};}
  createRoom(){this.currentPage='create';this.header('Criar sala');
   this.app.innerHTML=`<section class="card"><h2>Preparar partida online</h2><p class="subtext">O jogo inicia com pelo menos 3 jogadores prontos. A sala fica aberta até o anfitrião começar.</p>
@@ -403,10 +403,15 @@ class OnlineUI{
   this.refreshing=true;
   const active=()=>this.roomId===roomId&&this.roomEpoch===epoch&&this.currentPage==='room';
   try{
-   const [r,catalog]=await Promise.all([this.cloud.rpc('es_room_view',{p_room:roomId}),
-    this.titleCatalog?Promise.resolve(this.titleCatalog):this.cloud.rpc('es_title_catalog').catch(()=>null)]);
+   const [r,catalog,roomRanking]=await Promise.all([this.cloud.rpc('es_room_view',{p_room:roomId}),
+    this.titleCatalog?Promise.resolve(this.titleCatalog):this.cloud.rpc('es_title_catalog').catch(()=>null),
+    this.cloud.rpc('es_v81_room_ranking',{p_room:roomId}).catch(()=>[])]);
    if(!active())return;
    const titlesChanged=catalog!==this.titleCatalog;this.titleCatalog=catalog;
+   if(Array.isArray(roomRanking)&&roomRanking.length){
+    const points=new Map(roomRanking.map(p=>[String(p.id),Number(p.points)||0]));
+    r.players=(r.players||[]).map(p=>points.has(String(p.id))?{...p,room_points:points.get(String(p.id))}:p);
+   }
    this.connectionRestored();this.room=r;
    if(r.status==='discussion'&&seconds(r.phaseEnds)===0){
     await this.cloud.rpc('es_begin_vote',{p_room:roomId}).catch(()=>{});if(!active())return;
@@ -477,7 +482,7 @@ class OnlineUI{
    phase=`<section class="card center v74-reveal"><div class="eyebrow">SEGREDOS REVELADOS</div><h2>Fim da rodada</h2><div class="result-word">${ESC(r.me.word)}</div><p class="subtext">${ESC(r.me.category)}</p>
     <p class="notice">${impostors.length} impostor(es) revelado(s) · ${totalWins} vencedor(es).</p>
     ${window.ESVoteReplay?`<div class="es-vote-replay-card"><div id="voteReplay"><p class="small muted">Preparando a cena dos golpes…</p></div>${btn('replayVotes','REVER GOLPES','secondary')}</div>`:''}
-    ${mine?`<div class="card es-v75-outcome ${mine.win?'is-victory':'is-defeat'} ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${window.ESMotion?.outcome(mine.win)||''} ${mine.win?'VOCÊ VENCEU!':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong>${pointLabel?'<p class="v81-point-delta" role="status">'+ESC(pointLabel)+'</p>':''}</div>`:''}
+    ${mine?`<div class="card es-v75-outcome ${mine.win?'is-victory':'is-defeat'} ${mine.win?'v74-result-good':'v74-result-bad'}"><h3>${window.ESMotion?.outcome(mine.win)||''} ${mine.win?'VOCÊ VENCEU!':r.public&&r.me?.ranking_delta===0?'ACERTO SOLITÁRIO — PONTUAÇÃO PRESERVADA':'VOCÊ PERDEU'}</h3><p>${mine.impostor?'Você foi impostor':'Você foi comum'} · ${mine.votes} voto(s) recebido(s)</p><strong>${r.public?'+'+mine.xp+' XP de partida':'Partida privada · sem XP/ranking'}</strong>${pointLabel?'<p class="v81-point-delta" role="status">'+ESC(pointLabel)+'</p>':''}</div>`:''}
     <h3>Os impostores eram</h3>${impostors.map(p=>`<div class="result-name">${ESC(p.nick)}</div>`).join('')}
     <h3>Resultados individuais</h3>${(r.results||[]).map(x=>`<div class="member ${x.win?'v74-result-good':'v74-result-bad'}"><span class="member-info"><strong>${ESC(r.players.find(p=>p.id===x.user)?.nick||'Jogador')}</strong><small>${x.impostor?'Impostor':'Comum'} · ${x.votes} voto(s) recebido(s)</small></span><span class="pill ${x.win?'good':'red'}">${x.win?'VENCEU':'PERDEU'} ${r.public?`· +${x.xp} XP`:''}</span></div>`).join('')}
     <p class="small muted">Resultados revelados somente após o encerramento da votação.</p>
@@ -724,7 +729,7 @@ class OnlineUI{
   }catch(e){this.error(e);}
  }
 
- async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog,season=null,history=[];try{[rank,catalog,season,history]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').then(rows=>Array.isArray(rows)&&rows.length?rows:this.cloud.rpc('es_leaderboard')).catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog'),this.cloud.rpc('es_v77_season_ranking').catch(()=>null),this.cloud.rpc('es_v77_season_history').catch(()=>[])]);}catch(e){return this.error(e);}
+ async ranking(){this.currentPage='ranking';this.header('Ranking público');let rank,catalog,season=null,history=[];try{[rank,catalog,season,history]=await Promise.all([this.cloud.rpc('es_v75_leaderboard').then(rows=>Array.isArray(rows)&&rows.length?rows:this.cloud.rpc('es_leaderboard')).catch(()=>this.cloud.rpc('es_leaderboard')),this.cloud.rpc('es_title_catalog'),this.cloud.rpc('es_v81_monthly_ranking').catch(()=>this.cloud.rpc('es_v77_season_ranking').catch(()=>null)),this.cloud.rpc('es_v81_monthly_history').catch(()=>this.cloud.rpc('es_v77_season_history').catch(()=>[]))]);}catch(e){return this.error(e);}
   const ranked=rankedPlayers(rank);
   const medals={1:['🥇','Ouro'],2:['🥈','Prata'],3:['🥉','Bronze']};
   const podium=ranked.filter(p=>p.position<=3);

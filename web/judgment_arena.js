@@ -5,9 +5,12 @@
 (function(){
  'use strict';
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let activeTitles=[];
  const palette=['violet','amber','teal','rose','blue','silver','emerald','scarlet','indigo','copper'];
  const paint=i=>palette[i%palette.length];
- function fighter(p,i){
+ function fighter(p,i,catalog){
+  if(window.ESTitleSkinsV81?.figure && Array.isArray(catalog)&&catalog.length)
+   return '<span class="judge-figure judge-figure-v82">'+window.ESTitleSkinsV81.figure(p,catalog)+'</span>';
   const name=String(p.nick||'Jogador'),initial=name.charAt(0).toUpperCase();
   return '<span class="judge-figure judge-color-'+paint(i)+'" aria-hidden="true">'+
    '<span class="judge-shadow"></span><span class="judge-legs"></span>'+
@@ -21,7 +24,8 @@
    '<div class="judge-platform" aria-hidden="true"></div><div class="judge-floor" aria-hidden="true"></div>';
  }
  function markup(players,myId,required,alreadyVoted,titleCatalog){
-  const roster=(Array.isArray(players)?players:[]).filter(p=>p&&p.active);
+  if(Array.isArray(titleCatalog)&&titleCatalog.length)activeTitles=titleCatalog;
+  const roster=(window.ESTitleSkinsV81?.sorted(Array.isArray(players)?players:[])||players||[]).filter(p=>p&&p.active);
   const max=Math.max(1,Math.floor(Number(required)||1));
   let eligible=0;
   const characters=roster.map((p,i)=>{
@@ -31,7 +35,10 @@
    const t=(Array.isArray(titleCatalog)?titleCatalog:[]).find(item=>item.code===p.title);
    const rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';
    const title=t?'<span class="judge-title title-'+rarity+'">'+esc(t.name)+'</span>':'';
-   const body=title+fighter(p,i)+'<strong class="judge-name">'+esc(name)+'</strong>'+
+   const badges=''; // Full body skin already carries costume, symbol and equipment.
+   const first=i===0&&Number.isFinite(Number(p.room_points));
+   const leader=first?'<span class="es81-room-crown" aria-label="Primeiro lugar da sala">♛</span>':'';
+   const body=title+leader+fighter(p,i,titleCatalog)+badges+'<strong class="judge-name">'+esc(name)+'</strong>'+
     '<span class="judge-marker">'+(self?'VOCÊ':!p.online?'SEM CONEXÃO':alreadyVoted?'JOGADOR':'TOQUE PARA ACUSAR')+'</span>'+
     '<span class="judge-target" aria-hidden="true">⚔</span>';
    if(canVote){
@@ -98,7 +105,7 @@
    const id=String(p.id),name=String(p.nick||'Jogador');
    return '<article class="judge-actor es-vote-actor '+(excluded.has(id)?'is-target':'')+
     '" data-player="'+esc(id)+'" data-judgment-player="'+esc(id)+'">'+
-    '<span class="es-vote-figure judge-figure-wrap">'+fighter(p,i)+'</span>'+
+    '<span class="es-vote-figure judge-figure-wrap">'+fighter(p,i,activeTitles)+'</span>'+
     '<strong class="judge-name">'+esc(name)+'</strong>'+
     '<small class="es-vote-hit-count" data-count="'+esc(id)+'">0 golpe(s)</small></article>';
   }).join('');
