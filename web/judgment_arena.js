@@ -21,7 +21,7 @@
    '<div class="judge-platform" aria-hidden="true"></div><div class="judge-floor" aria-hidden="true"></div>';
  }
  function markup(players,myId,required,alreadyVoted,titleCatalog){
-  const roster=(Array.isArray(players)?players:[]).filter(p=>p&&p.active);
+  const roster=(window.ESTitleSkinsV81?.sorted(Array.isArray(players)?players:[])||players||[]).filter(p=>p&&p.active);
   const max=Math.max(1,Math.floor(Number(required)||1));
   let eligible=0;
   const characters=roster.map((p,i)=>{
@@ -31,7 +31,10 @@
    const t=(Array.isArray(titleCatalog)?titleCatalog:[]).find(item=>item.code===p.title);
    const rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';
    const title=t?'<span class="judge-title title-'+rarity+'">'+esc(t.name)+'</span>':'';
-   const body=title+fighter(p,i)+'<strong class="judge-name">'+esc(name)+'</strong>'+
+   const badges=window.ESTitleSkinsV81?.emblem(p,titleCatalog)||'';
+   const first=i===0&&Number.isFinite(Number(p.room_points));
+   const leader=first?'<span class="es81-room-crown" aria-label="Primeiro lugar da sala">♛</span>':'';
+   const body=title+leader+fighter(p,i)+badges+'<strong class="judge-name">'+esc(name)+'</strong>'+
     '<span class="judge-marker">'+(self?'VOCÊ':!p.online?'SEM CONEXÃO':alreadyVoted?'JOGADOR':'TOQUE PARA ACUSAR')+'</span>'+
     '<span class="judge-target" aria-hidden="true">⚔</span>';
    if(canVote){
