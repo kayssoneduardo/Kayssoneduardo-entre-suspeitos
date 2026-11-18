@@ -102,7 +102,7 @@ function shape(s){
  '<path d="M110 93L139 100L146 152L121 154L104 112Z" fill="'+base+'" stroke="'+light+'" stroke-width="3"/>'+
  '<path d="'+coat+'" fill="url(#'+id+')" stroke="'+light+'" stroke-width="4"/>'+armored+
  '<path d="M45 98L27 115L53 127L61 107M118 99L137 115L112 128L101 107" fill="'+dark+'" stroke="'+light+'" stroke-width="3"/>'+
- '+texture+heraldry+
+ texture+heraldry+
  '<path d="M57 148L103 148L110 157L51 158Z" fill="'+dark+'" stroke="'+light+'" stroke-width="3"/>'+
  '<path d="M59 49Q60 19 81 21Q103 21 103 47L103 73L59 73Z" fill="'+base+'" stroke="'+light+'" stroke-width="3"/>'+
  '<path d="M65 50L99 50L96 64L66 64Z" fill="'+dark+'" stroke="'+light+'" stroke-width="2"/>'+
