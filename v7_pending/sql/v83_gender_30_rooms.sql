@@ -44,7 +44,7 @@ declare v uuid:=public.es_auth(); r uuid; code text; tries int:=0;begin
  end loop;
  insert into public.es_members(room_id,user_id) values(r,v);
  return r;
-end$function$
+end$function$;
 
 CREATE OR REPLACE FUNCTION public.es_rules(p_room uuid, p_max integer, p_impostors integer, p_categories text[], p_difficulty text, p_clue text, p_know boolean)
  RETURNS void
@@ -60,7 +60,7 @@ declare n int;begin
  or p_clue not in ('both','category','hint','none') then raise exception 'Configuração inválida';end if;
  update public.es_rooms set max_players=p_max,impostors=p_impostors,categories=p_categories,difficulty=p_difficulty,clue_mode=p_clue,impostors_know=p_know where id=p_room;
  update public.es_members set ready=false where room_id=p_room and left_at is null;
-end$function$
+end$function$;
 
 CREATE OR REPLACE FUNCTION public.es_room_view(p_room uuid)
  RETURNS jsonb
@@ -97,5 +97,4 @@ declare r public.es_rooms%rowtype;rd public.es_rounds%rowtype; w public.es_words
  'max',r.max_players,'impostors',r.impostors,'categories',r.categories,'difficulty',r.difficulty,
  'clue',r.clue_mode,'know',r.impostors_know,'phaseEnds',r.phase_ends,'revealEnds',case when r.status='discussion' then r.phase_ends else null end,'round',r.round_no,
  'players',people,'me',me,'starter',case when r.status='lobby' then null else rd.starter_id end,'results',results);
-end$function$
-
+end$function$;
