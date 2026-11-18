@@ -57,16 +57,34 @@ h1{font-size:clamp(24px,5vw,38px);margin:12px 0 5px}h2{font-size:19px;margin:7px
 @media(max-width:540px){main{padding:11px 7px}.panel{padding:10px}.cast{grid-template-columns:repeat(4,minmax(0,1fr))}.fighter{min-height:168px;padding:7px 1px}.body{transform:scale(.83);margin:-7px 0}.fighter .name{font-size:10px}.fighter .title{font-size:8px}}
 @media(max-width:360px){.cast{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* V8.1: guerreiro vetorial proporcional, coroa somente no lider do ranking */
+.cast{grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 5px}
+.fighter{min-height:223px;overflow:visible;padding:10px 2px}
+.fighter .name{font-size:12px}.fighter .points{font-size:10px}
+.fighter .body{display:block;width:94px;height:133px;flex:0 0 133px;transform:none;margin:0;filter:drop-shadow(0 5px 5px #06020baa)}
+.body .hero-svg{width:100%;height:100%;display:block;overflow:visible}
+.body .aura,.body .crown,.body .head,.body .torso,.body .leg,.body .arm,.body .blade,.body .shade,.body .crest{display:none!important}
+.body.r-lenda,.body.r-mistico{filter:drop-shadow(0 0 10px var(--accent))}
+.body.r-mistico .hero-halo{filter:drop-shadow(0 0 5px #ff1945);animation:magica 2.2s alternate infinite}
+.fighter.is-room-leader{border-color:#f8d27a;background:linear-gradient(#e6b95424,#080a1570);box-shadow:inset 0 0 0 1px #f2c46488}
+.leader-crown{position:absolute;z-index:10;top:27px;left:50%;width:36px;transform:translateX(-50%);filter:drop-shadow(0 2px 6px #ffce53b9);pointer-events:none}
+.leader-crown svg{display:block;width:100%;height:auto}
+.skin-card .body{width:85px;height:119px;flex:0 0 119px;transform:none;margin:0}
+.fighter.fallen .body{transform:rotate(-58deg) translateY(11px)}
+@media(max-width:650px){.cast{grid-template-columns:repeat(4,minmax(0,1fr))}.fighter{min-height:205px}.fighter .body{width:80px;height:119px;flex-basis:119px}}
+@media(max-width:430px){.cast{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px 4px}.fighter{min-height:209px}.fighter .body{width:82px;height:120px;flex-basis:120px}.fighter .title{font-size:9px;white-space:normal;min-height:20px;line-height:1.15}.fighter .name{font-size:11px}.leader-crown{top:29px;width:30px}}
+@media(prefers-reduced-motion:reduce){.body.r-mistico .hero-halo{animation:none!important}}
 </style>
 </head>
 <body>
 <main>
-<header><span class="brand">ENTRE SUSPEITOS <span style="color:#da97ec">V8.0 LAB</span></span><a href="./">Voltar ao jogo</a></header>
+<header><span class="brand">ENTRE SUSPEITOS <span style="color:#da97ec">V8.1 LAB</span></span><a href="./">Voltar ao jogo</a></header>
 <span class="eyebrow">Protótipo interativo · Arena do Julgamento</span><h1>Um voto. Um golpe.</h1>
-<p class="muted">Bonecos medievais, títulos acima do nome, skins por raridade e ranking da sala. Nenhum banner ou cartão duplicado abaixo da arena.</p>
-<div class="notice">DEMONSTRAÇÃO VISUAL: não conecta à votação real, não libera skins na sua conta e não altera pontos, ranking, conquistas nem Supabase. O limite atual das salas reais é 10; o modo 20 aqui testa apenas a apresentação.</div>
+<p class="muted">Guerreiros medievais redesenhados, títulos acima do nome, skins por raridade e ranking da sala. Nenhum banner ou cartão duplicado abaixo da arena.</p>
+<div class="notice">DEMONSTRAÇÃO VISUAL: não conecta à votação real, não libera skins na sua conta e não altera pontos, ranking, conquistas nem Supabase. O limite atual das salas reais é 10; o modo 30 aqui testa apenas a apresentação.</div>
 <section class="panel"><h2>Arena frontal</h2><div class="controls">
-<label>Jogadores <select id="size"><option>6</option><option>10</option><option selected>20</option></select></label>
+<label>Jogadores <select id="size"><option>6</option><option>10</option><option>20</option><option selected>30</option></select></label>
 <button id="vote" class="primary">REVELAR GOLPES ANÔNIMOS</button>
 <button id="win">Simular +25 pontos na sala</button>
 <button id="reenter">Sair e voltar</button>
@@ -83,19 +101,42 @@ h1{font-size:clamp(24px,5vw,38px);margin:12px 0 5px}h2{font-size:19px;margin:7px
 'use strict';
 var types=[['comum','Comum',80],['incomum','Incomum',75],['raro','Raro',70],['lenda','Lendário',50],['mistico','Místico',25]];
 var titles={comum:'Viajante',incomum:'Sussurro da Noite',raro:'Caçador das Sombras',epico:'Arquiteto de Segredos',lenda:'Lenda do Julgamento',mistico:'Eclipse Carmesim'};
-var names=['Zero','Ana','Bento','Celso','Diana','Fábio','Gabi','Hugo','Íris','João','Kira','Luan','Maya','Nilo','Olívia','Paulo','Rita','Sofia','Theo','Yara'];
-var base=[110,95,90,85,81,78,75,72,69,66,63,60,58,56,51,48,44,39,33,20];
+var names=['Zero','Ana','Bento','Celso','Diana','Fábio','Gabi','Hugo','Íris','João','Kira','Luan','Maya','Nilo','Olívia','Paulo','Rita','Sofia','Theo','Yara','Lia','Caio','Vera','Renan','Nina','Otávio','Eloá','Davi','Bia','Téo'];
+var base=[110,95,90,85,81,78,75,72,69,66,63,60,58,56,51,48,44,39,33,30,29,28,26,25,23,21,19,17,15,12];
 var skins=[];types.forEach(function(t){for(var i=1;i<=t[2];i++){skins.push({id:'skin_'+t[0]+'_'+String(i).padStart(3,'0'),tier:t[0],number:i,name:t[1]+' '+String(i).padStart(3,'0')});}});
-var roster=names.map(function(name,i){return {id:String(i),name:name,tier:types[i<8?0:i<13?1:i<17?2:i<19?3:4][0],points:base[i],skin:1};});
+var roster=names.map(function(name,i){return {id:String(i),name:name,tier:types[i<14?0:i<22?1:i<27?2:i<29?3:4][0],points:base[i],skin:1};});
 var chosen=null;
 var $=function(id){return document.getElementById(id);};
 var escape=function(s){return String(s).replace(/[&<>"']/g,function(v){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&#39;'}[v];});};
 var saved=0;try{saved=Number(localStorage.getItem('es_v80_lab_points')||0)||0;}catch(e){}
 roster[0].points+=saved;
-function body(tier,index){var v=Math.max(0,Number(index)-1),helm=v%5,crest=['◈','✦','♜','✶','◆'][Math.floor(v/5)%5],armor=Math.floor(v/25)%3,weapon=Math.floor(v/75)%4;return '<span class="body r-'+tier+' helm-'+helm+' armor-'+armor+' weapon-'+weapon+'" aria-hidden="true"><i class="aura"></i><i class="shade"></i><i class="leg"></i><i class="arm"></i><i class="torso"></i><i class="head"><i class="face"></i></i><i class="blade"></i><i class="crest">'+crest+'</i><i class="crown">♛</i></span>';}
+function body(tier,index){
+ var k=Number(index)||1,helm=k%3,weapon=k%4,fancy=tier==='lenda'||tier==='mistico';
+ var v='<svg class="hero-svg" viewBox="0 0 112 142" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">'+
+ '<ellipse cx="55" cy="135" rx="30" ry="5" fill="#060310" opacity=".5"/>'+
+ (fancy?'<ellipse class="hero-halo" cx="56" cy="70" rx="40" ry="59" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="4 5"/>':'')+
+ '<path d="M44 38 30 124 Q54 134 82 124 L69 38Z" fill="#1b1726" stroke="var(--light)" stroke-width="1.5"/>'+
+ '<path d="M40 76 54 76 52 118 34 118Z M57 76 72 76 79 118 62 118Z" fill="#353849" stroke="var(--light)" stroke-width="1.6"/>'+
+ '<path d="M34 115 52 115 50 130 28 130Z M62 115 79 115 85 130 63 130Z" fill="var(--plate)" stroke="var(--light)" stroke-width="1.8"/>'+
+ '<path d="M42 38 Q56 32 70 38 L79 77 68 89 43 89 32 76Z" fill="var(--plate)" stroke="var(--light)" stroke-width="2.5"/>'+
+ '<path d="M40 50 72 50 M44 78 70 78" stroke="var(--accent)" stroke-width="2"/>'+
+ '<path d="M34 42 24 47 18 82 25 95 34 92 29 78 35 59 44 49Z M77 42 87 47 94 81 87 96 77 93 84 78 76 59 68 49Z" fill="var(--plate)" stroke="var(--light)" stroke-width="2"/>'+
+ '<path d="M26 45 36 41 43 50 35 57 22 53Z M69 50 77 41 86 46 89 53 75 57Z" fill="var(--light)" stroke="var(--plate)" stroke-width="1.5"/>'+
+ '<path d="M47 36 63 36 65 47 45 47Z" fill="#353241" stroke="var(--light)"/>'+
+ '<path d="'+(helm===0?'M42 19 Q55 7 70 19 L69 40 43 40Z':helm===1?'M42 20 55 9 71 20 70 40 43 40Z':'M38 22 47 13 66 13 74 22 69 40 43 40Z')+'" fill="var(--plate)" stroke="var(--light)" stroke-width="2"/>'+
+ '<path d="M47 29 67 29 64 37 49 37Z" fill="#0b1221" stroke="var(--accent)"/>'+
+ '<path d="M49 31 54 32 M59 32 64 31" stroke="#e0f2ff" stroke-width="1.4"/>'+
+ '<path d="M56 17 56 39" stroke="var(--light)" stroke-width="1.6"/>'+
+ '<path d="M51 53 62 53 65 62 56 68 47 62Z" fill="var(--accent)"/>'+
+ '<path d="M11 79 28 76 37 90 24 109 10 104 9 88Z" fill="#1b2939" stroke="var(--light)" stroke-width="2"/>'+
+ '<path d="M16 83 28 82 31 91 22 101 15 100Z" fill="var(--plate)" stroke="var(--accent)"/>'+
+ (weapon%2===0?'<path d="M95 9 100 20 98 78 91 78 89 20Z M86 79 104 79 104 84 86 84Z M92 84 98 112 92 112Z" fill="var(--light)" stroke="var(--accent)"/>':'<path d="M94 22 97 127" fill="none" stroke="var(--light)" stroke-width="4"/><path d="M94 5 101 27 88 27Z" fill="var(--accent)" stroke="var(--light)"/>')+
+ (tier==='mistico'?'<path d="M18 42 11 21 31 29 38 13 M74 14 84 29 102 21 96 44" stroke="#ff284d" fill="none" stroke-width="3"/>':'')+'</svg>';
+ return '<span class="body r-'+tier+'" aria-hidden="true">'+v+'</span>';
+}
 function render(){
  var n=Number($('size').value),all=roster.slice(0,n).sort(function(a,b){return b.points-a.points||a.name.localeCompare(b.name);});
- $('cast').innerHTML=all.map(function(p,i){return '<button class="fighter r-'+p.tier+(chosen===p.id?' chosen':'')+'" data-id="'+p.id+'" aria-label="'+escape(p.name)+'; '+escape(titles[p.tier])+'; '+p.points+' pontos"><span class="rank">'+(i+1)+'º</span><span class="title">'+escape(titles[p.tier])+'</span><span class="name">'+escape(p.name)+'</span>'+body(p.tier,p.skin+i)+'<span class="points">'+p.points+' pts</span></button>';}).join('');
+ $('cast').innerHTML=all.map(function(p,i){return '<button class="fighter r-'+p.tier+(i===0?' is-room-leader':'')+(chosen===p.id?' chosen':'')+'" data-id="'+p.id+'" aria-label="'+escape(p.name)+'; '+escape(titles[p.tier])+'; '+p.points+' pontos"><span class="rank">'+(i+1)+'º</span>'+(i===0?'<span class="leader-crown" aria-hidden="true"><svg viewBox="0 0 50 36"><path d="M4 12 15 19 25 3 35 19 46 12 41 29 9 29Z" fill="#f4c65d" stroke="#ffecad" stroke-width="2"/><path d="M9 31H41V35H9Z" fill="#d79732"/><circle cx="25" cy="23" r="4" fill="#a92c55"/></svg></span>':'')+'<span class="title">'+escape(titles[p.tier])+'</span><span class="name">'+escape(p.name)+'</span>'+body(p.tier,p.skin+i)+'<span class="points">'+p.points+' pts</span></button>';}).join('');
  $('cast').querySelectorAll('[data-id]').forEach(function(button){button.onclick=function(){chosen=button.getAttribute('data-id');$('message').textContent='Alvo escolhido. O voto permanece secreto até o fim.';render();};});
 }
 function renderLibrary(){
@@ -110,7 +151,7 @@ $('size').onchange=render;$('tier').onchange=renderLibrary;$('count').onchange=r
 $('vote').onclick=function(){if(chosen===null){$('message').textContent='Selecione um suspeito antes de atacar.';return;}var a=$('cast').querySelector('[data-id="'+chosen+'"]');if(a){a.classList.remove('hit');void a.offsetWidth;a.classList.add('hit');$('message').textContent='1 golpe anônimo aplicado no alvo. Este é apenas um efeito local, sem revelar autor do voto.';}};
 $('win').onclick=function(){saved+=25;roster[0].points+=25;try{localStorage.setItem('es_v80_lab_points',String(saved));}catch(e){}render();$('message').textContent='+25 pontos simulados para Zero nesta sala de demonstração.';};
 $('reenter').onclick=function(){var value=roster[0].points;render();$('message').textContent='Retorno simulado: Zero mantém '+value+' pontos porque o protótipo salvou o progresso local.';};
-$('reset').onclick=function(){saved=0;roster.forEach(function(p,i){p.points=base[i];p.tier=types[i<8?0:i<13?1:i<17?2:i<19?3:4][0];p.skin=1;});chosen=null;try{localStorage.removeItem('es_v80_lab_points');}catch(e){}render();$('message').textContent='Simulação reiniciada. Nenhum ponto real foi alterado.';};
+$('reset').onclick=function(){saved=0;roster.forEach(function(p,i){p.points=base[i];p.tier=types[i<14?0:i<22?1:i<27?2:i<29?3:4][0];p.skin=1;});chosen=null;try{localStorage.removeItem('es_v80_lab_points');}catch(e){}render();$('message').textContent='Simulação reiniciada. Nenhum ponto real foi alterado.';};
 $('nov').onclick=function(){season(11);};$('dec').onclick=function(){season(12);};
 $('tier').innerHTML='<option value="all">Todas as raridades</option>'+types.map(function(t){return '<option value="'+t[0]+'">'+t[1]+' ('+t[2]+')</option>';}).join('');
 $('legend').innerHTML=types.map(function(t){return '<span class="dot">'+t[1]+': '+t[2]+'</span>';}).join('');
