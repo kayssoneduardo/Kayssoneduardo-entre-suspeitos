@@ -143,7 +143,7 @@ console.log('PASSOU: limites de nível, progresso de XP, ordem e empates no rank
   ui.renderRoom(room);assert.doesNotMatch(app.html,/id="timerOnline"/);
   assert.match(app.html,/Sem limite de tempo/);
   room.players[0].voted=true;room.players[1].voted=false;ui.renderRoom(room);
-  assert.match(app.html,/JÁ VOTOU/);assert.match(app.html,/FALTA VOTAR/);
+  assert.doesNotMatch(app.html,/es77-players|cosmetic-player/,'Votação não deve repetir cartões dos participantes');
   assert.match(app.html,/1 de 2 jogadores já votaram/);
   ui.cloud.rpc=async name=>name==='es_me'?{nickname:'Teste',xp:400,ranking_points:-25}:name==='es_leaderboard'?[{nickname:'Teste',xp:400,ranking_points:-25,online_wins:2}]:[];
   await ui.profile();assert.match(app.html,/Nível 3/);assert.match(app.html,/500 XP/);assert.match(app.html,/<progress/);
