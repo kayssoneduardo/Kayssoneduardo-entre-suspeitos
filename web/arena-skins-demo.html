@@ -86,7 +86,7 @@ h1{font-size:clamp(24px,5vw,38px);margin:12px 0 5px}h2{font-size:19px;margin:7px
 <section class="panel"><h2>Arena frontal</h2><div class="controls">
 <label>Jogadores <select id="size"><option>6</option><option>10</option><option>20</option><option selected>30</option></select></label>
 <button id="vote" class="primary">REVELAR GOLPES ANÔNIMOS</button>
-<button id="win">Simular +25 pontos na sala</button>
+<button id="win">Simular +25 pontos na sala</button><button id="takeover">Rival assume a liderança</button>
 <button id="reenter">Sair e voltar</button>
 <button id="reset">Zerar simulação</button></div>
 <p class="muted" id="message" role="status">Toque em um boneco para acusá-lo. Nenhum outro jogador descobre seu voto.</p>
@@ -94,6 +94,10 @@ h1{font-size:clamp(24px,5vw,38px);margin:12px 0 5px}h2{font-size:19px;margin:7px
 <p class="muted" id="arenaStatus">Pontuação demonstrativa ordena os bonecos; sua pontuação simulada é guardada apenas neste navegador.</p></section>
 <section class="panel"><h2>300 skins por títulos e conquistas</h2><p class="muted">Prévia de um catálogo escalável. A distribuição por raridade é visual; o desbloqueio real dependerá da conquista verificada pelo servidor.</p>
 <div class="legend" id="legend"></div><div class="controls" style="margin:10px 0"><label>Raridade <select id="tier"></select></label><label>Exibir <select id="count"><option value="12">12</option><option value="30">30</option><option value="all">Todas</option></select></label><span class="pill" id="catalogTotal"></span></div><div class="library" id="library"></div></section>
+<section class="panel"><h2>Defesa do inocente · simulação da nova regra</h2>
+<p class="muted">O ranking atual dá +25 por vitória e −25 por derrota. Na nova regra, o inocente acusado que identifica sozinho um impostor não perde nem ganha pontos. Estes exemplos ainda não alteram a conta real.</p>
+<div class="controls"><label>Cenário <select id="scoreCase"><option value="solo">Acusado e único a acertar o impostor</option><option value="two">Dois impostores, acertei um sozinho</option><option value="shared">Acertei, mas outra pessoa também acertou</option><option value="miss">Fui acusado, mas votei errado</option><option value="win">Vitória normal</option></select></label><button id="simulateScore">Calcular pontos</button></div>
+<p id="scoreOutcome" role="status" class="notice">Escolha um cenário para testar a regra.</p></section>
 <section class="panel"><h2>Temporadas mensais</h2><p class="muted">Regra proposta: começa em 1º de dezembro de 2026, troca todo dia 1º, preserva o pódio histórico dos três melhores. A simulação abaixo não representa resultados reais.</p><div class="controls"><button id="nov">Novembro — exemplo</button><button id="dec">Dezembro — exemplo</button></div><div id="season"></div></section>
 </main>
 <script>
@@ -150,6 +154,8 @@ function season(month){var label=month===11?'Novembro de 2026':'Dezembro de 2026
 $('size').onchange=render;$('tier').onchange=renderLibrary;$('count').onchange=renderLibrary;
 $('vote').onclick=function(){if(chosen===null){$('message').textContent='Selecione um suspeito antes de atacar.';return;}var a=$('cast').querySelector('[data-id="'+chosen+'"]');if(a){a.classList.remove('hit');void a.offsetWidth;a.classList.add('hit');$('message').textContent='1 golpe anônimo aplicado no alvo. Este é apenas um efeito local, sem revelar autor do voto.';}};
 $('win').onclick=function(){saved+=25;roster[0].points+=25;try{localStorage.setItem('es_v80_lab_points',String(saved));}catch(e){}render();$('message').textContent='+25 pontos simulados para Zero nesta sala de demonstração.';};
+$('takeover').onclick=function(){roster[1].points=Math.max.apply(null,roster.map(function(p){return p.points;}))+25;render();$('message').textContent='Ana assumiu o primeiro lugar. A coroa foi transferida automaticamente.';};
+$('simulateScore').onclick=function(){var c=$('scoreCase').value;var delta=c==='win'?25:(c==='solo'||c==='two')?0:-25;var labels={solo:'Único a identificar um impostor, embora acusado e derrotado.',two:'Acertou sozinho um dos dois impostores e perdeu.',shared:'Não houve acerto exclusivo; derrota normal.',miss:'O voto não acertou um impostor; derrota normal.',win:'Vitória normal.'};$('scoreOutcome').textContent=labels[c]+' Resultado competitivo: '+(delta>0?'+':'')+delta+' pontos. Demonstração, sem acesso a votos reais.';};
 $('reenter').onclick=function(){var value=roster[0].points;render();$('message').textContent='Retorno simulado: Zero mantém '+value+' pontos porque o protótipo salvou o progresso local.';};
 $('reset').onclick=function(){saved=0;roster.forEach(function(p,i){p.points=base[i];p.tier=types[i<14?0:i<22?1:i<27?2:i<29?3:4][0];p.skin=1;});chosen=null;try{localStorage.removeItem('es_v80_lab_points');}catch(e){}render();$('message').textContent='Simulação reiniciada. Nenhum ponto real foi alterado.';};
 $('nov').onclick=function(){season(11);};$('dec').onclick=function(){season(12);};
