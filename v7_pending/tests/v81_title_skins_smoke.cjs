@@ -39,4 +39,33 @@ assert(room.includes('between 3 and 30'));
 const monthly=fs.readFileSync('v7_pending/sql/v81_monthly_seasons_DRAFT.sql','utf8');
 assert(monthly.includes("America/Fortaleza")&&monthly.includes('es_v81_monthly_podium'));
 assert(monthly.includes('on conflict(month_start,position) do nothing'),'Snapshot must be idempotent');
+
+const realTitles=(()=>{
+ const w={};vm.runInNewContext(fs.readFileSync('web/title_catalog_v82.js','utf8'),{window:w},{filename:'title_catalog_v82.js'});return w.ESTitleCatalogV82;
+})();
+assert.equal(realTitles.length,200,'Must have all 200 real title entries');
+const signatures=new Set();
+for(const t of realTitles){
+ const outfit=api.describe(t.name,t.rarity,'m',t.code);
+ const partner=api.describe(t.name,t.rarity,'f',t.code);
+ assert.notEqual(outfit.skinId,partner.skinId, 'Both genders for '+t.code);
+ assert(outfit.colors.length===3&&outfit.weapon&&outfit.armor&&outfit.cloak&&outfit.helm,'Distinct detailed outfit for '+t.code);
+ assert(outfit.effects==={comum:0,incomum:0,epico:1,lenda:2,mistico:3}[outfit.tier],'Animation budget for '+t.code);
+ signatures.add(outfit.skinId);
+ const full=api.figure({title:t.code,gender:'f'},realTitles);
+ assert(full.includes('es81-costume-svg')&&full.includes('data-effect-count="'+outfit.effects+'"'));
+}
+assert.equal(signatures.size,200,'Every real title gets its own skin identity');
+assert.notEqual(api.describe('Fantasma Absoluto','mistico','f').colors[2],
+ api.describe('Verdade Silenciosa','mistico','f').colors[2], 'Mythic outfit palette is theme-based, not rarity red');
+assert.notEqual(api.describe('Rei das Mil Máscaras','lenda','m').colors[2],
+ api.describe('Oráculo da Verdade','lenda','m').colors[2], 'Legendary colour is theme-based');
+const costumeCss=fs.readFileSync('web/title_skins_v81.css','utf8');
+assert(costumeCss.includes('.es81-tier-epico .es81-motion-1'));
+assert(costumeCss.includes('.es81-tier-lenda .es81-motion-2'));
+assert(costumeCss.includes('.es81-tier-mistico .es81-motion-3'));
+assert(costumeCss.includes('.judge-title.title-mistico'));
+assert(costumeCss.includes('.judge-name{color:#f6f0ff!important'));
+assert(!costumeCss.includes('.es81-skin-mistico{filter:drop-shadow(0 0 12px #ff173f)'));
+
 console.log('PASSOU V8.1: title semantics, gender, exact rare tier mapping, 30-player stage, solo majority and monthly drafts.');
