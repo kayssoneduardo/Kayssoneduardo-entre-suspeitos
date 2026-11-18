@@ -2,7 +2,7 @@
    O banco é Supabase/PostgREST, com RPCs SECURITY DEFINER e RLS. */
 (function(){
 'use strict';
-const PREFIX='es3_', MIN=3, MAX=10;
+const PREFIX='es3_', MIN=3, MAX=30;
 const CATEGORIES=Object.keys(window.ES_WORD_BANK||{});
 const COMPILED_CLOUD=window.ES_SERVER_CONFIG||{url:'',key:''};
 const ESC=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -365,15 +365,15 @@ class OnlineUI{
   $('enterCode').onclick=async()=>{try{this.enterRoom(await this.cloud.rpc('es_join_code',{p_code:$('roomCode').value.trim()}));}catch(e){this.error(e);}};
  }
  formRules(c={}){
-  const val=c.categories||CATEGORIES, max=c.max||10,imp=c.impostors||2;
-  return `<div class="option-grid">${input('maxOn','Máximo de jogadores','number',max,'min="3" max="10"')}${input('impOn','Impostores','number',imp,'min="1" max="4"')}</div>
+  const val=c.categories||CATEGORIES, max=c.max||30,imp=c.impostors||2;
+  return `<div class="option-grid">${input('maxOn','Máximo de jogadores','number',max,'min="3" max="30"')}${input('impOn','Impostores','number',imp,'min="1" max="10"')}</div>
    <div class="field"><label>Dificuldade</label><select id="difficultyOn">${['Fácil','Médio','Difícil','Misturado'].map(x=>`<option ${c.difficulty===x?'selected':''}>${x}</option>`).join('')}</select></div>
    <div class="field"><label>Dicas para o impostor</label><select id="clueOn">${[['both','Categoria e dica'],['category','Só categoria'],['hint','Só dica'],['none','Nenhuma']].map(x=>`<option value="${x[0]}" ${c.clue===x[0]?'selected':''}>${x[1]}</option>`).join('')}</select></div>
    <label class="check"><input type="checkbox" id="knowOn" ${c.know?'checked':''}> Impostores conhecem seus parceiros</label>
    <h3>Categorias</h3><div class="online-words">${CATEGORIES.map((x,i)=>`<label class="check"><input type="checkbox" data-oc="${i}" ${val.includes(x)?'checked':''}>${ESC(x)}</label>`).join('')}</div>`;
  }
  getRules(){const max=Number($('maxOn').value),imp=Number($('impOn').value),categories=[...this.app.querySelectorAll('[data-oc]:checked')].map(x=>CATEGORIES[Number(x.dataset.oc)]);
-  if(max<MIN||max>MAX||imp<1||imp>Math.floor((max-1)/2)||!categories.length)throw new Error('Escolha 3 a 10 jogadores, uma quantidade válida de impostores e pelo menos uma categoria.');
+  if(max<MIN||max>MAX||imp<1||imp>10||imp>Math.floor((max-1)/2)||!categories.length)throw new Error('Escolha 3 a 30 jogadores, até 10 impostores e pelo menos uma categoria.');
   return {p_max:max,p_impostors:imp,p_categories:categories,p_difficulty:$('difficultyOn').value,p_clue:$('clueOn').value,p_know:$('knowOn').checked};}
  createRoom(){this.currentPage='create';this.header('Criar sala');
   this.app.innerHTML=`<section class="card"><h2>Preparar partida online</h2><p class="subtext">O jogo inicia com pelo menos 3 jogadores prontos. A sala fica aberta até o anfitrião começar.</p>
@@ -417,7 +417,7 @@ class OnlineUI{
    const sig=JSON.stringify(r);
    if(sig!==this.lastFingerprint||titlesChanged){
     // Do not destroy a revealed card, selected secret ballot or active rules editor.
-    if((r.status==='results'&&this.app.querySelector('.es-vote-replay.is-playing'))
+    if((r.status==='results'&&(this.app.querySelector('.es-vote-replay.is-playing')||this.app.querySelector('.es83-execution.es83-playing')))
       ||(this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))
       ||this.app.querySelector('.online-editing'))return;
     this.lastFingerprint=sig;this.renderRoom(r);
@@ -466,6 +466,7 @@ class OnlineUI{
    const arenaBallot=window.ESJudgmentArena?.markup(joined,me,r.impostors,myVote,this.titleCatalog)||null;
    phase=`<section class="card es77-voting"><div class="es77-vote-eyebrow">◈ DECISÃO FINAL</div><h2>Votação secreta</h2><p class="small muted">${joined.filter(p=>p.voted).length} de ${joined.length} jogadores já votaram.</p><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
     <p class="subtext">Escolha ${r.impostors} suspeito(s), sem repetir nomes. Os votos dos outros permanecem secretos.</p>
+    <p class="small muted">✓ JÁ VOTOU indica somente quem confirmou o voto, nunca o suspeito escolhido.</p>
     ${arenaBallot?arenaBallot+(myVote?'':btn('submitVote','CONFIRMAR GOLPES')):myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check es77-vote-choice"><input type="checkbox" data-vote="${ESC(p.id)}"><span class="es77-vote-avatar" aria-hidden="true">${ESC(p.nick.charAt(0).toUpperCase())}</span><strong>${ESC(p.nick)}</strong><span class="es77-vote-mark" aria-hidden="true">◈</span></label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
     <p id="onlineError" class="error"></p></section>`;
   }else if(r.status==='results'){
@@ -534,7 +535,7 @@ class OnlineUI{
   const current=()=>this.roomId===r.id&&this.currentPage==='room'&&String(this.room?.round)===String(r.round);
   const draw=animated=>{
    if(!current()||!$('voteReplay'))return;
-   window.ESVoteReplay.mount($('voteReplay'),cache.ballots,r.players,r.impostors,animated);
+   window.ESVoteReplay.mount($('voteReplay'),cache.ballots,r.players,r.impostors,animated,this.titleCatalog);
    this.voteReplayPlayedKey=key;
   };
   if(cache.ballots!==null)draw(this.voteReplayPlayedKey!==key);
@@ -609,6 +610,7 @@ class OnlineUI{
    <small>XP não é gasto: acumula em partidas públicas, aumenta seu nível e libera títulos. Não define sua posição no ranking.</small></section>
    <div class="field"><label for="photoOn">Foto de perfil (opcional, até 1 MB)</label><input type="file" id="photoOn" accept="image/*"></div>${btn('uploadPhoto','Salvar foto de perfil','secondary')}
    ${input('nicknameOn','Apelido','text',p.nickname,'maxlength="28"')}${btn('saveNick','Salvar apelido')}
+   <div class="field"><label for="arenaGenderOn">Versão do personagem na Arena do Julgamento</label><select id="arenaGenderOn"><option value="m" ${p.arena_gender!=='f'?'selected':''}>Masculina</option><option value="f" ${p.arena_gender==='f'?'selected':''}>Feminina</option></select></div>${btn('saveArenaGender','Salvar aparência da arena','secondary')}
    <div class="divider"></div><div class="option-grid"><p><b>${p.xp}</b><br>XP público</p><p><b>${p.ranking_points}</b><br>Pontos de ranking</p>
    <p><b>${p.online_wins} / ${p.online_losses}</b><br>Vitórias / derrotas públicas</p>
    <p><b>${p.private_wins} / ${p.private_losses}</b><br>Vitórias / derrotas privadas</p>
@@ -637,6 +639,7 @@ class OnlineUI{
     await this.cloud.uploadAvatar(blob);this.profile();
   }catch(e){this.error(e);}};
   $('saveNick').onclick=async()=>{try{await this.cloud.rpc('es_set_nickname',{p_nick:$('nicknameOn').value});this.profile();}catch(e){this.error(e);}};
+  $('saveArenaGender').onclick=async()=>{try{await this.cloud.rpc('es_set_arena_gender',{p_gender:$('arenaGenderOn').value});this.profile();}catch(e){this.error(e);}};
   if(newlyUnlocked)window.ESV77?.achievement(newlyUnlocked);
  }
 

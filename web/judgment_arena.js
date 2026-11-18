@@ -7,7 +7,10 @@
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const palette=['violet','amber','teal','rose','blue','silver','emerald','scarlet','indigo','copper'];
  const paint=i=>palette[i%palette.length];
+ let currentCatalog=[];
  function fighter(p,i){
+  if(window.ES83Arena?.art&&currentCatalog.length)
+   return '<span class="judge-figure es83-figure">'+window.ES83Arena.art(p,currentCatalog)+'</span>';
   const name=String(p.nick||'Jogador'),initial=name.charAt(0).toUpperCase();
   return '<span class="judge-figure judge-color-'+paint(i)+'" aria-hidden="true">'+
    '<span class="judge-shadow"></span><span class="judge-legs"></span>'+
@@ -21,6 +24,7 @@
    '<div class="judge-platform" aria-hidden="true"></div><div class="judge-floor" aria-hidden="true"></div>';
  }
  function markup(players,myId,required,alreadyVoted,titleCatalog){
+  currentCatalog=Array.isArray(titleCatalog)?titleCatalog:[];
   const roster=(Array.isArray(players)?players:[]).filter(p=>p&&p.active);
   const max=Math.max(1,Math.floor(Number(required)||1));
   let eligible=0;
@@ -31,7 +35,8 @@
    const t=(Array.isArray(titleCatalog)?titleCatalog:[]).find(item=>item.code===p.title);
    const rarity=t&&['comum','incomum','raro','lenda','mistico'].includes(t.rarity)?t.rarity:'comum';
    const title=t?'<span class="judge-title title-'+rarity+'">'+esc(t.name)+'</span>':'';
-   const body=title+fighter(p,i)+'<strong class="judge-name">'+esc(name)+'</strong>'+
+   const already=window.ES83Arena?.standing(p)||'';
+   const body=title+fighter(p,i)+'<strong class="judge-name">'+esc(name)+'</strong>'+already+
     '<span class="judge-marker">'+(self?'VOCÊ':!p.online?'SEM CONEXÃO':alreadyVoted?'JOGADOR':'TOQUE PARA ACUSAR')+'</span>'+
     '<span class="judge-target" aria-hidden="true">⚔</span>';
    if(canVote){

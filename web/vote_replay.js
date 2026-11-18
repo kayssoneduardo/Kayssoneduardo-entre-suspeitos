@@ -50,10 +50,12 @@
    '<p class="es-vote-announcement" role="status" aria-live="polite">Revelando os votos encerrados…</p>'+
    '</div>';
  }
- function mount(container,ballots,players,slots,animate=true){
+ function mount(container,ballots,players,slots,animate=true,titleCatalog=[]){
   if(!container)return null;
   const roster=Array.isArray(players)?players.filter(p=>p&&p.id!=null):[];
   const summary=tally(ballots,roster,slots);
+  if(window.ES83Arena?.renderCenter && Array.isArray(titleCatalog) && titleCatalog.length)
+   return window.ES83Arena.renderCenter(container,roster,summary,titleCatalog,animate);
   container.innerHTML=build(roster,summary);
   const root=container.querySelector('.es-vote-replay');
   if(!root)return summary;
