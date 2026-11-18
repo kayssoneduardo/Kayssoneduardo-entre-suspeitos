@@ -64,7 +64,7 @@ assert(board.includes('Quem votou em quem permanece secreto'));
 assert(!board.includes('data-vote='));
 assert(html.indexOf('judgment_arena.js')>html.indexOf('v77.js'));
 assert(html.indexOf('judgment_arena.js')<html.indexOf('vote_replay.js'));
-assert.match(html,/8\.3\.0 \(EXECUÇÃO E STATUS DE VOTO\)/);
+assert.match(html,/8\.4\.0 \(SKINS MÍSTICAS APRIMORADAS\)/);
 assert(demo.includes('ESJudgmentArena.bind')&&demo.includes('ESVoteReplay.mount'));
 assert(demo.includes('não envia votos ao servidor'),'Demo does not submit real votes');
 assert(online.includes("this.cloud.rpc('es_vote',{p_room:r.id,p_targets:targets})"),'Official server voting unchanged');
