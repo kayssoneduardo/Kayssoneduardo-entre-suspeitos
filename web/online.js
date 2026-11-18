@@ -417,7 +417,7 @@ class OnlineUI{
    const sig=JSON.stringify(r);
    if(sig!==this.lastFingerprint||titlesChanged){
     // Do not destroy a revealed card, selected secret ballot or active rules editor.
-    if((r.status==='results'&&this.app.querySelector('.es-vote-replay.is-playing'))
+    if((r.status==='results'&&(this.app.querySelector('.es-vote-replay.is-playing')||this.app.querySelector('.es83-execution.es83-playing')))
       ||(this.app.querySelector('.card-reveal.revealed')&&(!r.revealEnds||seconds(r.revealEnds)>0))
       ||this.app.querySelector('.online-editing'))return;
     this.lastFingerprint=sig;this.renderRoom(r);
@@ -466,6 +466,7 @@ class OnlineUI{
    const arenaBallot=window.ESJudgmentArena?.markup(joined,me,r.impostors,myVote,this.titleCatalog)||null;
    phase=`<section class="card es77-voting"><div class="es77-vote-eyebrow">◈ DECISÃO FINAL</div><h2>Votação secreta</h2><p class="small muted">${joined.filter(p=>p.voted).length} de ${joined.length} jogadores já votaram.</p><p class="notice">Sem limite de tempo. A votação termina quando todos que continuam na sala votarem.</p>
     <p class="subtext">Escolha ${r.impostors} suspeito(s), sem repetir nomes. Os votos dos outros permanecem secretos.</p>
+    <p class="small muted">✓ JÁ VOTOU indica somente quem confirmou o voto, nunca o suspeito escolhido.</p>
     ${arenaBallot?arenaBallot+(myVote?'':btn('submitVote','CONFIRMAR GOLPES')):myVote?'<p class="pill good">Seu voto foi registrado.</p>':`<div id="voteNames">${joined.filter(x=>x.id!==me&&x.online).map(p=>`<label class="check es77-vote-choice"><input type="checkbox" data-vote="${ESC(p.id)}"><span class="es77-vote-avatar" aria-hidden="true">${ESC(p.nick.charAt(0).toUpperCase())}</span><strong>${ESC(p.nick)}</strong><span class="es77-vote-mark" aria-hidden="true">◈</span></label>`).join('')}</div>${btn('submitVote','CONFIRMAR VOTO')}`}
     <p id="onlineError" class="error"></p></section>`;
   }else if(r.status==='results'){
@@ -534,7 +535,7 @@ class OnlineUI{
   const current=()=>this.roomId===r.id&&this.currentPage==='room'&&String(this.room?.round)===String(r.round);
   const draw=animated=>{
    if(!current()||!$('voteReplay'))return;
-   window.ESVoteReplay.mount($('voteReplay'),cache.ballots,r.players,r.impostors,animated);
+   window.ESVoteReplay.mount($('voteReplay'),cache.ballots,r.players,r.impostors,animated,this.titleCatalog);
    this.voteReplayPlayedKey=key;
   };
   if(cache.ballots!==null)draw(this.voteReplayPlayedKey!==key);
