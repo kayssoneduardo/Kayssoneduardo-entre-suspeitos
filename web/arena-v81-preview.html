@@ -7,8 +7,40 @@
 @media(max-width:1050px){.layout{grid-template-columns:1fr}.rightcol{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.rightcol .section{margin:0}.hero{grid-template-columns:1fr}.stage{min-height:360px}}@media(max-width:700px){.page{padding:8px 8px 44px}.arenaCast{grid-template-columns:repeat(5,minmax(0,1fr));gap:5px 3px}.actor{min-height:144px;padding:7px 1px}.actor .figure{height:82px;width:76px}.actor .heroTitle{font-size:8px;min-height:26px}.actor .name{font-size:9px}.actor .points{font-size:8px}.actor .symbol{font-size:11px;bottom:28px}.actor .crown{font-size:15px}.stage{padding:16px 5px 22px}.rightcol{grid-template-columns:1fr}.skinshow{grid-template-columns:1fr 1fr}.portrait{min-height:210px}.portrait img{height:208px}.section-body{padding:10px}.section-head{padding:10px}.top .brand{font-size:17px}}
 @media(max-width:400px){.arenaCast{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px 2px}.actor .figure{height:77px;width:68px}.actor{min-height:139px}.actor .heroTitle{font-size:8px}.skinshow{grid-template-columns:1fr 1fr}.portrait{min-height:180px}.portrait img{height:172px}.skin-caption strong{font-size:15px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
-</style></head><body><div class="page">
-<header class="top"><div class="logo"><span class="crest">◈</span><div><div class="brand">ENTRE SUSPEITOS</div><div class="caption">ARENA DO JULGAMENTO</div></div></div><span class="tag">V8.1 • PRÉVIA PRIVADA</span></header>
+</style>
+<style id="v82-custom">
+#portrait{--costume-color:#8db7c8;--costume-hue:0deg;--costume-effects:0}
+#portrait #portraitImage{
+  filter:hue-rotate(var(--costume-hue)) saturate(1.04) drop-shadow(0 0 7px var(--costume-color));
+  position:relative;z-index:2
+}
+#portrait .crest-overlay{z-index:10;color:var(--costume-color)!important;text-shadow:0 0 10px var(--costume-color)!important}
+#portrait .costume-tint{position:absolute;inset:0;background:linear-gradient(150deg,transparent 15%,var(--costume-color) 80%);opacity:.25;mix-blend-mode:color;z-index:4;pointer-events:none}
+#portrait .costume-engraving{position:absolute;bottom:12px;right:9px;z-index:8;font-size:32px;font-family:Georgia,serif;color:var(--costume-color);text-shadow:0 0 10px var(--costume-color);pointer-events:none}
+#portrait .costume-orbit{position:absolute;inset:12% 18%;border:2px solid var(--costume-color);border-radius:50%;z-index:5;opacity:0;pointer-events:none}
+#portrait .orbit-two{inset:17% 12%;border-style:dashed}
+#portrait .orbit-three{inset:7% 6%;border-style:double;border-width:3px}
+#portrait[data-effects="1"] .orbit-one{opacity:.38;animation:v82-flare 5.2s ease-in-out infinite alternate}
+#portrait[data-effects="2"] .orbit-one{opacity:.6;animation:v82-flare 4s ease-in-out infinite alternate}
+#portrait[data-effects="2"] .orbit-two{opacity:.35;animation:v82-orbit 8s linear infinite}
+#portrait[data-effects="3"] .orbit-one{opacity:.7;animation:v82-flare 3s ease-in-out infinite alternate}
+#portrait[data-effects="3"] .orbit-two{opacity:.55;animation:v82-orbit 6s linear infinite}
+#portrait[data-effects="3"] .orbit-three{opacity:.45;animation:v82-breathe 4s ease-in-out infinite alternate}
+#skinTitle{color:#f5eefd!important;text-shadow:none!important}
+#skinTitle[data-rarity="comum"]{color:#c2bec2!important}
+#skinTitle[data-rarity="incomum"]{color:#85d1aa!important}
+#skinTitle[data-rarity="epico"]{color:#bd93f4!important}
+#skinTitle[data-rarity="lenda"]{color:#ffe2a6!important}
+#skinTitle[data-rarity="mistico"]{color:#ff315a!important;text-shadow:0 0 12px #ff315a!important}
+#v82-detail{margin-top:12px;font-size:12px;line-height:1.55;color:#eadbf4;border-top:1px solid #ffffff26;padding-top:10px}
+#v82-detail strong{color:#fff}
+@keyframes v82-flare{to{opacity:.85;transform:scale(1.1)}}
+@keyframes v82-orbit{to{transform:rotate(360deg)}}
+@keyframes v82-breathe{to{transform:scale(1.12);opacity:.75}}
+@media(prefers-reduced-motion:reduce){#portrait .costume-orbit{animation:none!important}}
+</style>
+</head><body><div class="page">
+<header class="top"><div class="logo"><span class="crest">◈</span><div><div class="brand">ENTRE SUSPEITOS</div><div class="caption">ARENA DO JULGAMENTO</div></div></div><span class="tag">V8.2 • PRÉVIA PRIVADA</span></header>
 <div class="hero"><div><span class="caption">DIREÇÃO DE ARTE APROVADA · MEDIEVAL REALISTA</span><h1>O título se torna sua armadura.</h1><p class="subtitle">Skins criadas a partir do significado de cada título, com personagens masculinos e femininos, coroa para o líder e golpes anônimos. Tudo nesta página é uma <b>simulação</b> independente do jogo publicado.</p></div><div class="row"><span class="pill">30 personagens</span><span class="pill">5 raridades</span><span class="pill">2 versões</span></div></div>
 <div class="layout"><div><section class="section"><div class="section-head"><h2>⚔ Salão do Julgamento</h2><span class="pill" id="onlineCount">24 / 30 jogadores</span></div><div class="section-body"><div class="controls"><div class="row"><label class="mode-label" for="capacity">Participantes</label><select id="capacity"><option value="6">6</option><option value="12">12</option><option value="20">20</option><option value="30" selected>30</option></select></div><div class="row"><span class="pill">Pública</span><span class="pill">Rodada 06</span><span class="pill">Voto secreto</span></div></div><div class="stage" id="stage"><span class="torch left" aria-hidden="true">♨</span><span class="torch right" aria-hidden="true">♨</span><span class="rune" aria-hidden="true">◈</span><div class="arenaCast" id="cast"></div></div><div class="controls"><span class="textnote" id="voteHelp" role="status">Toque em um personagem para escolhê-lo. O voto é anônimo.</span><button class="btn primary" id="castVote">⚔ CONFIRMAR GOLPE</button><button class="btn alt" id="resetVote">Nova votação</button></div><div class="safe">Esta página <b>não acessa o Supabase</b>, não envia votos, não concede títulos e não altera ranking ou pontuação do jogo real. No jogo final, a votação seguirá as regras do servidor.</div></div></section>
 <section class="section"><div class="section-head"><h2>✦ Ateliê das Skins</h2><span class="pill">Nome do título → armadura</span></div><div class="section-body"><div class="controls"><div class="row"><label for="rarity">Raridade</label><select id="rarity"><option value="comum">Comum</option><option value="incomum">Incomum</option><option value="epico">Épico</option><option value="lenda">Lendário</option><option value="mistico" selected>Místico</option></select></div><div class="row"><label for="titleSelect">Título</label><select id="titleSelect"></select></div></div><div class="tabs" role="group" aria-label="Versão do personagem"><button class="btn alt small" id="male" aria-pressed="true">Masculina</button><button class="btn alt small" id="female" aria-pressed="false">Feminina</button></div><div class="skinshow"><div class="portrait" id="portrait"><img alt="Prévia da skin selecionada" id="portraitImage"><span class="crest-overlay" id="portraitRune">◈</span></div><div class="skin-caption"><span class="caption" id="skinTier">RARIDADE MÍSTICA</span><strong id="skinTitle">Fantasma Absoluto</strong><p class="muted" id="skinDescription"></p><div class="stat">Símbolo <b id="skinSymbol">☽</b></div><div class="stat">Estilo <b id="skinStyle">Espectral</b></div><p class="smallprint">As dez bases ilustradas são artes de prévia. Uma skin final terá detalhes próprios para cada título, sem apenas recolorir o mesmo corpo.</p></div></div></div></section></div>
@@ -49,4 +81,55 @@ $('resetVote').onclick=()=>{voted=false;selected=null;$('castVote').disabled=fal
 $('scoreWin').onclick=()=>{scores[0].points+=25;$('scoreLog').textContent='Zero recebeu +25 pontos simulados; o ranking reorganizou os personagens.';paintStage()};$('scoreLose').onclick=()=>{scores[0].points-=25;$('scoreLog').textContent='Zero recebeu −25 pontos simulados.';paintStage()};$('rejoin').onclick=()=>{$('scoreLog').textContent='Zero reconectou à MESMA sala: '+scores[0].points+' pontos preservados nesta demonstração.';paintStage()};$('toggleSeason').onclick=()=>{priorSeason=!priorSeason;season();$('toggleSeason').textContent=priorSeason?'Ver exemplo do mês atual':'Ver exemplo do mês anterior'};$('soloDemo').onclick=()=>soloCase(true);$('soloFail').onclick=()=>soloCase(false);
 paintTitles();paintStage();season();
 })();
-</script></body></html>
+</script>
+<script id="v82-title-specific">
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const FOLD=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const motifs=[
+ [/fantasma|invisivel|intocavel|ausencia/,'♧','#c9e4f0','Fantasmagoria',188,'Véu espectral'],
+ [/mascar|disfarc|blefe|alibi|engan|duas faces/,'◈','#c3a1b2','Máscaras',298,'Máscara cerimonial'],
+ [/nevoa|eco|sussurr|bruma/,'≋','#a6d4d0','Névoa',159,'Manto vaporoso'],
+ [/coroa|rei|imperador|soberano|trono|veredito/,'♛','#e4c7a4','Realeza',35,'Coroa e estandarte'],
+ [/oraculo|etern|farol|estrela/,'✦','#b6c2ed','Profecia',247,'Orbe profético'],
+ [/abismo|destino|impossivel|elo/,'◇','#a9c9bc','Abismo',150,'Runas ancestrais'],
+ [/olhar|olho|lince|aguia|visao/,'◉','#97b9d2','Visão',188,'Viseira do observador'],
+ [/verdade|justica|testemunha/,'✧','#b0cbb1','Verdade',146,'Selo do testemunho'],
+ [/sombra|penumbra|ocult|noturn/,'☾','#9694af','Sombras',242,'Manto noturno'],
+ [/arquivo|bibliotec|memoria|cronista/,'▤','#cfb897','Memórias',60,'Pergaminho de arquivo'],
+ [/lamina|navalha|aco|inquisidor|guardiao/,'⚔','#c7c0b8','Lâminas',20,'Lâmina de guarda']
+];
+const FX={comum:0,incomum:0,epico:1,lenda:2,mistico:3};
+const initial=$('portrait');
+initial.insertAdjacentHTML('beforeend','<span class="costume-tint"></span><span class="costume-engraving"></span><span class="costume-orbit orbit-one"></span><span class="costume-orbit orbit-two"></span><span class="costume-orbit orbit-three"></span>');
+const detail=document.createElement('p');detail.id='v82-detail';
+$('skinDescription').insertAdjacentElement('afterend',detail);
+function hash(str){let h=2166136261;for(const c of str)h=Math.imul(h^c.charCodeAt(0),16777619)>>>0;return h}
+function paint(){
+ const title=$('titleSelect').value||'Fantasma Absoluto';
+ const rarity=$('rarity').value;
+ const norm=FOLD(title),seed=hash(norm),theme=motifs.find(m=>m[0].test(norm))||[null,'✺','#c2b4a5','Andarilho',37,'Broche de aventureiro'];
+ const [_,symbol,palette,identity,hue,gear]=theme;
+ const effectCount=FX[rarity]||0;
+ initial.style.setProperty('--costume-color',palette);
+ initial.style.setProperty('--costume-hue',hue+'deg');
+ initial.dataset.effects=String(effectCount);
+ initial.querySelector('.costume-engraving').textContent=symbol+' '+['◇','✧','◈','☾','✦','⊕','⚜'][seed%7];
+ $('portraitRune').textContent=symbol;
+ $('skinSymbol').textContent=symbol;
+ $('skinStyle').textContent=identity;
+ $('skinTitle').dataset.rarity=rarity;
+ // Colour is chosen by the title's meaning. The rarity controls motion only.
+ const motion=effectCount===0?'sem efeitos animados':effectCount+' camadas de efeitos animados';
+ detail.textContent='Identidade do título: '+identity+'. Equipamento: '+gear+
+   '. Cor própria do traje: '+palette+'. Animação: '+motion+
+   '. Variação individual #'+String(seed%1000+1).padStart(3,'0')+'.';
+ $('skinDescription').textContent='A raridade colore somente o título. O nome desta conquista orienta a paleta, os adornos e o equipamento. A arte-base ilustrada ainda é compartilhada nesta demonstração; os trajes finais individuais serão produzidos a partir destes conceitos.';
+}
+['rarity','titleSelect'].forEach(id=>$(id).addEventListener('change',()=>setTimeout(paint,0)));
+['male','female'].forEach(id=>$(id).addEventListener('click',()=>setTimeout(paint,0)));
+paint();
+})();
+</script>
+</body></html>
