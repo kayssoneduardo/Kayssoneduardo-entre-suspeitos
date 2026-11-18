@@ -7,7 +7,7 @@ const sql=read('v7_pending/sql/v78_ready_replay.sql');
 const html=read('web/index.html'),css=read('web/style.css');
 assert(html.indexOf('vote_replay.js')>html.indexOf('v77.js'));
 assert(html.indexOf('vote_replay.js')<html.indexOf('online.js'));
-assert.match(html,/8\.3\.0 \(EXECUÇÃO E STATUS DE VOTO/);
+assert.match(html,/8\.4\.0 \(SKINS MÍSTICAS APRIMORADAS/);
 assert(!online.includes('cosmetic-nameplate'),'Moldura não deve ocupar faixa adicional no perfil/sala');
 assert(online.includes("['cosmetics','profile','publicProfile'].includes(this.currentPage)"));
 assert(online.includes("btn('returnRoomProfile'"),'Perfil aberto na sala deve voltar sem reingressar');

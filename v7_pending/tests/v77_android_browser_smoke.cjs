@@ -65,7 +65,7 @@ async function main(){
    ready=await evaluate("document.readyState==='complete'&&!!window.ESV77").catch(()=>false);
   }
   assert(ready,'V7.7 must load in a real browser');
-  const initial=await evaluate('({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,version:document.body.textContent.includes("8.3.0")})');
+  const initial=await evaluate('({width:innerWidth,scrollWidth:document.documentElement.scrollWidth,version:document.body.textContent.includes("8.4.0")})');
   assert(initial.version,'RC must be visible in the page');
   assert(initial.scrollWidth<=initial.width+5,'Initial page must not scroll sideways at 360px');
   const mobile=await evaluate(`(function(){

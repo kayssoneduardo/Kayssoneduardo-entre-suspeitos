@@ -1,0 +1,66 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skins Entre Suspeitos V8.4</title>
+<style>
+:root{font-family:system-ui,sans-serif;color:#efe4f5;background:#100b1b;color-scheme:dark}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% 0,#442952,#100b1b 60%)}main{max-width:1060px;margin:auto;padding:17px 12px 50px}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px}a{color:#ebc99e}
+h1{font-family:Georgia,serif;font-size:clamp(24px,5vw,37px)}p{line-height:1.45;color:#c7b6d0;font-size:13px}
+fieldset{border:1px solid #8d6b91;border-radius:14px;margin:16px 0;display:flex;gap:8px;flex-wrap:wrap}
+label{display:grid;gap:4px;flex:1;min-width:135px;font-size:12px}
+input,select,button{font:inherit;border:1px solid #956f9b;border-radius:9px;background:#24152f;color:white;padding:9px;min-height:42px}
+button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #e9c687}
+#grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:9px;margin:13px 0}
+.skin{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;padding:9px 5px;border:1px solid #785b85;border-radius:12px;background:#1f142d}
+.skin img{height:177px;max-width:100%;width:100%;object-fit:contain;filter:drop-shadow(0 5px 5px #0009)}
+.skin strong{font-size:12px;overflow-wrap:anywhere}.rarity{font-size:10px;letter-spacing:.07em;font-weight:900}
+.comum{color:#c6c1bc}.incomum{color:#95d9a9}.raro{color:#bc98ef}.lenda{color:#f5d086}.mistico{color:#ff315b}
+#selected{border:1px solid #9a779f;border-radius:15px;text-align:center;background:#1a1026;padding:15px}
+#selected img{height:min(50vh,390px);max-width:100%;object-fit:contain}
+nav{display:flex;justify-content:center;align-items:center;gap:9px}
+@media(max-width:480px){#grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.skin img{height:120px}.skin strong{font-size:10px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important}}
+</style></head><body><main>
+<header><b>ENTRE SUSPEITOS · V8.4</b><a href="./">Voltar ao jogo</a></header>
+<h1>Skins por título</h1><p>200 títulos e 400 skins, com versões masculina e feminina. A cor da raridade fica no título; a roupa segue o significado da conquista.</p>
+<fieldset><label>Buscar título<input id="query" type="search" placeholder="Fantasma, máscaras, veredito"></label>
+<label>Raridade<select id="tier"><option value="all">Todas</option><option value="comum">Comum</option><option value="incomum">Incomum</option><option value="raro">Épico</option><option value="lenda">Lendário</option><option value="mistico">Místico</option></select></label>
+<label>Versão<select id="gender"><option value="m">Masculina</option><option value="f">Feminina</option></select></label></fieldset>
+<p id="count" role="status"></p><section id="selected" aria-label="Skin selecionada"></section>
+<div id="grid"></div><nav><button id="prev">Anterior</button><span id="pages"></span><button id="next">Próxima</button></nav>
+</main>
+<script src="v83_skin_manifest.js?v=v840-refined"></script>
+<script src="v83_skin_assets_1.js?v=v840-refined"></script>
+<script src="v83_skin_assets_2.js?v=v840-refined"></script>
+<script src="v83_skin_assets_3.js?v=v840-refined"></script>
+<script src="v83_skin_assets_4.js?v=v840-refined"></script>
+<script>
+(function(){
+'use strict';
+var list=Array.isArray(window.ES83_META)?window.ES83_META:[],images=window.ES83_SVGS||{},page=0,perPage=24,current='fantasma_absoluto';
+var $=id=>document.getElementById(id);
+var esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+var fold=x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+var label={comum:'Comum',incomum:'Incomum',raro:'Épico',lenda:'Lendário',mistico:'Místico'};
+var src=(x,g)=>{var b64=images[x.code+'_'+g]||images[x.code+'_m'];return b64?'data:image/svg+xml;base64,'+b64:''};
+function select(id){
+ var x=list.find(t=>t.code===id);if(!x)return;current=id;
+ $('selected').innerHTML='<span class="rarity '+x.rarity+'">'+label[x.rarity]+'</span><h2>'+esc(x.name)+'</h2>'+
+ '<img src="'+src(x,$('gender').value)+'" alt="Personagem do título '+esc(x.name)+'">'+
+ '<p>'+esc(x.animationName||'Sem efeito especial')+' · '+esc(x.theme||'Traje temático')+'</p>';
+}
+function filtered(){var q=fold($('query').value),tier=$('tier').value;return list.filter(x=>(tier==='all'||x.rarity===tier)&&fold(x.name).includes(q))}
+function render(){
+ var arr=filtered(),max=Math.ceil(arr.length/perPage);page=Math.max(0,Math.min(page,max-1));
+ $('count').textContent=arr.length+' títulos encontrados · '+Object.keys(images).length+' skins disponíveis';
+ $('grid').innerHTML=arr.slice(page*perPage,(page+1)*perPage).map(x=>
+ '<button type="button" class="skin" data-title="'+esc(x.code)+'"><span class="rarity '+x.rarity+'">'+label[x.rarity]+'</span>'+
+ '<img loading="lazy" decoding="async" src="'+src(x,$('gender').value)+'" alt=""><strong>'+esc(x.name)+'</strong></button>'
+ ).join('');
+ $('grid').querySelectorAll('[data-title]').forEach(b=>b.onclick=()=>select(b.dataset.title));
+ $('pages').textContent=max?(page+1)+' / '+max:'0 / 0';$('prev').disabled=page===0;$('next').disabled=page>=max-1;
+ var show=arr.find(x=>x.code===current)||arr[0];if(show)select(show.code);else $('selected').textContent='Nenhum título encontrado.';
+}
+$('query').oninput=()=>{page=0;render()};$('tier').onchange=()=>{page=0;render()};$('gender').onchange=render;
+$('prev').onclick=()=>{page--;render()};$('next').onclick=()=>{page++;render()};render();
+})();
+</script></body></html>
