@@ -1,27 +1,44 @@
-/* V8.1 draft — only the title-aware arena, never the public site until merged. */
+/* V8.2 DRAFT — each title chooses a distinct COSTUME. Rarity colors TITLE ONLY.
+ * Animation budgets: common 0 / uncommon 0 / epic 1 / legendary 2 / mystic 3.
+ */
 .judge-panel .judge-actor{overflow:hidden;isolation:isolate}
 .judge-panel .judge-title{position:relative;z-index:7;min-height:26px;line-height:1.12;text-align:center;max-width:100%;font-size:clamp(9px,1.7vw,12px);overflow-wrap:anywhere}
-.judge-panel .es81-skin{position:absolute;left:4px;bottom:31px;z-index:6;color:var(--es81-accent);text-shadow:0 0 12px var(--es81-accent)}
-.judge-panel .es81-skin-symbol{font-size:17px;position:relative;z-index:2}
-.judge-panel .es81-skin-ring{display:none;position:absolute;inset:-5px;border:1px solid var(--es81-accent);border-radius:50%;filter:drop-shadow(0 0 5px var(--es81-accent))}
-.judge-panel .es81-skin-epico .es81-skin-ring{display:block;opacity:.3}
-.judge-panel .es81-skin-lenda .es81-skin-ring{display:block;opacity:.67}
-.judge-panel .es81-skin-mistico .es81-skin-ring{display:block;border-width:2px;opacity:1;animation:es81-spirit 2.8s ease-in-out infinite alternate}
-.judge-panel .es81-skin-comum{filter:grayscale(.6);opacity:.7}
-.judge-panel .es81-skin-incomum{opacity:.9}
-.judge-panel .es81-skin-epico{filter:drop-shadow(0 0 5px #b68add)}
-.judge-panel .es81-skin-lenda{filter:drop-shadow(0 0 8px #e6b05a)}
-.judge-panel .es81-skin-mistico{filter:drop-shadow(0 0 12px #ff173f)}
-.judge-panel .es81-skin-mistico+.judge-name,.judge-panel .title-mistico{color:#ff315b!important;text-shadow:0 0 12px #ff173f!important}
-.judge-panel .es81-skin-lenda+.judge-name{color:#ffe4ac}
-.judge-panel .es81-room-crown{position:absolute;top:1px;right:3px;z-index:8;font-size:21px;color:#fbd47f;text-shadow:0 0 10px #efab4d}
+.judge-panel .judge-title.title-mistico,.judge-panel .title-mistico{color:#ff315b!important;text-shadow:0 0 12px #ff173f!important}
+.judge-panel .judge-title.title-lenda{color:#ffda83!important}
+.judge-panel .judge-title.title-raro{color:#85caff!important}
+.judge-panel .judge-title.title-incomum{color:#91dcb9!important}
+.judge-panel .judge-title.title-comum{color:#c8c0bb!important}
+.judge-panel .judge-name{color:#f6f0ff!important;text-shadow:0 1px 3px #000a!important}
+.judge-panel .es81-room-crown{position:absolute;top:1px;right:3px;z-index:9;font-size:21px;color:#fbd47f;text-shadow:0 0 10px #efab4d}
 .judge-panel .judge-actor:has(.es81-room-crown){border-color:#eac982;box-shadow:inset 0 0 14px #edb76236,0 0 13px #e6b66154}
-.judge-panel .es81-theme-royal+.judge-name{letter-spacing:.03em}
-.judge-panel .es81-theme-ghost{opacity:.95}
-.judge-panel .judge-actor:has(.es81-theme-ghost) .judge-figure{filter:drop-shadow(0 0 9px #a7a8ebaa)}
-.judge-panel .judge-actor:has(.es81-theme-mist) .judge-figure{filter:drop-shadow(0 0 9px #85b7bfaa)}
-.judge-panel .judge-actor:has(.es81-theme-masks) .judge-helm{border-color:#d2a4c9}
-.judge-panel .judge-actor:has(.es81-theme-abyss) .judge-weapon{box-shadow:0 0 9px #a35bed}
-@keyframes es81-spirit{from{transform:scale(.8);opacity:.5}to{transform:scale(1.4);opacity:1}}
-@media(max-width:480px){.judge-panel .judge-title{font-size:9px}.judge-panel .es81-room-crown{font-size:16px}}
-@media(prefers-reduced-motion:reduce){.judge-panel .es81-skin-ring{animation:none!important}}
+.judge-panel .judge-figure-v82{width:83px;height:122px;flex:0 0 122px;display:grid;place-items:center;max-width:100%;filter:none}
+.judge-panel .es81-character{position:relative;display:block;isolation:isolate;width:100%;height:100%;--es81-pulse:var(--es81-skin-light);overflow:visible}
+.judge-panel .es81-costume-svg{position:absolute;inset:0;display:block;width:100%;height:100%;overflow:visible;filter:drop-shadow(0 4px 2px #0007)}
+.judge-panel .es81-motion{position:absolute;left:50%;top:50%;width:65%;height:65%;border-radius:50%;border:1px solid var(--es81-skin-light);opacity:0;pointer-events:none;transform:translate(-50%,-50%);filter:drop-shadow(0 0 7px var(--es81-skin-light))}
+.judge-panel .es81-tier-epico .es81-motion-1{opacity:.37;animation:es82Gleam 5.5s ease-in-out infinite alternate}
+.judge-panel .es81-tier-lenda .es81-motion-1{opacity:.53;animation:es82Gleam 3.8s ease-in-out infinite alternate}
+.judge-panel .es81-tier-lenda .es81-motion-2{opacity:.35;border-style:dashed;animation:es82Orbit 7s linear infinite}
+.judge-panel .es81-tier-mistico .es81-motion-1{opacity:.66;animation:es82Gleam 2.9s ease-in-out infinite alternate}
+.judge-panel .es81-tier-mistico .es81-motion-2{opacity:.52;border-style:dashed;animation:es82Orbit 5.4s linear infinite}
+.judge-panel .es81-tier-mistico .es81-motion-3{opacity:.55;width:88%;height:91%;border-width:2px;border-style:double;animation:es82Breathe 4s ease-in-out infinite alternate}
+.judge-panel .es81-tier-mistico .es81-costume-svg{animation:es82Float 4.6s ease-in-out infinite}
+.judge-panel .es81-tier-lenda .es81-costume-svg{animation:es82Float 6s ease-in-out infinite}
+.judge-panel .es81-tier-epico .es81-costume-svg{animation:es82Float 8s ease-in-out infinite}
+.judge-panel .es81-tier-comum .es81-motion,.judge-panel .es81-tier-incomum .es81-motion{display:none!important}
+.judge-panel .judge-figure-v82 .judge-torso,.judge-panel .judge-figure-v82 .judge-helm{display:none}
+.judge-panel .es81-tier-mistico .es81-costume-svg{filter:drop-shadow(0 0 5px var(--es81-skin-light))}
+.judge-panel .es81-tier-lenda .es81-costume-svg{filter:drop-shadow(0 0 3px var(--es81-skin-light))}
+.judge-panel .es81-theme-ghost{opacity:.82}
+.judge-panel .es81-theme-ghost .es81-costume-svg{filter:drop-shadow(0 0 5px var(--es81-skin-light))}
+.judge-panel .es81-theme-mist .es81-motion{filter:blur(3px) drop-shadow(0 0 6px var(--es81-skin-light))}
+.judge-panel .es81-theme-royal .es81-costume-svg{filter:drop-shadow(0 0 4px var(--es81-skin-light))}
+.judge-panel .es81-theme-masks .es81-costume-svg{transform-origin:center 45%}
+.judge-panel .es81-gender-f .es81-costume-svg{max-width:100%}
+.es-judgment-result .judge-figure-v82{width:76px;height:102px;flex:0 0 102px}
+.es-judgment-result .es-vote-figure .judge-figure-v82{width:100%;height:100%;display:block}
+@keyframes es82Gleam{from{transform:translate(-50%,-50%) scale(.8);opacity:.2}to{transform:translate(-50%,-50%) scale(1.28);opacity:.73}}
+@keyframes es82Orbit{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes es82Breathe{from{transform:translate(-50%,-50%) scale(.85)}to{transform:translate(-50%,-50%) scale(1.12)}}
+@keyframes es82Float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media(max-width:480px){.judge-panel .judge-title{font-size:9px}.judge-panel .es81-room-crown{font-size:16px}.judge-panel .judge-figure-v82{height:107px;flex-basis:107px;width:68px}}
+@media(prefers-reduced-motion:reduce){.judge-panel .es81-character *,.judge-panel .es81-character{animation:none!important;transition:none!important}}
