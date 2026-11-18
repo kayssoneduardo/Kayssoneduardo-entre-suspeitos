@@ -1,0 +1,27 @@
+/* V8.1 draft — only the title-aware arena, never the public site until merged. */
+.judge-panel .judge-actor{overflow:hidden;isolation:isolate}
+.judge-panel .judge-title{position:relative;z-index:7;min-height:26px;line-height:1.12;text-align:center;max-width:100%;font-size:clamp(9px,1.7vw,12px);overflow-wrap:anywhere}
+.judge-panel .es81-skin{position:absolute;left:4px;bottom:31px;z-index:6;color:var(--es81-accent);text-shadow:0 0 12px var(--es81-accent)}
+.judge-panel .es81-skin-symbol{font-size:17px;position:relative;z-index:2}
+.judge-panel .es81-skin-ring{display:none;position:absolute;inset:-5px;border:1px solid var(--es81-accent);border-radius:50%;filter:drop-shadow(0 0 5px var(--es81-accent))}
+.judge-panel .es81-skin-epico .es81-skin-ring{display:block;opacity:.3}
+.judge-panel .es81-skin-lenda .es81-skin-ring{display:block;opacity:.67}
+.judge-panel .es81-skin-mistico .es81-skin-ring{display:block;border-width:2px;opacity:1;animation:es81-spirit 2.8s ease-in-out infinite alternate}
+.judge-panel .es81-skin-comum{filter:grayscale(.6);opacity:.7}
+.judge-panel .es81-skin-incomum{opacity:.9}
+.judge-panel .es81-skin-epico{filter:drop-shadow(0 0 5px #b68add)}
+.judge-panel .es81-skin-lenda{filter:drop-shadow(0 0 8px #e6b05a)}
+.judge-panel .es81-skin-mistico{filter:drop-shadow(0 0 12px #ff173f)}
+.judge-panel .es81-skin-mistico+.judge-name,.judge-panel .title-mistico{color:#ff315b!important;text-shadow:0 0 12px #ff173f!important}
+.judge-panel .es81-skin-lenda+.judge-name{color:#ffe4ac}
+.judge-panel .es81-room-crown{position:absolute;top:1px;right:3px;z-index:8;font-size:21px;color:#fbd47f;text-shadow:0 0 10px #efab4d}
+.judge-panel .judge-actor:has(.es81-room-crown){border-color:#eac982;box-shadow:inset 0 0 14px #edb76236,0 0 13px #e6b66154}
+.judge-panel .es81-theme-royal+.judge-name{letter-spacing:.03em}
+.judge-panel .es81-theme-ghost{opacity:.95}
+.judge-panel .judge-actor:has(.es81-theme-ghost) .judge-figure{filter:drop-shadow(0 0 9px #a7a8ebaa)}
+.judge-panel .judge-actor:has(.es81-theme-mist) .judge-figure{filter:drop-shadow(0 0 9px #85b7bfaa)}
+.judge-panel .judge-actor:has(.es81-theme-masks) .judge-helm{border-color:#d2a4c9}
+.judge-panel .judge-actor:has(.es81-theme-abyss) .judge-weapon{box-shadow:0 0 9px #a35bed}
+@keyframes es81-spirit{from{transform:scale(.8);opacity:.5}to{transform:scale(1.4);opacity:1}}
+@media(max-width:480px){.judge-panel .judge-title{font-size:9px}.judge-panel .es81-room-crown{font-size:16px}}
+@media(prefers-reduced-motion:reduce){.judge-panel .es81-skin-ring{animation:none!important}}
